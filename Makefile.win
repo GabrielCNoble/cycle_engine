@@ -1,0 +1,145 @@
+# Project: Cycle
+# Makefile created by Dev-C++ 5.11
+
+CPP      = g++.exe -D__DEBUG__
+CC       = gcc.exe -D__DEBUG__
+WINDRES  = windres.exe
+OBJ      = camera.o console.o draw.o entity.o framebuffer.o gpu.o gui.o input.o light.o main.o material.o model.o particle.o pew.o physics.o scenegraph.o script.o shader.o sound.o text.o texture.o gmath/frustum.o gmath/line.o gmath/matrix.o gmath/plane.o gmath/triangle.o gmath/vector.o soil/image_DXT.o soil/image_helper.o soil/SOIL.o soil/stb_image_aug.o armature.o vcache.o log.o draw_debug.o file.o tri.o tinyxml2.o loader_collada.o loader_wavefront.o
+LINKOBJ  = camera.o console.o draw.o entity.o framebuffer.o gpu.o gui.o input.o light.o main.o material.o model.o particle.o pew.o physics.o scenegraph.o script.o shader.o sound.o text.o texture.o gmath/frustum.o gmath/line.o gmath/matrix.o gmath/plane.o gmath/triangle.o gmath/vector.o soil/image_DXT.o soil/image_helper.o soil/SOIL.o soil/stb_image_aug.o armature.o vcache.o log.o draw_debug.o file.o tri.o tinyxml2.o loader_collada.o loader_wavefront.o
+LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib32" -static-libgcc -L"libs/SDL/lib/mingw" -L"libs/GLEW/lib" -L"libs/bullet/lib" -L"libs/FreeType/lib" -L"libs/OPENAL/Win32" -L"libs/assimp/bin" -L"libs/ozz/lib" -lmingw32 -lopengl32 -lSDL2main -lSDL2 -lglew32 -lfreetype.dll -lBulletDynamics -lBulletCollision -lLinearMath -lassimp.dll  -lozz_base_r -lozz_animation_r    libs/OPENAL/Win32/OpenAL32.lib -m32 -g3
+INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/FreeType/include/freetype2" -I"libs/SDL/include" -I"libs/GLEW/include" -I"libs/OPENAL/include" -I"libs/bullet/include" -I"libs/FreeType/include" -I"libs/FreeType/include/freetype2/freetype" -I"configuration" -I"gmath" -I"loaders" -I"libs/assimp/include/assimp" -I"libs/ozz"
+CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/FreeType/include/freetype2" -I"libs/SDL/include" -I"libs/GLEW/include" -I"libs/OPENAL/include" -I"libs/bullet/include" -I"libs/FreeType/include" -I"libs/FreeType/include/freetype2/freetype" -I"configuration" -I"gmath" -I"loaders" -I"libs/assimp/include/assimp" -I"libs/ozz"
+BIN      = Cycle.exe
+CXXFLAGS = $(CXXINCS) -m32 -g3 -Wno-write-strings
+CFLAGS   = $(INCS) -m32 -g3
+RM       = rm.exe -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
+
+camera.o: camera.c
+	$(CPP) -c camera.c -o camera.o $(CXXFLAGS)
+
+console.o: console.c
+	$(CPP) -c console.c -o console.o $(CXXFLAGS)
+
+draw.o: draw.c
+	$(CPP) -c draw.c -o draw.o $(CXXFLAGS)
+
+entity.o: entity.c
+	$(CPP) -c entity.c -o entity.o $(CXXFLAGS)
+
+framebuffer.o: framebuffer.c
+	$(CPP) -c framebuffer.c -o framebuffer.o $(CXXFLAGS)
+
+gpu.o: gpu.c
+	$(CPP) -c gpu.c -o gpu.o $(CXXFLAGS)
+
+gui.o: gui.c
+	$(CPP) -c gui.c -o gui.o $(CXXFLAGS)
+
+input.o: input.c
+	$(CPP) -c input.c -o input.o $(CXXFLAGS)
+
+light.o: light.c
+	$(CPP) -c light.c -o light.o $(CXXFLAGS)
+
+main.o: main.c
+	$(CPP) -c main.c -o main.o $(CXXFLAGS)
+
+material.o: material.c
+	$(CPP) -c material.c -o material.o $(CXXFLAGS)
+
+model.o: model.c
+	$(CPP) -c model.c -o model.o $(CXXFLAGS)
+
+particle.o: particle.c
+	$(CPP) -c particle.c -o particle.o $(CXXFLAGS)
+
+pew.o: pew.c
+	$(CPP) -c pew.c -o pew.o $(CXXFLAGS)
+
+physics.o: physics.c
+	$(CPP) -c physics.c -o physics.o $(CXXFLAGS)
+
+scenegraph.o: scenegraph.c
+	$(CPP) -c scenegraph.c -o scenegraph.o $(CXXFLAGS)
+
+script.o: script.c
+	$(CPP) -c script.c -o script.o $(CXXFLAGS)
+
+shader.o: shader.c
+	$(CPP) -c shader.c -o shader.o $(CXXFLAGS)
+
+sound.o: sound.c
+	$(CPP) -c sound.c -o sound.o $(CXXFLAGS)
+
+text.o: text.c
+	$(CPP) -c text.c -o text.o $(CXXFLAGS)
+
+texture.o: texture.c
+	$(CPP) -c texture.c -o texture.o $(CXXFLAGS)
+
+gmath/frustum.o: gmath/frustum.c
+	$(CPP) -c gmath/frustum.c -o gmath/frustum.o $(CXXFLAGS)
+
+gmath/line.o: gmath/line.c
+	$(CPP) -c gmath/line.c -o gmath/line.o $(CXXFLAGS)
+
+gmath/matrix.o: gmath/matrix.c
+	$(CPP) -c gmath/matrix.c -o gmath/matrix.o $(CXXFLAGS)
+
+gmath/plane.o: gmath/plane.c
+	$(CPP) -c gmath/plane.c -o gmath/plane.o $(CXXFLAGS)
+
+gmath/triangle.o: gmath/triangle.c
+	$(CPP) -c gmath/triangle.c -o gmath/triangle.o $(CXXFLAGS)
+
+gmath/vector.o: gmath/vector.c
+	$(CPP) -c gmath/vector.c -o gmath/vector.o $(CXXFLAGS)
+
+soil/image_DXT.o: soil/image_DXT.c
+	$(CPP) -c soil/image_DXT.c -o soil/image_DXT.o $(CXXFLAGS)
+
+soil/image_helper.o: soil/image_helper.c
+	$(CPP) -c soil/image_helper.c -o soil/image_helper.o $(CXXFLAGS)
+
+soil/SOIL.o: soil/SOIL.c
+	$(CPP) -c soil/SOIL.c -o soil/SOIL.o $(CXXFLAGS)
+
+soil/stb_image_aug.o: soil/stb_image_aug.c
+	$(CPP) -c soil/stb_image_aug.c -o soil/stb_image_aug.o $(CXXFLAGS)
+
+armature.o: armature.c
+	$(CPP) -c armature.c -o armature.o $(CXXFLAGS)
+
+vcache.o: vcache.c
+	$(CPP) -c vcache.c -o vcache.o $(CXXFLAGS)
+
+log.o: log.c
+	$(CPP) -c log.c -o log.o $(CXXFLAGS)
+
+draw_debug.o: draw_debug.c
+	$(CPP) -c draw_debug.c -o draw_debug.o $(CXXFLAGS)
+
+file.o: file.c
+	$(CPP) -c file.c -o file.o $(CXXFLAGS)
+
+tri.o: tri.c
+	$(CPP) -c tri.c -o tri.o $(CXXFLAGS)
+
+tinyxml2.o: tinyxml2.cpp
+	$(CPP) -c tinyxml2.cpp -o tinyxml2.o $(CXXFLAGS)
+
+loader_collada.o: loader_collada.c
+	$(CPP) -c loader_collada.c -o loader_collada.o $(CXXFLAGS)
+
+loader_wavefront.o: loader_wavefront.c
+	$(CPP) -c loader_wavefront.c -o loader_wavefront.o $(CXXFLAGS)

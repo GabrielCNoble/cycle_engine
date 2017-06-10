@@ -1,0 +1,37 @@
+/* set the stencil test to always pass, and
+set the value that will be placed in the stencil
+equals to 0x0f. */
+glStencilFunc(GL_ALWAYS, 0x0f, 0xff); 
+
+
+/* the first param tells OpenGL to replace the value in the stencil
+buffer in case the test fails. Since it won't fail, it will apply the
+function specified in the second param in case
+the fragment fails the depth test. If it fails, 
+don't update the stencil buffer. If it passes, 
+execute the function specified in the third
+param. In other words, if the fragment passes, 
+the value in the stencil buffer will be replaced
+by the second param of glStencilFunc. */
+
+glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE); 
+
+/* setting stuff this way makes the stencil
+be updated every time a pixel is drawn. */
+
+
+
+
+
+/* this makes the stencil test pass if
+the pixel have the same stencil value as 
+the second param of glStencilFunc. If not,
+the stencil test will fail. */
+glStencilFunc(GL_EQUAL, 0x0f, 0xff);
+
+
+/* this tells OpenGL to not touch the stencil
+buffer regardless the result of the stencil test.
+By doing this, the stencil buffer is being
+used just for comparision.  */
+glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);

@@ -1,0 +1,2 @@
+When linking the libs, the order libBulletDynamics.a libBulletCollision.a libLinearMath must be respected. As for the other libs,
+just shove 'em up your butt. Or link them too, that is up to you.
