@@ -8,9 +8,10 @@ So far, its renderer features:
   - parallax occlusion mapping
   - bloom (broken)
   - volumetric lights (broken)
+  - translucent (and refractive) surfaces (unfinished)
   - PBR materials
-  
-Translucent materials are on the way.  
+
+An option to allow it to switch to forward rendering is in consideration.  
 
 Physics engine used:
   - Bullet physics
