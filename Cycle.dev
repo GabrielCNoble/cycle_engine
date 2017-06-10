@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0000000100000000001000000
-UnitCount=105
+UnitCount=104
 
 [VersionInfo]
 Major=1
@@ -961,7 +961,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit94]
-FileName=draw_common.h
+FileName=gpu.inl
 CompileCpp=1
 Folder=
 Compile=1
@@ -991,26 +991,6 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit96]
-FileName=file.c
-CompileCpp=1
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit95]
-FileName=gpu.inl
-CompileCpp=1
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit97]
 FileName=file.h
 CompileCpp=1
 Folder=
@@ -1020,8 +1000,8 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit99]
-FileName=tri.h
+[Unit95]
+FileName=file.c
 CompileCpp=1
 Folder=
 Compile=1
@@ -1030,7 +1010,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit98]
+[Unit97]
 FileName=tri.c
 CompileCpp=1
 Folder=
@@ -1040,7 +1020,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit100]
+[Unit99]
 FileName=tinyxml2.cpp
 CompileCpp=1
 Folder=
@@ -1050,7 +1030,17 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit101]
+[Unit98]
+FileName=tri.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit100]
 FileName=tinyxml2.h
 CompileCpp=1
 Folder=
@@ -1060,7 +1050,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit102]
+[Unit101]
 FileName=loader_collada.c
 CompileCpp=1
 Folder=
@@ -1070,7 +1060,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit103]
+[Unit102]
 FileName=loader_collada.h
 CompileCpp=1
 Folder=
@@ -1080,8 +1070,18 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit104]
+[Unit103]
 FileName=loader_wavefront.c
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit104]
+FileName=loader_wavefront.h
 CompileCpp=1
 Folder=
 Compile=1
