@@ -102,43 +102,25 @@ pew_Finish
 PEWAPI void pew_Finish()
 {
 	gui_Finish();
-	printf("1\n");
 	//physics_Finish();
 	armature_Finish();
-	printf("2\n");
 	camera_Finish();
-	printf("3\n");
 	scenegraph_Finish();
-	printf("4\n");
 	material_Finish();
-	printf("5\n");
 	vcache_Finish();
-	printf("6\n");
 	//particle_Finish();
 	texture_Finish();
-	printf("7\n");
 	shader_Finish();
-	printf("8\n");
 	light_Finish();
-	printf("9\n");
 	entity_Finish();
-	printf("10\n");
 	model_Finish();
-	printf("11\n");
 	input_Finish();
-	printf("12\n");
 	text_Finish();
-	printf("13\n");
 	sound_Finish();
-	printf("14\n");
 	gpu_Finish();
-	printf("15\n");
 	draw_Finish();
-	printf("16\n");
 	physics_Finish();
-	printf("17\n");
 	console_Finish();
-	printf("18\n");
 	return;
 }
 

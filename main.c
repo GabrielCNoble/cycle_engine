@@ -539,7 +539,7 @@ void ginit()
 	
 	//texture_LoadTexture("tile_d.png", "tile_d", 0);
 	//texture_LoadTexture("tile_n.png", "tile_n", 0);
-	//texture_LoadTexture("tile_h.png", "tile_h", 0);
+	texture_LoadTexture("dick.png", "tile_h", 0);
 	
 	texture_LoadTexture("greasy-pan-2-albedo.png", "greasy_diffuse", 0);
 	texture_LoadTexture("greasy-pan-2-normal.png", "greasy_normal", 0);
@@ -774,24 +774,24 @@ void ginit()
 	
 	for(i=0; i<1; i++)
 	{	
-		light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 30.0, 10.0, 40, 0.5, 0.01, 0.001, 20.5, 64, 4, 256, 256, 2);
+		light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 30.0, 10.0, 40, 0.5, 0.01, 0.001, 20.5, 64, 4, 256, 256, 2, -1);
 		//light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -3.5, 0.0, 1.0), &id, vec3(1.0, 0.0, 0.0), 10.0, 10.0, 40, 0.5, 0.02, 0.0, 0.03, 32, 32, 2048, 256, 2);
 		
-		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.0, 1);
+		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
 		
-		//light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS, vec4(0.0, 1.0, 0.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 40, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2);
-		light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1);
-		light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1);
-		light_CreateLight("lightwow10", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 0.6, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1);
-		light_CreateLight("lightwow11", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, 8.0, 1.0), &id, vec3(0.0, 0.6, 0.8), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1);
-		light_CreateLight("lightwow12", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-6.0, 2.0, 25.0, 1.0), &id, vec3(0.2, 0.7, 0.6), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1);
-		light_CreateLight("lightwow13", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-23.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1);
+		light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1 /*texture_GetTextureIndex("tile_h")*/);
+		light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreateLight("lightwow10", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 0.6, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreateLight("lightwow11", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, 8.0, 1.0), &id, vec3(0.0, 0.6, 0.8), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreateLight("lightwow12", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-6.0, 2.0, 25.0, 1.0), &id, vec3(0.2, 0.7, 0.6), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreateLight("lightwow13", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-23.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		
-		light_CreateLight("lightwow14", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1);
-		light_CreateLight("lightwow15", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(8.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1);
-		light_CreateLight("lightwow16", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-8.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1);
-		light_CreateLight("lightwow17", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(16.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1);
-		light_CreateLight("lightwow18", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-16.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1);
+		light_CreateLight("lightwow14", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1, -1);
+		light_CreateLight("lightwow15", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(8.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1, -1);
+		light_CreateLight("lightwow16", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-8.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1, -1);
+		light_CreateLight("lightwow17", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(16.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1, -1);
+		light_CreateLight("lightwow18", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-16.0, -3.0, -25.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 8.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 128, 128, 1, -1);
 	}
 	
 	

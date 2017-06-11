@@ -12,6 +12,6 @@ uniform float sysRenderTargetHeight;
 void main()
 {
 	//float e = texture2D(sysTextureSampler1, UV).r;
-	gl_FragColor = texture2D(sysTextureSampler0, UV);	
+	gl_FragColor = texture2D(sysTextureSampler0, UV) * sysExposure;	
 	//gl_FragColor = color * sysExposure;
 }

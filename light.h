@@ -53,7 +53,7 @@ void light_ResizeAffectingLightList(int new_size);
 
 //PEWAPI int light_CreateLightFromData(light_data0 *position_data, light_data1 *lparams);
 
-PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int max_samples, int min_samples, int max_shadow_map_res, int min_shadow_map_res, int max_shadow_aa_samples);
+PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int max_samples, int min_samples, int max_shadow_map_res, int min_shadow_map_res, int max_shadow_aa_samples, int tex_index);
 
 //PEWAPI void light_DestroyLight(light_t *light);
 

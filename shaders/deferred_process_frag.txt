@@ -8,9 +8,9 @@ varying mat4 inverse_projection_matrix;
 uniform sampler2D sysTextureSampler0;
 uniform sampler2D sysTextureSampler1;
 uniform sampler2D sysTextureSampler2;
-uniform sampler2D sysTextureSampler3;
 
-uniform samplerCube sysTextureSamplerCube0;
+
+//uniform samplerCube sysTextureSamplerCube0;
 
 #define BIAS 0.0000006
 #define POINT_LIGHT_BIAS 0.0000006
@@ -22,6 +22,8 @@ uniform samplerCube sysTextureSamplerCube0;
 
 #define sysLightType int(gl_LightSource[1].spotCutoff)
 #define sysLightRadius gl_LightSource[0].diffuse.a
+#define sysUseShadows gl_LightSource[3].spotExponent
+#define sysProjectTexture gl_LightSource[4].spotExponent
 
 
 #define RENDER_DRAWMODE_LIT 1
@@ -351,6 +353,16 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 
 }
 
+vec3 project_texture(sampler2D texture_sampler, vec3 frag_pos)
+{
+	vec4 v = sysCameraToLightProjectionMatrix * vec4(frag_pos, 1.0);
+	v /= v.w;
+	v.x = v.x * 0.5 + 0.5;
+	v.y = v.y * 0.5 + 0.5;
+
+	return texture2D(texture_sampler, v.xy).rgb;
+}
+
 vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)
 {
 	vec4 temp = inverse_projection_matrix * h_pos;
@@ -358,7 +370,7 @@ vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)
 	return temp;
 }
 
-float attenuate(vec3 light_vec, float light_radius, float linear_fallof, float quadratic_fallof)
+float attenuate_point(vec3 light_vec, float light_radius, float linear_fallof, float quadratic_fallof)
 {
 	//vec3 light_vec = frag_pos - light_pos;
 	float l = length(light_vec);
@@ -368,6 +380,16 @@ float attenuate(vec3 light_vec, float light_radius, float linear_fallof, float q
 	//return a;
 	return a * clamp((light_radius - l) / light_radius, 0.0, 1.0);
 	
+}
+
+float attenuate_spot(vec3 light_vec, vec3 spot_direction, float light_distance, float spot_cos_cutoff, float spot_exponent, float linear_fallof, float quadratic_fallof)
+{
+	float l = length(light_vec);
+	float a = 1.0 / (l * linear_fallof + l * l * quadratic_fallof);
+	float cos = max(dot(light_vec / l, spot_direction), 0.0);
+	
+	a *= cos * smoothstep(spot_cos_cutoff, spot_cos_cutoff + float(spot_exponent) / 255.0, cos) * clamp((light_distance - l) / light_distance, 0.0, 1.0);
+	return a;
 }
 
 float ndf_ggx(vec3 normal, vec3 half_vec, float roughness)
@@ -461,7 +483,8 @@ void main()
     vec3 half_vec;
     vec3 view_vec;
     vec4 vcolor=vec4(0.5, 0.5, 0.5, 0.0);
-    vec4 lcolor = gl_LightSource[0].diffuse;
+    //vec4 lcolor = gl_LightSource[0].diffuse;
+    vec3 light_color = gl_LightSource[0].diffuse.rgb;
     
     float diff;
     float intensity=1.0;
@@ -488,34 +511,50 @@ void main()
 
 		light_pos = gl_LightSource[0].position.xyz;
 		light_vec = light_pos - p_texel.xyz;
-		intensity = attenuate(light_vec, gl_LightSource[0].diffuse.a, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);	
+		
+		if(sysLightType == LIGHT_POINT)
+		{
+			intensity = attenuate_point(light_vec, gl_LightSource[0].diffuse.a, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+		}
+		else if(sysLightType == LIGHT_SPOT)
+		{
+			intensity = attenuate_spot(light_vec, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			if(sysProjectTexture == 1)
+			{
+				//light_color = vec3(0.0, 0.0, 1.0);
+				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);
+			}
+			
+		}
+		
+			
 
-		if(intensity == 0.0)
+		if(intensity <= 0.0)
 		{
 			discard;
 		}
-		else
+		/*else
 		{
 			if(sysLightType == LIGHT_SPOT)
 			{
-				if(dot(light_vec, gl_LightSource[0].spotDirection.xyz) < gl_LightSource[0].spotCosCutoff)
+				if(dot(normalize(light_vec), gl_LightSource[0].spotDirection.xyz) < gl_LightSource[0].spotCosCutoff)
 				{
 					discard;
 				}
 			}
-		}
+		}*/
 		
 		n_texel = texture2D(sysTextureSampler1, uv);
 		n_texel.xyz = normalize(n_texel.xyz);
     	d_texel = texture2D(sysTextureSampler0, uv);
 
 			
-		if(gl_LightSource[0].spotCutoff<90.0 && gl_LightSource[0].spotCutoff>0.0)
+		/*if(gl_LightSource[0].spotCutoff<90.0 && gl_LightSource[0].spotCutoff>0.0)
 		{
 			cos=max(dot(light_vec, gl_LightSource[0].spotDirection), 0.0);
-			intensity=pow(cos, 1.0);
-			intensity*=smoothstep(gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotCosCutoff + float(gl_LightSource[0].spotExponent) / 255.0, cos);
-		}
+			intensity*=pow(cos, 1.0);
+			intensity*=smoothstep(gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotCosCutoff + 0.1, cos);
+		}*/
 
 		
 		//phong(light_vec, cam_vec, n_texel.xyz, d_texel.w, 1.0, diff, spec);
@@ -523,20 +562,24 @@ void main()
 		
 		shadow = 1.0;
 		
-		if(sysLightType == LIGHT_SPOT)
+		if(sysUseShadows)
 		{
-			sample_2D_shadow_map(p_texel.xyz, n_texel.xyz, gl_LightSource[0].position.xyz, shadow);
+			if(sysLightType == LIGHT_SPOT)
+			{
+				sample_2D_shadow_map(p_texel.xyz, n_texel.xyz, gl_LightSource[0].position.xyz, shadow);
+			}
+			else if(sysLightType == LIGHT_POINT)
+			{
+				sample_3D_shadow_map(p_texel.xyz, n_texel.xyz, gl_LightSource[0].position.xyz, shadow);
+			}
 		}
-		else if(sysLightType == LIGHT_POINT)
-		{
-			sample_3D_shadow_map(p_texel.xyz, n_texel.xyz, gl_LightSource[0].position.xyz, shadow);
-		}
+		
 		
 		//f_color = vec4(1.0) * ndf_ggx(n_texel.xyz, normalize(view_vec + light_vec), 0.5);
 		//f_color = vec4(1.0) * g_smith(n_texel.xyz, normalize(view_vec), normalize(light_vec), 0.5);
 		//f_color = vec4(f_schlick(n_texel.xyz, normalize(view_vec), vec3(0.0, 0.0 ,0.0), 0.0), 1.0);
 		//f_color=((d_texel / PI) * diff + spec) * lcolor * intensity * shadow; 
-		f_color = vec4(cook_torrance(normalize(light_vec), normalize(view_vec), n_texel.xyz, d_texel.xyz, d_texel.w, n_texel.w) * intensity * gl_LightSource[0].diffuse.rgb * shadow, 1.0);
+		f_color = vec4(cook_torrance(normalize(light_vec), normalize(view_vec), n_texel.xyz, d_texel.xyz, d_texel.w, n_texel.w) * intensity * light_color * shadow, 1.0);
 
 	}
 	

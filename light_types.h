@@ -86,7 +86,8 @@ typedef struct
 	vec4_t world_position;
 	float radius;
 	float screen_value;
-	int align4;
+	int tex_index;					/* texture that can be used both for projection or modulation of the spot light's intensity */
+	//short align0;
 	/*short smin_x;
 	short smin_y;
 	short smax_x;

@@ -6,6 +6,7 @@
 uniform sampler2D sysTextureSampler0;
 uniform sampler2D sysDepthSampler;
 //uniform samplerCube sysTextureSamplerCube0;
+uniform sampler2D sys2DShadowSampler;
 uniform samplerCube sys3DShadowSampler;
 
 //uniform mat4 cameraToWorldMatrix;
@@ -25,6 +26,10 @@ uniform float useShadows;
 
 #define sysLightType int(gl_LightSource[1].spotCutoff)
 #define sysLightRadius gl_LightSource[0].diffuse.a
+
+#define LIGHT_POINT 1
+#define LIGHT_SPOT 2
+#define LIGHT_DIRECTIONAL 4
 
 //varying mat4 inverse_projection_matrix;
 //varying mat4 inverse_modelview_matrix;
@@ -72,6 +77,49 @@ vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)
 	vec4 temp = inverse_projection_matrix * h_pos;
 	temp /= temp.w;
 	return temp;
+}
+
+float sample_2d_shadow_map(vec3 frag_pos)
+{
+	vec4 v = sysCameraToLightProjectionMatrix  *  vec4(frag_pos, 1.0);
+	v/=v.w;
+	
+	v.x=v.x*0.5 + 0.5;
+	v.y=v.y*0.5 + 0.5;
+	v.z=v.z*0.5 + 0.5;
+
+	if(v.x<=1.0 && v.x>=0.0 && v.y<=1.0 && v.y>=0.0 && v.w >=0.0)
+	{
+		shadow=texture2D(sys2DShadowSampler, v.xy).x;
+		
+		if(v.z > shadow)
+		{
+			return 0.0;
+		}
+		return 1.0;
+	}
+}
+
+float sample_3d_shadow_map(vec3 frag_pos)
+{
+	vec4 v = sysCameraToLightProjectionMatrix * vec4(frag_pos, 1.0);	
+	float shadow;
+	
+	vec3 d=normalize(v.xyz);
+	
+	vec3 av = abs(v.xyz);
+	float fz = max(av.x, max(av.y, av.z));
+	fz = (sysLightZFar + sysLightZNear) / (sysLightZFar - sysLightZNear)  - (2.0 * sysLightZFar * sysLightZNear)  / ((sysLightZFar - sysLightZNear)*fz);
+	fz = fz * 0.5 + 0.5;	
+	
+	d.y = -d.y;
+	shadow = textureCube(sys3DShadowSampler, d).r;
+	
+	if(fz > shadow)
+	{
+		return 0.0;
+	}
+	return 1.0;
 }
 
 
@@ -161,7 +209,17 @@ void main()
 		
 		//if(useShadows > 0.0)
 		{
-			t = sysCameraToLightProjectionMatrix * vec4(cur_pos, 1.0);
+			
+			if(sysLightType == LIGHT_POINT)
+			{
+				shadow = sample_3d_shadow_map(cur_pos);
+			}
+			else if(sysLightType == LIGHT_SPOT)
+			{
+				shadow = sample_2d_shadow_map(cur_pos);
+			}
+			
+			/*t = sysCameraToLightProjectionMatrix * vec4(cur_pos, 1.0);
 			shadow = 0.0;
 			
 			t.y = -t.y;
@@ -174,7 +232,7 @@ void main()
 			fz = fz * 0.5 + 0.5;
 
 			
-			if(fz<dFactor) shadow = 1.0;
+			if(fz<dFactor) shadow = 1.0;*/
 		}
 		
 

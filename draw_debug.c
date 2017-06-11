@@ -90,7 +90,7 @@ extern armature_list_t armature_list;
 extern collider_array collider_a;
 extern int debug_flags;
 
-extern gpu_buffer_t debug_buffer;
+//extern gpu_buffer_t debug_buffer;
 
 
 
@@ -421,6 +421,7 @@ void draw_debug_Draw()
 	
 	if(debug_flags & DEBUG_DRAW_LIGHT_ORIGINS)
 	{
+		//printf("draw light origins\n");
 		glEnable(GL_POINT_SMOOTH);
 		glPointSize(12.0);
 		for(i = 0; i < c; i++)
