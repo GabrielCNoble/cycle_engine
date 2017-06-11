@@ -539,9 +539,9 @@ void ginit()
 	
 	//texture_LoadTexture("tile_d.png", "tile_d", 0);
 	//texture_LoadTexture("tile_n.png", "tile_n", 0);
-	texture_LoadTexture("dick.png", "tile_h", 0);
+	texture_LoadTexture("circles.png", "tile_h", 0);
 	
-	texture_LoadTexture("greasy-pan-2-albedo.png", "greasy_diffuse", 0);
+	/*texture_LoadTexture("greasy-pan-2-albedo.png", "greasy_diffuse", 0);
 	texture_LoadTexture("greasy-pan-2-normal.png", "greasy_normal", 0);
 	texture_LoadTexture("greasy-pan-2-roughness.png", "greasy_gloss", 0);
 	texture_LoadTexture("greasy-pan-2-metal.png", "greasy_mettalic", 0);
@@ -555,7 +555,7 @@ void ginit()
 	texture_LoadTexture("oakfloor_normal.png", "dungeon_normal", 0);
 	texture_LoadTexture("oakfloor_roughness.png", "dungeon_gloss", 0);
 	texture_LoadTexture("dungeon-stone1-metalness.png", "dungeon_mettalic", 0);
-	texture_LoadTexture("dungeon-stone1-height.png", "dungeon_height", 0);
+	texture_LoadTexture("dungeon-stone1-height.png", "dungeon_height", 0);*/
 	
 	texture_LoadTexture("scifi tile 1_COLOR.png", "scifi_d", 0);
 	texture_LoadTexture("scifi tile 1_NRM.png", "scifi_n", 0);
@@ -693,15 +693,15 @@ void ginit()
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
 	entity_CreateEntityDef("pew_plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("pew_plane"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("piramid", ENTITY_DYNAMIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("piramid"), 2.0, COLLISION_SHAPE_CONVEX_HULL);
 	entity_CreateEntityDef("stairs", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("stairs"), 1.0, COLLISION_SHAPE_CONVEX_HULL);
-	entity_CreateEntityDef("ico_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("ico_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("ico_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_blue", ENTITY_COLLIDES, material_GetMaterialIndex("translucent3"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
@@ -779,7 +779,7 @@ void ginit()
 		
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
 		
-		light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1 /*texture_GetTextureIndex("tile_h")*/);
+		light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, texture_GetTextureIndex("tile_h"));
 		light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		light_CreateLight("lightwow10", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 0.6, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);

@@ -2483,7 +2483,7 @@ void draw_ComposeVolNoBloom()
 	//draw_ResolveTranslucent();
 	
 	framebuffer_BindFramebuffer(&composite_buffer);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	shader_SetShaderByIndex(composite_shader_index);
 	shader_SetCurrentShaderUniform1f(UNIFORM_Exposure, exposure);
 	//shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, composite_buffer.width);
@@ -2497,7 +2497,9 @@ void draw_ComposeVolNoBloom()
 	
 	glDisable(GL_DEPTH_TEST);
 	//glDisable(GL_STENCIL_TEST);
-	//glDepthMask(GL_FALSE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_FALSE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);	/* additive blending */
 	
@@ -2505,8 +2507,8 @@ void draw_ComposeVolNoBloom()
 	
 	/* lit scene */
 	
-	//glBindTexture(GL_TEXTURE_2D, left_buffer.color_out1);
-	//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+	glBindTexture(GL_TEXTURE_2D, left_buffer.color_out1);
+	glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 	
 	/* light volumes  */
 	//glActiveTexture(GL_TEXTURE0);
@@ -2520,7 +2522,7 @@ void draw_ComposeVolNoBloom()
 	glFlush();
 	
 	glEnable(GL_DEPTH_TEST);
-	//glDepthMask(GL_TRUE);
+	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 }
 
@@ -3292,6 +3294,9 @@ void draw_DrawLightVolumes()
 	int imax_y;
 	int light_type;
 	int area_type;
+	int draw_count;
+	int draw_start;
+	int project_texture = 0;
 	mat3_t orientation;
 	mat4_t cam_transform;
 	float v[4];
@@ -3345,8 +3350,10 @@ void draw_DrawLightVolumes()
 	glVertexAttribPointer(shader_a.shaders[plvol_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
+	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler1, 5);
 	shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 1);
 	shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 2);
+	shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 3);
 	
 	shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
 	shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_camera->frustum.znear);
@@ -3369,7 +3376,21 @@ void draw_DrawLightVolumes()
 			//shader_to_use=slvol_shader_index;	
 			area_type = LIGHT_SPOT;
 			light_type = LIGHT_SPOT;
+			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, active_light_a.shadow_data[i].shadow_map.shadow_map);
+			draw_count = DRAW_CONE_LOD0_COUNT;
+			draw_start = DRAW_CONE_LOD0_BEGIN;
+			
+			if(active_light_a.position_data[i].tex_index)
+			{
+				glActiveTexture(GL_TEXTURE5);
+				glBindTexture(GL_TEXTURE_2D, texture_a.textures[active_light_a.position_data[i].tex_index].tex_ID);
+				glLighti(GL_LIGHT4, GL_SPOT_EXPONENT, 1);
+			}
+			else
+			{
+				glLighti(GL_LIGHT4, GL_SPOT_EXPONENT, 0);
+			}
 			//continue;
 		}
 		else if(active_light_a.position_data[i].bm_flags&LIGHT_POINT)
@@ -3377,7 +3398,10 @@ void draw_DrawLightVolumes()
 			//shader_to_use=plvol_shader_index;
 			area_type = LIGHT_POINT;
 			light_type = LIGHT_POINT;
+			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, active_light_a.shadow_data[i].shadow_map.shadow_map);
+			draw_count = DRAW_SPHERE_LOD0_COUNT;
+			draw_start = DRAW_SPHERE_LOD0_BEGIN;
 		}
 		
 		v[0] = active_light_a.position_data[i].world_position.x;
@@ -3386,10 +3410,22 @@ void draw_DrawLightVolumes()
 		v[3] = 1.0;
 		glLightfv(GL_LIGHT0, GL_POSITION, v);
 		 		
-		v[0] = -active_light_a.position_data[i].world_orientation.floats[2][0];
-		v[1] = -active_light_a.position_data[i].world_orientation.floats[2][1];
-		v[2] = -active_light_a.position_data[i].world_orientation.floats[2][2];
+		v[0] = active_light_a.position_data[i].world_orientation.floats[2][0];
+		v[1] = active_light_a.position_data[i].world_orientation.floats[2][1];
+		v[2] = active_light_a.position_data[i].world_orientation.floats[2][2];
 		glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
+				
+		/* up vector */
+		v[0] = active_light_a.position_data[i].world_orientation.floats[1][0];
+		v[1] = active_light_a.position_data[i].world_orientation.floats[1][1];
+		v[2] = active_light_a.position_data[i].world_orientation.floats[1][2];
+		glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
+				
+		/* right vector */
+		v[0] = active_light_a.position_data[i].world_orientation.floats[0][0];
+		v[1] = active_light_a.position_data[i].world_orientation.floats[0][1];
+		v[2] = active_light_a.position_data[i].world_orientation.floats[0][2];
+		glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
 		 		
 		 		
 		v[0] = (float)active_light_a.params[i].r / 255.0;
@@ -3416,7 +3452,9 @@ void draw_DrawLightVolumes()
 		shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, active_light_a.shadow_data[i].zfar);
 		light_SetAreaType(area_type);
 		light_SetLightType(light_type);
-		glDrawArrays(GL_TRIANGLES, DRAW_SPHERE_LOD0_BEGIN, DRAW_SPHERE_LOD0_COUNT);
+		
+		
+		glDrawArrays(GL_TRIANGLES, draw_start, draw_count);
 
 	}
 
@@ -3439,7 +3477,7 @@ void draw_DrawLightVolumes()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, right_volume_buffer.color_out1);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, geometry_buffer.z_buffer);
+	glBindTexture(GL_TEXTURE_2D, right_volume_buffer.z_buffer);
 	
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
 	shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 1);
