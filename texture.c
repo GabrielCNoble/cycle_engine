@@ -408,6 +408,7 @@ PEWAPI void texture_SetTextureByIndex(int texture_index, int tex_unit, int textu
 
 	int uniform;
 	int u_value;
+
 	switch(tex_unit)
 	{
 		case GL_TEXTURE0:
@@ -441,7 +442,6 @@ PEWAPI void texture_SetTextureByIndex(int texture_index, int tex_unit, int textu
 	
 	glActiveTexture(tex_unit);
 	glBindTexture(GL_TEXTURE_2D, texture_a.textures[texture_index].tex_ID);
-	
 	shader_SetCurrentShaderUniform1i(uniform, u_value);
 	
 	return;

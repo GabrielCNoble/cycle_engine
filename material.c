@@ -68,6 +68,8 @@ PEWAPI void material_ResizeMaterialArray(int new_size)
 	}
 	material_a.materials=temp;
 	material_a.array_size=new_size;
+	
+	printf("resize array\n");
 	return;
 }
 
@@ -90,90 +92,71 @@ PEWAPI void material_CreateMaterialFromData(material_t *material)
 
 PEWAPI void material_CreateMaterial(char *name, short shininess, float diffuse_r, float diffuse_g, float diffuse_b, float diffuse_a, float specular_r, float specular_g, float specular_b, float specular_intensity, int bm_flags, tex_info_t *ti)
 {
-	material_t m;
+	material_t *material = &material_a.materials[material_a.material_count++];
 	color4_t p[2];
 	int i;
 	
-	m.name = name;
-	m.shininess = shininess;
+	material->name = name;
+	material->shininess = shininess;
 	material_FloatToBaseMultiplierPair(diffuse_r, diffuse_g, diffuse_b, diffuse_a, p);
 	
-	m.diff_color = p[0];
-	m.diff_mult = p[1];
+	material->diff_color = p[0];
+	material->diff_mult = p[1];
 	
-	p[0] = material_FloatToColor4_t(specular_r, specular_g, specular_b, specular_intensity);
+	//p[0] = material_FloatToColor4_t(specular_r, specular_g, specular_b, specular_intensity);
 	
-	m.spec_color = p[0];
+	//m.spec_color = p[0];
 	
-	m.diff_tex = -1;
-	m.norm_tex = -1;
-	m.heig_tex = -1;
-	m.spec_tex = -1;
+	material->diff_tex = -1;
+	material->norm_tex = -1;
+	material->met_tex = -1;
+	material->gloss_tex = -1;
+	material->heig_tex = -1;
 	
-	m.bm_flags = bm_flags;
+	material->bm_flags = bm_flags;
 	
  
 	if(bm_flags & MATERIAL_DiffuseTexture)
 	{
-		//for(i = 0; i<ti->diff_tex_count && i < 2; i++)
-		//{
-		//	m.diff_tex[i] = ti->diff_tex[i];
-		//}
-		m.diff_tex = ti->diff_tex;
+		material->diff_tex = ti->diff_tex;
 	}
 		
 	if(bm_flags & MATERIAL_NormalTexture)
 	{
-		/*for(i = 0; i<ti->norm_tex_count && i < 2; i++)
-		{
-			m.norm_tex[i] = ti->norm_tex[i];
-		}*/
-		m.norm_tex = ti->norm_tex;
+		material->norm_tex = ti->norm_tex;
 	}
 		
 	if(bm_flags & MATERIAL_HeightTexture)
 	{
-		/*for(i = 0; i<ti->heig_tex_count && i < 2; i++)
-		{
-			m.heig_tex[i] = ti->heig_tex[i];
-		}*/
-		m.heig_tex = ti->heig_tex;
+		material->heig_tex = ti->heig_tex;
 	}
-	
-	/*if(bm_flags & MATERIAL_SpecularTexture)
-	{
-		m.spec_tex = ti->spec_tex;
-		//printf("spec tex: %d\n", m.spec_tex);
-	}*/
 	
 	if(bm_flags & MATERIAL_GlossTexture)
 	{
-		m.gloss_tex = ti->gloss_tex;
-		//printf("spec tex: %d\n", m.spec_tex);
+		material->gloss_tex = ti->gloss_tex;
 	}
 	
 	if(bm_flags & MATERIAL_MetallicTexture)
 	{
-		m.met_tex = ti->met_tex;
-		//printf("spec tex: %d\n", m.spec_tex);
+		material->met_tex = ti->met_tex;
 	}
 	
 	if(bm_flags & MATERIAL_Wireframe)
 	{
-		m.shader_index = shader_GetShaderIndex("wireframe");
-		m.shininess = 0;
+		material->shader_index = shader_GetShaderIndex("wireframe");
+		material->shininess = 0;
 	}
 	else if(bm_flags & (MATERIAL_Shadeless | MATERIAL_Emissive))
 	{
-		m.shader_index = shader_GetShaderIndex("flat");
+		material->shader_index = shader_GetShaderIndex("flat");
 	}
 	else if(bm_flags & MATERIAL_Translucent)
 	{
-		m.shader_index = shader_GetShaderIndex("draw_translucent");	
+		material->shader_index = shader_GetShaderIndex("draw_translucent");	
 	}
 	else
 	{
-		m.shader_index = shader_GetShaderIndex("lit");
+		material->shader_index = shader_GetShaderIndex("lit");
 	}
 
 		
@@ -184,7 +167,12 @@ PEWAPI void material_CreateMaterial(char *name, short shininess, float diffuse_r
 	{
 		material_ResizeMaterialArray(material_a.array_size<<1);
 	}
-	material_a.materials[material_a.material_count++]=m;
+	
+	/* copying materials like they're 'objects' in C is error
+	prone. The compiler seems to be capable to generate broken 
+	code for this... */
+	
+	//material_a.materials[material_a.material_count++] = material;
 	
 	//printf("created material %s index %d\n", name, material_a.material_count-1);
 	
@@ -228,7 +216,6 @@ PEWAPI int material_GetMaterialIndex(char *name)
 	{
 		if(!strcmp(material_a.materials[i].name, name))
 		{
-			printf("material %s index %d\n", name, i);
 			return i;
 		}
 	}
@@ -244,12 +231,17 @@ material_SetMaterialByIndex
 PEWAPI void material_SetMaterialByIndex(int material_index)
 {
 	float c_color[4];
+	int bm_flags asm("edi\n");
+	material_t *material asm("esi\n");
 	if(material_index>=0)
 	{
+		renderer.active_material_index = material_index;	
+		material = &material_a.materials[material_index];
+		bm_flags = material->bm_flags;
 		
 		renderer.active_material_index = material_index;
 		
-		if(material_a.materials[material_index].bm_flags&MATERIAL_Wireframe)
+		if(bm_flags&MATERIAL_Wireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			
@@ -269,12 +261,18 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 			glEnable(GL_CULL_FACE);
 		}*/
 		
-		c_color[0]=color_conversion_lookup_table[material_a.materials[material_index].diff_color.r]*material_a.materials[material_index].diff_mult.r;
-		c_color[1]=color_conversion_lookup_table[material_a.materials[material_index].diff_color.g]*material_a.materials[material_index].diff_mult.g;
-		c_color[2]=color_conversion_lookup_table[material_a.materials[material_index].diff_color.b]*material_a.materials[material_index].diff_mult.b;
-		c_color[3]=color_conversion_lookup_table[material_a.materials[material_index].diff_color.a];
+		/* is this really necessary? */
+		/* is this faster? */
+		/* really? A probably uncached memory access
+		/* is faster than a division instruction? */
+		
+		c_color[0]=color_conversion_lookup_table[material->diff_color.r] * material->diff_mult.r;
+		c_color[1]=color_conversion_lookup_table[material->diff_color.g] * material->diff_mult.g;
+		c_color[2]=color_conversion_lookup_table[material->diff_color.b] * material->diff_mult.b;
+		c_color[3]=color_conversion_lookup_table[material->diff_color.a];
 		
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&c_color);
+		
 	
 		/*if(c_color[3]<1.0 && material_a.materials[material_index].bm_flags & MATERIAL_Translucent)
 		{
@@ -288,70 +286,56 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 			glDepthMask(GL_TRUE);
 		}*/
 		
-				   /* is this really necessary? */
-				   /* is this faster? */
-				   /* really? A probably uncached memory access
-				   is faster than a division instruction? */
 				   
-		c_color[0]=color_conversion_lookup_table[material_a.materials[material_index].spec_color.r];
-		c_color[1]=color_conversion_lookup_table[material_a.materials[material_index].spec_color.g];
-		c_color[2]=color_conversion_lookup_table[material_a.materials[material_index].spec_color.b];
-		c_color[3]=color_conversion_lookup_table[material_a.materials[material_index].spec_color.a];
-		glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat *)&c_color);
-		glMateriali(GL_FRONT, GL_SHININESS, material_a.materials[material_index].shininess);
-		renderer.active_material_index=material_index;	
+				   
+		/*c_color[0]=color_conversion_lookup_table[material->spec_color.r];
+		c_color[1]=color_conversion_lookup_table[material->spec_color.g];
+		c_color[2]=color_conversion_lookup_table[material->spec_color.b];
+		c_color[3]=color_conversion_lookup_table[material->spec_color.a];
+		glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat *)&c_color);*/
+		
+		glMateriali(GL_FRONT, GL_SHININESS, material->shininess);
+		
 		
 		//shader_SetCurrentShaderUniform1i(UNIFORM_MaterialFlags, (int)material_a.materials[material_index].bm_flags);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)material_a.materials[material_index].bm_flags & MATERIAL_Shadeless);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_DiffuseTexture, (int)material_a.materials[material_index].bm_flags & MATERIAL_DiffuseTexture);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_NormalTexture, (int)material_a.materials[material_index].bm_flags & MATERIAL_NormalTexture);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_HeightTexture, (int)material_a.materials[material_index].bm_flags & MATERIAL_HeightTexture);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_GlossTexture, (int)material_a.materials[material_index].bm_flags & MATERIAL_GlossTexture);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_MetallicTexture, (int)material_a.materials[material_index].bm_flags & MATERIAL_MetallicTexture);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_FrontAndBack, (int)material_a.materials[material_index].bm_flags & MATERIAL_FrontAndBack);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)bm_flags & MATERIAL_Shadeless);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_DiffuseTexture, (int)bm_flags & MATERIAL_DiffuseTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_NormalTexture, (int)bm_flags & MATERIAL_NormalTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_HeightTexture, (int)bm_flags & MATERIAL_HeightTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_GlossTexture, (int)bm_flags & MATERIAL_GlossTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_MetallicTexture, (int)bm_flags & MATERIAL_MetallicTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_FrontAndBack, (int)bm_flags & MATERIAL_FrontAndBack);
 		
-		/*glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture_a.textures[material_a.materials[material_index].diff_tex[0]].tex_ID);
-		shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);*/
-		
-		//if(material_a.materials[material_index].diff_tex[0]!=-1)
-		//{
-
-			
-			//printf("diff tex %d\n", material_a.materials[material_index].diff_tex[0]);
-		if(material_a.materials[material_index].diff_tex!=-1)
+		//if(material_a.materials[material_index].diff_tex!=-1)
+		if(bm_flags & MATERIAL_DiffuseTexture)
 		{
-			texture_SetTextureByIndex(material_a.materials[material_index].diff_tex, GL_TEXTURE0, 0);
+			texture_SetTextureByIndex(material->diff_tex, GL_TEXTURE0, 0);
 		}
 			
-		if(material_a.materials[material_index].norm_tex!=-1)
+		//if(material_a.materials[material_index].norm_tex!=-1)
+		if(bm_flags & MATERIAL_NormalTexture)
 		{
-			texture_SetTextureByIndex(material_a.materials[material_index].norm_tex, GL_TEXTURE1, 0);
+			texture_SetTextureByIndex(material->norm_tex, GL_TEXTURE1, 0);
 		}
 			
-		if(material_a.materials[material_index].heig_tex!=-1)
+		//if(material_a.materials[material_index].heig_tex!=-1)
+		if(bm_flags & MATERIAL_HeightTexture)
 		{
-			texture_SetTextureByIndex(material_a.materials[material_index].heig_tex, GL_TEXTURE2, 0);
+			texture_SetTextureByIndex(material->heig_tex, GL_TEXTURE2, 0);
 		}
+		
 			
-		if(material_a.materials[material_index].gloss_tex != -1)
+		//if(material_a.materials[material_index].gloss_tex != -1)
+		if(bm_flags & MATERIAL_GlossTexture)
 		{
-			texture_SetTextureByIndex(material_a.materials[material_index].gloss_tex, GL_TEXTURE3, 0);
-			//printf("set specular texture\n");
+			texture_SetTextureByIndex(material->gloss_tex, GL_TEXTURE3, 0);
 		}
 		
-		if(material_a.materials[material_index].met_tex != -1)
+		//if(material_a.materials[material_index].met_tex != -1)
+		if(bm_flags & MATERIAL_MetallicTexture)
 		{
-			texture_SetTextureByIndex(material_a.materials[material_index].met_tex, GL_TEXTURE4, 0);
-			//printf("set specular texture\n");
+			texture_SetTextureByIndex(material->met_tex, GL_TEXTURE4, 0);
 		}
-			//shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
-		//}
-		
-		//if(material_a.materials[material_index].shader_index!=renderer.active_shader_index)
-		//{
-			//shader_SetShaderByIndex(material_a.materials[material_index].shader_index);
-		//}
 			
 	}
 	return;

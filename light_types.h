@@ -10,6 +10,16 @@
 
 #define MAX_LIGHTS_PER_ENTITY 16
 
+/* TODO (#1#): Avoid unmoving objects to be re-rendered 
+	               into shadow maps. Maybe create a big, shared 
+	               shadow maps for objects that haven't moved 
+	               in two frames, and re-render just objects that 
+	               are moving in the light's shadow map. 
+				   Shadow mapping would then 
+	               access both shadow maps. Other solution 
+	               would be to not render cube shadow map 
+	               faces where no objects moved recently. */
+
 enum LIGHT_FLAGS
 {
 	LIGHT_POINT =								1,

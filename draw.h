@@ -67,8 +67,6 @@ void draw_SortRenderQueue(render_queue *queue, int left, int right);
 //screen_tile *draw_GetAffectedTile(int x, int y);
 
 
-/* TODO: merge those functions. */
-//void draw_FillCommandBuffer(command_buffer_t *cb, mesh_t *mesh, int entity_index, int material_index, int texture_layer, mat4_t *model_view_matrix, unsigned int *light_IDs, unsigned int ligth_count);
 
 void draw_FillCommandBuffer128(command_buffer_t *cb, mesh_t *mesh, int entity_index, int material_index, mat4_t *model_view_matrix, mat4_t *last_model_view_matrix);
 

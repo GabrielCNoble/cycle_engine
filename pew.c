@@ -171,7 +171,6 @@ PEWAPI void pew_MainLoop()
 	{
 		
 		//printf("avarage fps (10 frames): %.02f	 \r", fps_disp);
-		
 		pew_UpdateDeltaTime();
 		f = pew_GetDeltaTime();
 		draw_OpenFrame();
@@ -188,13 +187,17 @@ PEWAPI void pew_MainLoop()
 		scenegraph_ProcessScenegraph();	
 		pew.gamemain_function(pew.ti.ms_elapsed * pew.time_scale);
 		
+		
 		//f = pew_GetDeltaTime();
 		lastf = pew_GetDeltaTime();
+		
 		//printf("processing: %.02f ", lastf - f);
 		
 		
 		draw_DrawFrame();
+		
 		draw_CloseFrame();
+		
 		//lastf = pew_GetDeltaTime();
 		
 		//printf("rendition: %.02f ", pew_GetDeltaTime() - lastf);

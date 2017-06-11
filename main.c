@@ -700,7 +700,8 @@ void ginit()
 	entity_CreateEntityDef("stairs", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("stairs"), 1.0, COLLISION_SHAPE_CONVEX_HULL);
 	entity_CreateEntityDef("ico_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("blue"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_blue", ENTITY_COLLIDES, material_GetMaterialIndex("translucent3"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
@@ -715,54 +716,6 @@ void ginit()
 	//entity_SpawnEntity("plane2", def, vec3(0.0, -6.0, 100.0), &id);
 	def = entity_GetEntityDef("stairs");
 
-	//entity_SpawnEntity("stairs0", def, vec3(0.0, -5.0, 0.0), &id);
-	//entity_SpawnEntity("stairs1", def, vec3(0.0, -1.0, 10.0), &id);
-	
-	/*def = entity_GetEntityDef("rigged");
-	int ei = entity_SpawnEntity("rig", def, vec3(0.0, -3.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);*/
-	
-	//ad = armature_GetArmDefByIndex(1);
-	//armature_CreateArmature(ad, "_test_", vec3(0.0, -5.0, 0.0), &id);
-	
-	/*ei = entity_SpawnEntity("rig2", def, vec3(0.0, 3.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	//animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);
-	
-	ei = entity_SpawnEntity("rig3", def, vec3(0.0, 9.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	//animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);
-	
-	ei = entity_SpawnEntity("rig4", def, vec3(0.0, 15.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	//animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);
-	
-	ei = entity_SpawnEntity("rig5", def, vec3(0.0, 21.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	//animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);
-	
-	ei = entity_SpawnEntity("rig6", def, vec3(0.0, 27.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	//animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);
-	
-	ei = entity_SpawnEntity("rig7", def, vec3(0.0, 33.0, 0.0), &id);
-	armature = entity_GetEntityArmature(ei);
-	//animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);*/
-	//def = entity_GetEntityDef("spiral");
-
-	//entity_SpawnEntity("spiral", def, vec3(-1.5, -5.5, 0.0), &id, 1);
-
-	//eptr = entity_GetEntity("piramid");
-	
-	//scenegraph_SetParent(armature->assigned_node, eptr.extra_data->assigned_node, 0);
 	
 	id = mat3_t_id();
 	def = entity_GetEntityDef("ico_greasy");
@@ -770,6 +723,14 @@ void ginit()
 	
 	def = entity_GetEntityDef("ico_iron_rusted");
 	entity_SpawnEntity("ico_iron_rusted", def, vec3(-3.0, 0.0, 0.0), &id);
+	
+	
+	def = entity_GetEntityDef("cube_greasy");
+	entity_SpawnEntity("cube_greasy", def, vec3(0.0, 0.0, 3.0), &id);
+	
+	def = entity_GetEntityDef("cube_iron_rusted");
+	entity_SpawnEntity("cube_iron_rusted", def, vec3(0.0, 0.0, -3.0), &id);
+	
 	
 	/*def = entity_GetEntityDef("ico_red");
 	entity_SpawnEntity("ico_red", def, vec3(0.0,  0.0, -5.0), &id);
@@ -809,7 +770,6 @@ void ginit()
 	}*/
 	
 	
-
 	id = mat3_t_id();
 	
 	for(i=0; i<1; i++)
@@ -835,7 +795,6 @@ void ginit()
 	}
 	
 	
-	
 	id = mat3_t_id();
 	cptr=camera_GetActiveCamera();
 	camera_TranslateCamera(cptr, vec3(0.0, 1.0 ,0.0), 1.7, 1);
@@ -843,47 +802,6 @@ void ginit()
 	general_collider_t *c = physics_GetColliderByIndex(col_index);
 	scenegraph_SetParent(cptr->assigned_node, c->base.assigned_node, 0);
 	
-	//lptr = light_GetLight("lightwow7");
-	
-	//scenegraph_SetParent(lptr.extra_data->assigned_node, cptr->assigned_node, 0);
-	
-	//entity_CreateEntity("body", ENTITY_PLAYER, ENTITY_OVERRIDE_BULLET_ROTATION|ENTITY_INVISIBLE, cptr->local_position, &id, 1.0, model_GetMeshPtr("cubeUV"), material_GetMaterialIndex("red"), 1);
-	//eptr=entity_GetEntity("body");
-	
-	
-	/*armature_CreateArmature(ad, "test", vec3(0.0, 0.0, 0.0), &id);
-	armature = armature_GetArmature("test");
-	animation = armature_GetAnimationIndex("unnamed_animation.0000");
-	armature_PlayAnimation(armature, animation);
-	
-	
-	scenegraph_SetParent(armature->assigned_node, eptr.extra_data->assigned_node, 0);
-	
-	node_t *n = scenegraph_AddNode(NODE_BONE, 0, 0, "cam_bone");
-	scenegraph_SetParent(cptr->assigned_node, n, 0);*/
-	
-	
-	//scenegraph_SetParent(cptr->assigned_node, eptr.extra_data->assigned_node, 0);
-	
-	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
-	
-	
-	/*entity_CreateEntity("ball", ENTITY_DYNAMIC, 0, vec3(0.0, 5.0, 0.0), &id, 1.0, model_GetMeshPtr("ico"), material_GetMaterialIndex("blue"), 0);
-	light_CreateLight("ball_light", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 0.4, 0.1), 5.0, 10.0, 40, 0.5, 0.02, 0.0, 20.5, 64, 4, 256, 256, 2);
-	eptr=entity_GetEntity("ball");
-	lptr = light_GetLight("ball_light");
-	scenegraph_SetParent(lptr.extra_data->assigned_node, eptr.extra_data->assigned_node, 0);
-	
-	
-	entity_CreateEntity("ball2", ENTITY_DYNAMIC, 0, vec3(0.0, 5.0, -10.0), &id, 1.0, model_GetMeshPtr("ico"), material_GetMaterialIndex("blue"), 0);
-	light_CreateLight("ball_light2", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.2, 0.2, 1.0), 5.0, 10.0, 40, 0.5, 0.02, 0.0, 20.5, 64, 4, 256, 256, 2);
-	eptr=entity_GetEntity("ball2");
-	lptr = light_GetLight("ball_light2");
-	scenegraph_SetParent(lptr.extra_data->assigned_node, eptr.extra_data->assigned_node, 0);*/
-	
-	//entity_CreateEntity("pew", ENTITY_OTHER, 0, vec3(0.0, -1.8, 0.0),&id, 0.0, model_GetMeshPtr("pew_plane"), material_GetMaterialIndex("pew"), 0);
-	
-	//scenegraph_SetParent(lptr->assigned_node, cptr->assigned_node, 0);
 
 	pew_SetTimeScale(1.0);
 
