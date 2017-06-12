@@ -637,8 +637,8 @@ void ginit()
 	//tif.spec_tex = (short)texture_GetTextureIndex("rock4_d");
 	tif.heig_tex = (short)texture_GetTextureIndex("rock4_h");
 	
-	material_CreateMaterial("red", 2048, 1.0, 1.0 ,1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0, NULL);
-	material_CreateMaterial("green", 128, 0.9, 0.9, 0.9, 1.0, 0.1, 0.1 ,0.1, 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_HeightTexture, &tif);
+	material_CreateMaterial("red", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, 0, NULL);
+	material_CreateMaterial("green", 0.5, 0.0, vec4(0.0, 1.0, 0.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_HeightTexture, &tif);
 	
 	
 	//tif.diff_tex = (short)texture_GetTextureIndex("scifi_d");
@@ -651,14 +651,14 @@ void ginit()
 	tif.norm_tex = (short)texture_GetTextureIndex("greasy_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("greasy_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("greasy_mettalic");
-	material_CreateMaterial("greasy", 128, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0 ,1.0, 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("greasy", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("iron_rusted_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("iron_rusted_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("iron_rusted_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("iron_rusted_mettalic");
-	material_CreateMaterial("iron_rusted", 128, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0 ,1.0, 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("iron_rusted", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("dungeon_diffuse");
@@ -666,7 +666,7 @@ void ginit()
 	tif.gloss_tex = (short)texture_GetTextureIndex("dungeon_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("dungeon_mettalic");
 	tif.heig_tex = (short)texture_GetTextureIndex("dungeon_height");
-	material_CreateMaterial("dungeon", 128, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0 ,1.0, 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture, &tif);
+	material_CreateMaterial("dungeon", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture, &tif);
 	
 	/*tif.diff_tex = (short)texture_GetTextureIndex("brick_d");
 	tif.norm_tex = (short)texture_GetTextureIndex("brick_n");
@@ -693,7 +693,7 @@ void ginit()
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
 	entity_CreateEntityDef("pew_plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("pew_plane"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("piramid", ENTITY_DYNAMIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("piramid"), 2.0, COLLISION_SHAPE_CONVEX_HULL);
@@ -774,15 +774,17 @@ void ginit()
 	
 	for(i=0; i<1; i++)
 	{	
-		light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 40, 0.5, 0.01, 0.001, 20.5, 64, 4, 256, 256, 2, -1);
+		//light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 40, 0.5, 0.01, 0.001, 20.5, 64, 4, 256, 256, 2, -1);
 		//light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -3.5, 0.0, 1.0), &id, vec3(1.0, 0.0, 0.0), 10.0, 10.0, 40, 0.5, 0.02, 0.0, 0.03, 32, 32, 2048, 256, 2);
 		
-		
-		light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreatePointLight("lightwow6", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
+		//light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
+		light_CreatePointLight("lightwow8", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.7, 1);
-		light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		
-		light_CreateLight("lightwow8", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(3.0, -1.0, -15.0, 1.0), &id, vec3(0.6, 0.6, 1.0), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
+		//light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
+		light_CreateSpotLight("lightwow7", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
+		//light_CreateLight("lightwow8", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(3.0, -1.0, -15.0, 1.0), &id, vec3(0.6, 0.6, 1.0), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		
 		/*light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		light_CreateLight("lightwow10", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 0.6, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);

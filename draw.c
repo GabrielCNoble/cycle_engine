@@ -2653,6 +2653,11 @@ void draw_ResolveGBuffer()
 	float fx;
 	float fy;
 	
+	light_data0 *position;
+	light_data1 *params;
+	light_data2 *shadow;
+	light_data3 *extra;
+	
 	mat3_t orientation;
 	mat4_t camera_to_world_matrix;
 	mat4_t camera_to_light_matrix;
@@ -2773,30 +2778,35 @@ void draw_ResolveGBuffer()
 			c=active_light_a.light_count;
 			for(i=0; i<active_light_a.light_count; i++)
 			{
+				
+				position = &active_light_a.position_data[i];
+				params = &active_light_a.params[i];
+				shadow = &active_light_a.shadow_data[i];
+				extra = &active_light_a.extra_data[i];
 		 		//light_SetLight(i);
 		 		
 		 		//mat4_t_compose(&light_transform, &active_light_a.position_data[i].world_orientation, active_light_a.position_data[i].world_position.vec3);
 		 		//mat4_t_mult(&model_view_matrix, &light_transform, &active_camera->world_to_camera_matrix);
 		 		//glLoadMatrixf(&model_view_matrix.floats[0][0]);
 		 		
-		 		glLightfv(GL_LIGHT0, GL_POSITION, &active_light_a.position_data[i].world_position.floats[0]);
+		 		glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 		 		
 		 		/* forward vector */
-		 		v[0] = active_light_a.position_data[i].world_orientation.floats[2][0];
-				v[1] = active_light_a.position_data[i].world_orientation.floats[2][1];
-				v[2] = active_light_a.position_data[i].world_orientation.floats[2][2];
+		 		v[0] = position->world_orientation.floats[2][0];
+				v[1] = position->world_orientation.floats[2][1];
+				v[2] = position->world_orientation.floats[2][2];
 				glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
 				
 				/* up vector */
-				v[0] = active_light_a.position_data[i].world_orientation.floats[1][0];
-				v[1] = active_light_a.position_data[i].world_orientation.floats[1][1];
-				v[2] = active_light_a.position_data[i].world_orientation.floats[1][2];
+				v[0] = position->world_orientation.floats[1][0];
+				v[1] = position->world_orientation.floats[1][1];
+				v[2] = position->world_orientation.floats[1][2];
 				glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
 				
 				/* right vector */
-				v[0] = active_light_a.position_data[i].world_orientation.floats[0][0];
-				v[1] = active_light_a.position_data[i].world_orientation.floats[0][1];
-				v[2] = active_light_a.position_data[i].world_orientation.floats[0][2];
+				v[0] = position->world_orientation.floats[0][0];
+				v[1] = position->world_orientation.floats[0][1];
+				v[2] = position->world_orientation.floats[0][2];
 				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
 		 		
 		 		
@@ -2807,10 +2817,10 @@ void draw_ResolveGBuffer()
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
 				
 				
-				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)active_light_a.position_data[i].spot_co);
-				glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, active_light_a.params[i].spot_e);
-				glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)active_light_a.params[i].lin_fallof/0xffff);
-				glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)active_light_a.params[i].sqr_fallof/0xffff);
+				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
+				glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, params->spot_e);
+				glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)params->lin_fallof/0xffff);
+				glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)params->sqr_fallof/0xffff);
 				
 				
 				/*imin_x=active_light_a.position_data[i].smin_x;
@@ -2820,7 +2830,7 @@ void draw_ResolveGBuffer()
 				
 				light_type = 0;
 				
-				if(active_light_a.position_data[i].bm_flags&LIGHT_SPOT)
+				if(position->bm_flags&LIGHT_SPOT)
 				{
 					draw_begin = DRAW_CONE_LOD0_BEGIN;
 					draw_count = DRAW_CONE_LOD0_COUNT;
@@ -2839,10 +2849,10 @@ void draw_ResolveGBuffer()
 						glLighti(GL_LIGHT4, GL_SPOT_EXPONENT, 0);
 					}*/
 				}
-				else if(active_light_a.position_data[i].bm_flags&LIGHT_POINT)
+				else if(position->bm_flags&LIGHT_POINT)
 				{
 					
-					if(active_light_a.position_data[i].bm_flags & LIGHT_VIEWPOINT_INSIDE_VOLUME)
+					if(position->bm_flags & LIGHT_VIEWPOINT_INSIDE_VOLUME)
 					{
 						draw_begin = DRAW_SCREEN_QUAD_BEGIN;
 						draw_count = DRAW_SCREEN_QUAD_COUNT;
@@ -2851,7 +2861,7 @@ void draw_ResolveGBuffer()
 					}
 					else
 					{
-						if(active_light_a.position_data[i].screen_value > 0.35)
+						if(position->screen_value > 0.35)
 						{
 							draw_begin = DRAW_SPHERE_LOD0_BEGIN;
 							draw_count = DRAW_SPHERE_LOD0_COUNT;
@@ -2874,27 +2884,27 @@ void draw_ResolveGBuffer()
 				//glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, area_type);
 				light_SetAreaType(area_type);
 				
-				if(active_light_a.position_data[i].bm_flags&LIGHT_GENERATE_SHADOWS && renderer.renderer_flags&RENDERFLAG_USE_SHADOW_MAPS)
+				if(position->bm_flags&LIGHT_GENERATE_SHADOWS && renderer.renderer_flags&RENDERFLAG_USE_SHADOW_MAPS)
 				{
 					switch(light_type)
 					{
 						case LIGHT_SPOT:
 							glActiveTexture(GL_TEXTURE3);
-							glBindTexture(GL_TEXTURE_2D, active_light_a.shadow_data[i].shadow_map.shadow_map);
+							glBindTexture(GL_TEXTURE_2D, shadow->shadow_map.shadow_map);
 						break;
 						
 						case LIGHT_POINT:
 							glActiveTexture(GL_TEXTURE4);
-							glBindTexture(GL_TEXTURE_CUBE_MAP, active_light_a.shadow_data[i].shadow_map.shadow_map);
+							glBindTexture(GL_TEXTURE_CUBE_MAP, shadow->shadow_map.shadow_map);
 						break;
 					}		
 
-					mat4_t_mult(&camera_to_light_matrix, &camera_to_world_matrix, &active_light_a.extra_data[i].world_to_light_matrix);
-					mat4_t_mult(&camera_to_light_projection_matrix, &camera_to_light_matrix, &active_light_a.extra_data[i].light_projection_matrix);
+					mat4_t_mult(&camera_to_light_matrix, &camera_to_world_matrix, &extra->world_to_light_matrix);
+					mat4_t_mult(&camera_to_light_projection_matrix, &camera_to_light_matrix, &extra->light_projection_matrix);
 
-					shader_SetCurrentShaderUniform1f(UNIFORM_LightZNear, active_light_a.shadow_data[i].znear);
-					shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, active_light_a.shadow_data[i].zfar);
-					shader_SetCurrentShaderUniform1f(UNIFORM_ShadowMapSize, active_light_a.params[i].max_shadow_map_res * MIN_SHADOW_MAP_RES);
+					shader_SetCurrentShaderUniform1f(UNIFORM_LightZNear, shadow->znear);
+					shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, shadow->zfar);
+					shader_SetCurrentShaderUniform1f(UNIFORM_ShadowMapSize, params->shadow_map_res * MIN_SHADOW_MAP_RES);
 					shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraToLightProjectionMatrix, &camera_to_light_projection_matrix.floats[0][0]);
 					use_shadows = 1;
 				}
@@ -2907,7 +2917,7 @@ void draw_ResolveGBuffer()
 				/* spot cutoff goes to the fragment shader... */
 				//glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, light_type);
 				light_SetLightType(light_type);
-				glLighti(GL_LIGHT2, GL_SPOT_EXPONENT, active_light_a.params[i].max_shadow_aa_samples);
+				glLighti(GL_LIGHT2, GL_SPOT_EXPONENT, params->max_shadow_aa_samples);
 				glLighti(GL_LIGHT3, GL_SPOT_EXPONENT, use_shadows);
 				glDrawArrays(draw_mode, draw_begin, draw_count);
 			}
@@ -3438,7 +3448,7 @@ void draw_DrawLightVolumes()
 		
 		glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, ((float)params->scattering / (float)0xffff) * MAX_LIGHT_VOLUME_SCATTERING);
 		glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, ((float)params->energy / (float)0xffff) * MAX_LIGHT_ENERGY);
-		glLighti(GL_LIGHT2, GL_SPOT_CUTOFF, params->max_samples);
+		glLighti(GL_LIGHT2, GL_SPOT_CUTOFF, params->volume_samples);
 		
 		if(position->bm_flags & LIGHT_GENERATE_SHADOWS)
 		{

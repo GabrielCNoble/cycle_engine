@@ -1652,7 +1652,7 @@ static void scenegraph_FillShadowQueue()
 				
 			*(int *)&scb.model_view_matrix.floats[0][3] = 0xff000000;				/* this tells draw_DrawShadowMaps that this command_buffer_t starts a light's render queue */
 			*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].shadow_map.shadow_map << 16);
-			*(int *)&scb.model_view_matrix.floats[2][3] = (GL_TEXTURE_2D << 16) | (active_light_a.params[j].max_shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;
+			*(int *)&scb.model_view_matrix.floats[2][3] = (GL_TEXTURE_2D << 16) | (active_light_a.params[j].shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;
 			draw_DispatchShadowCommandBuffer(&scb);
 			
 			p_index = 0;	
@@ -1896,7 +1896,7 @@ static void scenegraph_FillShadowQueue()
 					
 				*(int *)&scb.model_view_matrix.floats[0][3] = 0xff000000; 				/* this tells draw_DrawShadowMaps that this command_buffer_t starts a light's render queue */
 				*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].shadow_map.shadow_map << 16);
-				*(int *)&scb.model_view_matrix.floats[2][3] = ((GL_TEXTURE_CUBE_MAP_POSITIVE_X+m) << 16) | (active_light_a.params[j].max_shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;		
+				*(int *)&scb.model_view_matrix.floats[2][3] = ((GL_TEXTURE_CUBE_MAP_POSITIVE_X+m) << 16) | (active_light_a.params[j].shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;		
 				draw_DispatchShadowCommandBuffer(&scb);
 				
 				//printf("m: %d used: %d\n", m, used[m]);

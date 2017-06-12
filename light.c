@@ -7,6 +7,7 @@
 //#include "framebuffer.h"
 #include "macros.h"
 
+
 extern renderer_t renderer;
 extern shader_array shader_a;
 light_array light_a;
@@ -298,56 +299,79 @@ void light_ResizeAffectingLightList(int new_size)
 	}
 }*/
 
-PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int max_samples, int min_samples, int max_shadow_map_res, int min_shadow_map_res, int max_shadow_aa_samples, int tex_index)
+PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples,  int shadow_map_res, int max_shadow_aa_samples, int tex_index)
 {
-	int light_index = light_a.light_count;
+	int light_index = light_a.light_count++;
+	light_data0 *position_data;
+	light_data1 *params;
+	light_data2 *shadow_data;
+	light_data3 *extra_data;
 	int c;
 	float frustum_angle;
-	if(light_index>=light_a.array_size)
+	if(light_index >= light_a.array_size)
 	{
 		light_ResizeLightArray(&light_a, light_a.array_size<<1);
 	}
 	
-	memcpy(&light_a.position_data[light_index].world_orientation, orientation, sizeof(mat3_t));
-	memcpy(&light_a.position_data[light_index].local_orientation, orientation, sizeof(mat3_t));
-	memcpy(&light_a.position_data[light_index].world_position, &position, sizeof(vec4_t));
-	memcpy(&light_a.position_data[light_index].local_position, &position, sizeof(vec4_t));
+	position_data = &light_a.position_data[light_index];
+	params = &light_a.params[light_index];
+	shadow_data = &light_a.shadow_data[light_index];
+	extra_data = &light_a.extra_data[light_index];
+	
+	memcpy(&position_data->world_orientation, orientation, sizeof(mat3_t));
+	memcpy(&position_data->local_orientation, orientation, sizeof(mat3_t));
+	memcpy(&position_data->world_position, &position, sizeof(vec4_t));
+	memcpy(&position_data->local_position, &position, sizeof(vec4_t));
 	//light_a.position_data[light_index].world_position = position;
 	//light_a.position_data[light_index].local_position = position;
-	light_a.position_data[light_index].tex_index = tex_index;
-	light_a.position_data[light_index].radius = radius;
-	light_a.position_data[light_index].bm_flags = bm_flags;
+	position_data->tex_index = tex_index;
+	
+	if(radius > LIGHT_MAX_RADIUS) radius = LIGHT_MAX_RADIUS;
+	else if(radius < LIGHT_MIN_RADIUS) radius = LIGHT_MIN_RADIUS;
+	
+	position_data->radius = radius;
+	position_data->bm_flags = bm_flags;
 	//light_a.position_data[light_index].bm_state = LIGHT_HAS_MOVED;
-	light_a.position_data[light_index].spot_co = (char)spot_angle;
+	position_data->spot_co = (char)spot_angle;
 	
 	if(spot_blend > 1.0) spot_blend = 1.0;
 	else if(spot_blend < 0.0) spot_blend = 0.0;
 	
-	light_a.params[light_index].spot_e = 255 * spot_blend;
-	light_a.params[light_index].max_shadow_aa_samples = max_shadow_aa_samples;
+	params->spot_e = 255 * spot_blend;
+	params->max_shadow_aa_samples = max_shadow_aa_samples;
 	
 	
-	if(max_shadow_map_res < 0) max_shadow_map_res = MIN_SHADOW_MAP_RES;
+	if(shadow_map_res > MAX_SHADOW_MAP_RES) shadow_map_res = MAX_SHADOW_MAP_RES;
+	else if(shadow_map_res < MIN_SHADOW_MAP_RES) shadow_map_res = MIN_SHADOW_MAP_RES;
+	shadow_map_res = (shadow_map_res + MIN_SHADOW_MAP_RES - 1) & (~(MIN_SHADOW_MAP_RES - 1));
+	params->shadow_map_res = shadow_map_res / MIN_SHADOW_MAP_RES;
+	
+	
+	if(volume_samples > MAX_VOLUME_SAMPLES) volume_samples = MAX_VOLUME_SAMPLES;
+	else if(volume_samples < MIN_VOLUME_SAMPLES) volume_samples = MIN_VOLUME_SAMPLES;
+	params->volume_samples = volume_samples;
+	
+	/*if(max_shadow_map_res < 0) max_shadow_map_res = MIN_SHADOW_MAP_RES;
 	else if(max_shadow_map_res > MAX_SHADOW_MAP_RES) max_shadow_map_res = MAX_SHADOW_MAP_RES;
 	
 	if(min_shadow_map_res < 0) min_shadow_map_res = MIN_SHADOW_MAP_RES;
-	else if(min_shadow_map_res > MAX_SHADOW_MAP_RES) min_shadow_map_res = MAX_SHADOW_MAP_RES;
+	else if(min_shadow_map_res > MAX_SHADOW_MAP_RES) min_shadow_map_res = MAX_SHADOW_MAP_RES;*/
 	
-	if(min_shadow_map_res > max_shadow_map_res)
+	/*if(min_shadow_map_res > max_shadow_map_res)
 	{
 		c = min_shadow_map_res;
 		min_shadow_map_res = max_shadow_map_res;
 		max_shadow_map_res = c;
-	}
+	}*/
 	
-	max_shadow_map_res = (max_shadow_map_res + MIN_SHADOW_MAP_RES - 1) & (~(MIN_SHADOW_MAP_RES - 1));
-	min_shadow_map_res = (min_shadow_map_res + MIN_SHADOW_MAP_RES - 1) & (~(MIN_SHADOW_MAP_RES - 1));
 	
-	light_a.params[light_index].max_shadow_map_res = max_shadow_map_res / MIN_SHADOW_MAP_RES;
+	//min_shadow_map_res = (min_shadow_map_res + MIN_SHADOW_MAP_RES - 1) & (~(MIN_SHADOW_MAP_RES - 1));
+	
+	
 	//light_a.params[light_index].min_shadow_map_res = min_shadow_map_res / MIN_SHADOW_MAP_RES;
 	
 	
-	if(max_samples < 0) max_samples = MIN_VOLUME_SAMPLES;
+	/*if(max_samples < 0) max_samples = MIN_VOLUME_SAMPLES;
 	else if(max_samples > MAX_VOLUME_SAMPLES) max_samples = MAX_VOLUME_SAMPLES;
 	
 	if(min_samples < 0) min_samples = MIN_VOLUME_SAMPLES;
@@ -358,72 +382,62 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 		c = min_samples;
 		min_samples = max_samples;
 		max_samples = c;
-	}
-	
-	
-	
-	/* snap values to the closest MIN_SHADOW_MAP_RES multiple */
-	
-	
-	
-	
+	}*/
 	
 	if(bm_flags&LIGHT_POINT)
 	{
 			
 		//position_data->local_position.floats[3]=1.0;
-		light_a.position_data[light_index].local_position.floats[3] = 1.0;
-		if(bm_flags&LIGHT_GENERATE_SHADOWS)
+		position_data->local_position.floats[3] = 1.0;
+		if(bm_flags & LIGHT_GENERATE_SHADOWS)
 		{
-			light_a.shadow_data[light_index].shadow_map=light_CreateShadowCubeMap(max_shadow_map_res);
-		}
-		else
-		{
-			light_a.position_data[light_index].bm_flags &= ~LIGHT_GENERATE_SHADOWS;
+			shadow_data->shadow_map = light_CreateShadowCubeMap(shadow_map_res);
 		}
 			
 		frustum_angle=45.0;		
-		light_a.position_data[light_index].spot_co = 0;
+		position_data->spot_co = 0;
 		//position_data->spot_co=0;
 	}
 	else if(bm_flags&LIGHT_SPOT)
 	{
 		//position_data->local_position.floats[3]=1.0;
-		light_a.position_data[light_index].local_position.floats[3] = 1.0;
+		position_data->local_position.floats[3] = 1.0;
 		if(bm_flags&LIGHT_GENERATE_SHADOWS)
 		{
-			light_a.shadow_data[light_index].shadow_map=light_CreateShadowMap(max_shadow_map_res);
-		}
-		else
-		{
-			light_a.position_data[light_index].bm_flags &= ~LIGHT_GENERATE_SHADOWS;
+			shadow_data->shadow_map=light_CreateShadowMap(shadow_map_res);
 		}
 			
-		frustum_angle = (float)light_a.position_data[light_index].spot_co;
+		frustum_angle = (float)position_data->spot_co;
 	}
 	else
 	{
-		light_a.position_data[light_index].local_position.floats[3] = 0.0;
+		position_data->local_position.floats[3] = 0.0;
 	}
 	
 	
 		
 
 		
-	CreatePerspectiveMatrix(&light_a.extra_data[light_index].light_projection_matrix, DegToRad(frustum_angle) , 1.0, 0.001, radius / 0.001, &light_a.extra_data[light_index].generated_frustum);
+	CreatePerspectiveMatrix(&extra_data->light_projection_matrix, DegToRad(frustum_angle), 1.0, LIGHT_ZNEAR, radius / LIGHT_ZNEAR, &extra_data->generated_frustum);
 	
 	/*if(bm_flags & LIGHT_POINT)
 	{
 		light_CalculatePointLightFrustums(&light_a.extra_data[light_index].generated_frustums[0], light_a.extra_data[light_index].generated_frustums);
 	}*/
 	
-	light_a.shadow_data[light_index].znear = light_a.extra_data[light_index].generated_frustum.znear;
-	light_a.shadow_data[light_index].zfar = light_a.extra_data[light_index].generated_frustum.zfar;
+	shadow_data->znear = extra_data->generated_frustum.znear;
+	
+	shadow_data->zfar = extra_data->generated_frustum.zfar;
+	
+	/* depth imprecision was causing shadow artifacts. The solution was to kick the far clipping plane WAY farther, hence the
+	division by LIGHT_ZNEAR (which is smaller than one). Here zfar will be multiplied by LIGHT_ZNEAR to retrieve the correct value,
+	necessary to perform accurate frustum culling. */
+	extra_data->generated_frustum.zfar *= LIGHT_ZNEAR;
 	
 	//light_a.params[light_index].diffuse = material_FloatToColor4_t(diffuse_color.floats[0], diffuse_color.floats[1], diffuse_color.floats[2], 1.0);
-	light_a.params[light_index].r = 255 * diffuse_color.r;
-	light_a.params[light_index].g = 255 * diffuse_color.g;
-	light_a.params[light_index].b = 255 * diffuse_color.b;
+	params->r = 255 * diffuse_color.r;
+	params->g = 255 * diffuse_color.g;
+	params->b = 255 * diffuse_color.b;
 	//light_a.params[light_index].specular = material_FloatToColor4_t(specular_collor.floats[0], specular_collor.floats[1], specular_collor.floats[2], 1.0);
 	
 	
@@ -444,22 +458,21 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	else if(energy < MIN_LIGHT_ENERGY) energy = MIN_LIGHT_ENERGY;
 	
 	
-	light_a.params[light_index].lin_fallof = 0xffff * lin_fallof;
-	light_a.params[light_index].sqr_fallof = 0xffff * sqrd_fallof;
+	params->lin_fallof = 0xffff * lin_fallof;
+	params->sqr_fallof = 0xffff * sqrd_fallof;
 	//light_a.params[light_index].name = strdup(name);
-	light_a.params[light_index].scattering = 0xffff * (scattering / MAX_LIGHT_VOLUME_SCATTERING);
-	light_a.params[light_index].energy = 0xffff * (energy / MAX_LIGHT_ENERGY);
-	light_a.params[light_index].max_samples = max_samples;
+	params->scattering = 0xffff * (scattering / MAX_LIGHT_VOLUME_SCATTERING);
+	params->energy = 0xffff * (energy / MAX_LIGHT_ENERGY);
 	//light_a.params[light_index].min_samples = min_samples;
 	
 	//light_a.params[light_index].assigned_node = scenegraph_AddNode(NODE_LIGHT, light_index, name);
 	//light_a.params[light_index].bm_status = 0;
 	
-	light_a.extra_data[light_index].name = strdup(name);
-	light_a.extra_data[light_index].assigned_node = scenegraph_AddNode(NODE_LIGHT, light_index, -1, name);
+	extra_data->name = strdup(name);
+	extra_data->assigned_node = scenegraph_AddNode(NODE_LIGHT, light_index, -1, name);
 	
 
-	light_a.light_count++;
+	//light_a.light_count++;
 
 	return light_index;
 }
@@ -671,7 +684,7 @@ void light_SetLights(int *IDs, int light_count)
 }
 
 
-void light_SetLight(int ID)
+/*void light_SetLight(int ID)
 {
 	vec4_t pos;
 	//mat4_t light_model_view_projection_matrix;
@@ -681,6 +694,9 @@ void light_SetLight(int ID)
 	float d[3];
 	float c[4];
 	camera_t *active_camera=camera_GetActiveCamera();
+	light_data0 *position_data;
+	light_data1 *params;
+	light_data2 *shadow_data;
 	//mat4_t camera_to_light_clipspace_matrix;
 	//mat3_t cam_orientation=camera_a.cameras[renderer.active_camera_index].world_orientation;
 	//vec3_t cam_position=camera_a.cameras[renderer.active_camera_index].world_position;
@@ -697,23 +713,20 @@ void light_SetLight(int ID)
 		//mat4_t_mult(&light_model_view_projection_matrix, &active_light_a.world_data[ID].world_to_light_matrix, &active_light_a.world_data[ID].light_projection_matrix);
 		//mat4_t_mult(&camera_to_light_clipspace_matrix, &)
 		
+		//position_data = &active_light_a.position_data[ID]
+		
 		
 		d[0]=-active_light_a.position_data[ID].world_orientation.floats[2][0];
 		d[1]=-active_light_a.position_data[ID].world_orientation.floats[2][1];
 		d[2]=-active_light_a.position_data[ID].world_orientation.floats[2][2];
 		glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, d);
 		
-		/* is this faster? really? */
 		c[0]=color_conversion_lookup_table[active_light_a.params[ID].r];
 		c[1]=color_conversion_lookup_table[active_light_a.params[ID].g];
 		c[2]=color_conversion_lookup_table[active_light_a.params[ID].b];
 		c[3]=active_light_a.position_data[ID].radius;
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, c);
 		
-		/*c[0]=color_conversion_lookup_table[active_light_a.params[ID].specular.r];
-		c[1]=color_conversion_lookup_table[active_light_a.params[ID].specular.g];
-		c[2]=color_conversion_lookup_table[active_light_a.params[ID].specular.b];
-		glLightfv(GL_LIGHT0, GL_SPECULAR, c);*/
 		
 		glLightfv(GL_LIGHT0, GL_POSITION, &active_light_a.position_data[ID].world_position.floats[0]);
 		
@@ -728,7 +741,7 @@ void light_SetLight(int ID)
 		glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)active_light_a.params[ID].sqr_fallof/255.0);
 		
 		glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, active_light_a.params[ID].scattering);
-		glLighti(GL_LIGHT1, GL_SPOT_CUTOFF, active_light_a.params[ID].max_samples);
+		glLighti(GL_LIGHT1, GL_SPOT_CUTOFF, active_light_a.params[ID].volume_samples);
 		//printf("light is using %d samples\n", active_light_a.params[ID].max_samples);
 		
 		//glPushMatrix();
@@ -758,7 +771,7 @@ void light_SetLight(int ID)
 	
 	return;
 	
-}
+}*/
 
 void light_GetAffectingLights(render_queue *rqueue)
 {

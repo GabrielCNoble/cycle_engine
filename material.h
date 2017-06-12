@@ -20,7 +20,7 @@ PEWAPI void material_ResizeMaterialArray(int new_size);
 
 PEWAPI void material_CreateMaterialFromData(material_t *material);
 
-PEWAPI void material_CreateMaterial(char *name, short shininess, float diffuse_r, float diffuse_g, float diffuse_b, float diffuse_a, float specular_r, float specular_g, float specular_b, float specular_intensity, int bm_flags, tex_info_t *ti);
+PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic, vec4_t color, float emissive, int bm_flags, tex_info_t *ti);
 
 PEWAPI void material_LoadMaterial(char *filename, char *name);
 

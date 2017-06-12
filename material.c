@@ -90,18 +90,51 @@ PEWAPI void material_CreateMaterialFromData(material_t *material)
 }
 
 
-PEWAPI void material_CreateMaterial(char *name, short shininess, float diffuse_r, float diffuse_g, float diffuse_b, float diffuse_a, float specular_r, float specular_g, float specular_b, float specular_intensity, int bm_flags, tex_info_t *ti)
+PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic, vec4_t color, float emissive, int bm_flags, tex_info_t *ti)
 {
 	material_t *material = &material_a.materials[material_a.material_count++];
 	color4_t p[2];
 	int i;
 	
 	material->name = name;
-	material->shininess = shininess;
-	material_FloatToBaseMultiplierPair(diffuse_r, diffuse_g, diffuse_b, diffuse_a, p);
+	if(glossiness > 1.0) glossiness = 1.0;
+	else if(glossiness < 0.0) glossiness = 0.0;
 	
-	material->diff_color = p[0];
-	material->diff_mult = p[1];
+	if(metallic > 1.0) metallic = 1.0;
+	else if(metallic < 0.0) metallic = 0.0;
+	
+	if(color.r > 1.0) color.r = 1.0;
+	if(color.r < 0.0) color.r = 0.0;
+	
+	if(color.g > 1.0) color.g = 1.0;
+	if(color.g < 0.0) color.g = 0.0;
+	
+	if(color.b > 1.0) color.b = 1.0;
+	if(color.b < 0.0) color.b = 0.0;
+	
+	if(color.a > 1.0) color.a = 1.0;
+	if(color.a < 0.0) color.a = 0.0;
+	
+	if(emissive > MAX_MATERIAL_EMISSIVE) emissive = MAX_MATERIAL_EMISSIVE;
+	else if(emissive < 0.0) emissive = 0.0;
+	
+	
+	material->emissive = (emissive / MAX_MATERIAL_EMISSIVE) * 0xffff;
+	material->glossiness = 0xffff * glossiness;
+	material->metallic = 0xffff * metallic;
+	material->diff_color.r = 0xff * color.r;
+	material->diff_color.g = 0xff * color.g;
+	material->diff_color.b = 0xff * color.b;
+	material->diff_color.a = 0xff * color.a;
+	
+	
+	
+	
+	//material->shininess = shininess;
+	//material_FloatToBaseMultiplierPair(diffuse_r, diffuse_g, diffuse_b, diffuse_a, p);
+	
+	//material->diff_color = p[0];
+	//material->diff_mult = p[1];
 	
 	//p[0] = material_FloatToColor4_t(specular_r, specular_g, specular_b, specular_intensity);
 	
@@ -144,7 +177,7 @@ PEWAPI void material_CreateMaterial(char *name, short shininess, float diffuse_r
 	if(bm_flags & MATERIAL_Wireframe)
 	{
 		material->shader_index = shader_GetShaderIndex("wireframe");
-		material->shininess = 0;
+		//material->shininess = 0;
 	}
 	else if(bm_flags & (MATERIAL_Shadeless | MATERIAL_Emissive))
 	{
@@ -231,6 +264,7 @@ material_SetMaterialByIndex
 PEWAPI void material_SetMaterialByIndex(int material_index)
 {
 	float c_color[4];
+	float emissive;
 	int bm_flags asm("edi\n");
 	material_t *material asm("esi\n");
 	if(material_index>=0)
@@ -266,10 +300,23 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 		/* really? A probably uncached memory access
 		/* is faster than a division instruction? */
 		
-		c_color[0]=color_conversion_lookup_table[material->diff_color.r] * material->diff_mult.r;
-		c_color[1]=color_conversion_lookup_table[material->diff_color.g] * material->diff_mult.g;
-		c_color[2]=color_conversion_lookup_table[material->diff_color.b] * material->diff_mult.b;
-		c_color[3]=color_conversion_lookup_table[material->diff_color.a];
+		//c_color[0]=color_conversion_lookup_table[material->diff_color.r] * material->diff_mult.r;
+		//c_color[1]=color_conversion_lookup_table[material->diff_color.g] * material->diff_mult.g;
+		//c_color[2]=color_conversion_lookup_table[material->diff_color.b] * material->diff_mult.b;
+		//c_color[3]=color_conversion_lookup_table[material->diff_color.a];
+		
+		c_color[0] = (float)material->diff_color.r / 255.0;
+		c_color[1] = (float)material->diff_color.g / 255.0;
+		c_color[2] = (float)material->diff_color.b / 255.0;
+		c_color[3] = (float)material->diff_color.a / 255.0;
+		
+		if(bm_flags & MATERIAL_Emissive)
+		{
+			emissive = ((float)material->emissive / (float)(0xffff)) * MAX_MATERIAL_EMISSIVE;
+			c_color[0] *= 1.0 + emissive;
+			c_color[1] *= 1.0 + emissive;
+			c_color[2] *= 1.0 + emissive;
+		}
 		
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&c_color);
 		
@@ -294,7 +341,7 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 		c_color[3]=color_conversion_lookup_table[material->spec_color.a];
 		glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat *)&c_color);*/
 		
-		glMateriali(GL_FRONT, GL_SHININESS, material->shininess);
+		//glMateriali(GL_FRONT, GL_SHININESS, material->shininess);
 		
 		
 		//shader_SetCurrentShaderUniform1i(UNIFORM_MaterialFlags, (int)material_a.materials[material_index].bm_flags);
@@ -409,10 +456,10 @@ PEWAPI void material_FloatToBaseMultiplierPair(float r, float g, float b, float 
 
 PEWAPI void material_SetMaterialDiffuseColor(material_t *material, float r, float g, float b, float a)
 {
-	color4_t pair[2];
-	material_FloatToBaseMultiplierPair(r, g, b, a, pair);
-	material->diff_color=pair[0];
-	material->diff_mult=pair[1];	
+	//color4_t pair[2];
+	//material_FloatToBaseMultiplierPair(r, g, b, a, pair);
+	//material->diff_color=pair[0];
+	//material->diff_mult=pair[1];	
 }
 
 

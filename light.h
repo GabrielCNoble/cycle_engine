@@ -19,22 +19,20 @@
 #include "draw_types.h"
 
 
-#define MIN_SHADOW_MAP_RES 				32
-#define MAX_SHADOW_MAP_RES      		MIN_SHADOW_MAP_RES * 255
 
-#define MIN_VOLUME_SAMPLES 				4
-#define MAX_VOLUME_SAMPLES      		64
-#define MAX_LIGHT_VOLUME_SCATTERING 	0.1
-#define MIN_LIGHT_VOLUME_SCATTERING 	0.000002
-
-#define MAX_LIGHT_ENERGY 				1000.0
-#define MIN_LIGHT_ENERGY				0.02
 
 
 
 #define light_SetLightType(x) glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, x)
 #define light_SetAreaType(x) glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, x)
 
+
+/*#define light_CreateSpotLight(name, flags, position, orientation, color, distance, energy, spot_angle, spot_blend, lin_fallof, sqrd_fallof, scattering, volume_samples, shadow_map_res, tex_index) \
+        light_CreateLight(name, (flags & (~(LIGHT_POINT | LIGHT_DIRECTIONAL))) | LIGHT_SPOT, position, orientation, color, distance, energy, spot_angle, spot_blend, lin_fallof, sqrd_fallof, scattering, volume_samples, MIN_VOLUME_SAMPLES, shadow_map_res, MIN_SHADOW_MAP_RES, 0, tex_index)
+
+
+#define light_CreatePointLight(name, flags, position, orientation, color, radius, energy, lin_fallof, sqrd_fallof, scattering, volume_samples, shadow_map_res) \
+		light_CreateLight(name, (flags & (~(LIGHT_SPOT | LIGHT_DIRECTIONAL))) | LIGHT_POINT, position, orientation, color, distance, energy, 0, 0.0, lin_fallof, sqrd_fallof, scattering, volume_samples, MIN_VOLUME_SAMPLES, shadow_map_res, MIN_SHADOW_MAP_RES, 0, -1)*/
 
 #ifdef __cplusplus
 extern "C"
@@ -53,7 +51,11 @@ void light_ResizeAffectingLightList(int new_size);
 
 //PEWAPI int light_CreateLightFromData(light_data0 *position_data, light_data1 *lparams);
 
-PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int max_samples, int min_samples, int max_shadow_map_res, int min_shadow_map_res, int max_shadow_aa_samples, int tex_index);
+PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int max_shadow_aa_samples, int tex_index);
+
+PEWAPI static inline int light_CreatePointLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float radius, float energy, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res);
+
+PEWAPI static inline int light_CreateSpotLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float distance, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int tex_index);
 
 //PEWAPI void light_DestroyLight(light_t *light);
 

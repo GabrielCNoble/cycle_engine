@@ -10,6 +10,23 @@
 
 #define MAX_LIGHTS_PER_ENTITY 16
 
+#define LIGHT_ZNEAR 0.001
+
+#define LIGHT_MAX_RADIUS 80.0
+#define LIGHT_MIN_RADIUS 1.0
+
+
+#define MIN_SHADOW_MAP_RES 				32
+#define MAX_SHADOW_MAP_RES      		MIN_SHADOW_MAP_RES * 255
+
+#define MIN_VOLUME_SAMPLES 				4
+#define MAX_VOLUME_SAMPLES      		64
+#define MAX_LIGHT_VOLUME_SCATTERING 	0.1
+#define MIN_LIGHT_VOLUME_SCATTERING 	0.000002
+
+#define MAX_LIGHT_ENERGY 				1000.0
+#define MIN_LIGHT_ENERGY				0.02
+
 /* TODO (#1#): Avoid unmoving objects to be re-rendered 
 	               into shadow maps. Maybe create a big, shared 
 	               shadow maps for objects that haven't moved 
@@ -121,7 +138,7 @@ typedef struct
 	short energy;
 	unsigned short lin_fallof;
 	unsigned short sqr_fallof;
-	unsigned char max_shadow_map_res;		/* stored in multiples of the minimum shadow map resolution */
+	unsigned char shadow_map_res;		/* stored in multiples of the minimum shadow map resolution */
 	//unsigned char min_shadow_map_res;
 	
 	unsigned char r;
@@ -140,7 +157,7 @@ typedef struct
 	//unsigned char bm_status;
 	//unsigned char bm_flags;
 	
-	unsigned char max_samples;			// used for lod'ing the light volumes 
+	unsigned char volume_samples;			// used for lod'ing the light volumes 
 	//unsigned char min_samples;			// these values are valid only on light_a array
 	unsigned char max_shadow_aa_samples;
 	//unsigned char align3;				// on active_light_a, max_samples will be overwritten

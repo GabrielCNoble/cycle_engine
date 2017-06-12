@@ -5,6 +5,8 @@
 #include "vector_types.h"
 #include "frustum_types.h"
 
+#define MAX_MATERIAL_EMISSIVE 100.0
+
 enum MATERIAL_FLAGS
 {
 	MATERIAL_Shadeless = 1,
@@ -47,10 +49,12 @@ typedef struct
 typedef struct
 {
 	color4_t diff_color;
-	color4_t diff_mult;
-	color4_t spec_color;
+	//color4_t diff_mult;
+	//color4_t spec_color;
 	short shader_index;
-	short shininess;
+	short emissive;
+	short glossiness;
+	short metallic;
 	short bm_flags;
 	short diff_tex;		
 	short norm_tex;
@@ -59,6 +63,7 @@ typedef struct
 	short gloss_tex;
 	short met_tex;
 	short align0;
+	short align1;
 	char *name;	
 			
 }material_t;	/* 32 bytes long... */
