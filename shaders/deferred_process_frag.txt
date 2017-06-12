@@ -357,7 +357,7 @@ vec3 project_texture(sampler2D texture_sampler, vec3 frag_pos)
 {
 	vec4 v = sysCameraToLightProjectionMatrix * vec4(frag_pos, 1.0);
 	v /= v.w;
-	v.x = v.x * 0.5 + 0.5;
+	v.x = -v.x * 0.5 + 0.5;
 	v.y = v.y * 0.5 + 0.5;
 
 	return texture2D(texture_sampler, v.xy).rgb;
@@ -519,13 +519,14 @@ void main()
 		else if(sysLightType == LIGHT_SPOT)
 		{
 			intensity = attenuate_spot(light_vec, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
-			if(sysProjectTexture == 1)
+			/*if(sysProjectTexture == 1)
 			{
-				//light_color = vec3(0.0, 0.0, 1.0);
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);
-			}
+			}*/
 			
 		}
+		
+		
 		
 			
 
@@ -533,6 +534,8 @@ void main()
 		{
 			discard;
 		}
+		
+		
 		/*else
 		{
 			if(sysLightType == LIGHT_SPOT)
@@ -545,8 +548,16 @@ void main()
 		}*/
 		
 		n_texel = texture2D(sysTextureSampler1, uv);
+		
+		if(length(n_texel.xyz) == 0.0)
+		{
+			discard;
+		}
+		
 		n_texel.xyz = normalize(n_texel.xyz);
     	d_texel = texture2D(sysTextureSampler0, uv);
+    	
+    	
 
 			
 		/*if(gl_LightSource[0].spotCutoff<90.0 && gl_LightSource[0].spotCutoff>0.0)
@@ -580,6 +591,9 @@ void main()
 		//f_color = vec4(f_schlick(n_texel.xyz, normalize(view_vec), vec3(0.0, 0.0 ,0.0), 0.0), 1.0);
 		//f_color=((d_texel / PI) * diff + spec) * lcolor * intensity * shadow; 
 		f_color = vec4(cook_torrance(normalize(light_vec), normalize(view_vec), n_texel.xyz, d_texel.xyz, d_texel.w, n_texel.w) * intensity * light_color * shadow, 1.0);
+		//f_color = vec4(0.0);
+		
+		//f_color = vec4(1.0) * max(dot(normalize(light_vec + view_vec), n_texel.xyz), 0.0);
 
 	}
 	

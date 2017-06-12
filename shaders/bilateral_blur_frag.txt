@@ -7,6 +7,9 @@ uniform float sysRenderTargetWidth;
 uniform float sysRenderTargetHeight;
 
 
+uniform float sysZNear;
+uniform float sysZFar;
+
 
 float bilateralBlendWeight(float centerDepth, float sampleDepth)
 {
@@ -25,6 +28,14 @@ float bilateralBlendWeight(float centerDepth, float sampleDepth)
 }
 
 
+float linear_depth(float depth_sample)
+{
+    float zlin;
+    depth_sample = 2.0 * depth_sample - 1.0;
+    zlin = 2.0*sysZNear*sysZFar/(sysZFar+sysZNear-depth_sample*(sysZFar-sysZNear));
+    return zlin;
+}
+
 
 //float gaussian[]={0.00038771, 0.01330373, 0.11098164, 0.22508352};
 
@@ -38,7 +49,7 @@ void main()
 	vec4 rgbaSample = texture2D(sysTextureSampler0, uvCenter);
 	vec4 rgbaAccum = rgbaSample;
 	
-	float centerDepth = texture2D(sysDepthSampler, UV);
+	float centerDepth = texture2D(sysDepthSampler, UV).r;
 	float sampleDepth = centerDepth;
 	
 	float weight;
@@ -52,14 +63,14 @@ void main()
 	//uvCenter -= vec2(0.0, py);
 	uvCenter.y = max(py*2.0, uvCenter.y - py);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
 	
 	uvCenter.y = max(py*2.0, uvCenter.y - py);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
@@ -68,14 +79,14 @@ void main()
 	
 	uvCenter.y = min(1.0 - py*2.0, uvCenter.y + py);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
 	
 	uvCenter.y = min(1.0 - py*2.0, uvCenter.y + py);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
@@ -85,14 +96,14 @@ void main()
 	
 	uvCenter.x = max(px * 2.0, uvCenter.x - px);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
 	
 	uvCenter.x = max(px * 2.0, uvCenter.x - px);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
@@ -101,14 +112,14 @@ void main()
 	
 	uvCenter.x = min(1.0 - px*2.0, uvCenter.x + px);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;
 	
 	uvCenter.x = min(1.0 - px*2.0, uvCenter.x + px);
 	rgbaSample = texture2D(sysTextureSampler0, uvCenter);
-	sampleDepth = texture2D(sysDepthSampler, uvCenter);
+	sampleDepth = texture2D(sysDepthSampler, uvCenter).r;
 	weight = bilateralBlendWeight(centerDepth, sampleDepth);
 	rgbaAccum += rgbaSample * weight;
 	weightAccum += weight;

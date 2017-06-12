@@ -15,7 +15,6 @@ varying vec4 position;
 varying vec4 last_position;
 varying vec3 tangent;
 varying vec2 UV;
-varying float w;
 varying vec2 delta;
 varying float entity_id;
 

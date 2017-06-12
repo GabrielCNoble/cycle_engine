@@ -4,7 +4,8 @@
 
 uniform sampler2D sysTextureSampler1;
 uniform sampler2D sysTextureSampler0;
-uniform sampler2D sysDepthSampler;
+uniform sampler2D sysTextureSampler2;
+//uniform sampler2D sysDepthSampler;
 //uniform samplerCube sysTextureSamplerCube0;
 uniform sampler2D sys2DShadowSampler;
 uniform samplerCube sys3DShadowSampler;
@@ -36,11 +37,11 @@ uniform float sysRenderTargetHeight;
 //varying mat4 inverse_modelview_matrix;
 varying float z;
 
-float linearDepth(float depthSample)
+float linear_depth(float depth_sample)
 {
     float zlin;
-    depthSample=2.0*depthSample-1.0;
-    zlin=2.0*sysZNear*sysZFar/(sysZFar+sysZNear-depthSample*(sysZFar-sysZNear));
+    depth_sample = 2.0 * depth_sample - 1.0;
+    zlin=2.0*sysZNear*sysZFar/(sysZFar+sysZNear-depth_sample*(sysZFar-sysZNear));
     return zlin;
 }
 
@@ -158,7 +159,7 @@ float shade_point_spot(vec3 light_pos, vec3 light_direction, float light_radius,
 	float q=(light_radius-fallof)/light_radius;
 	//return 0.01;
 	//return light_radius*dot(nlvec, light_direction)/(lvec_len*0.005);
-	return (dot(nlvec, light_direction)*q)/(fallof*fallof*0.005);
+	return (dot(nlvec, light_direction)*q)/(fallof*fallof*0.05);
 }
 
 vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)
@@ -181,11 +182,7 @@ float sample_2d_shadow_map(vec3 frag_pos)
 	{
 		float shadow = texture2D(sys2DShadowSampler, v.xy).x;
 		
-		if(v.z > shadow)
-		{
-			return 0.0;
-		}
-		return 1.0;
+		return float((v.z < shadow));
 	}
 }
 
@@ -204,18 +201,19 @@ float sample_3d_shadow_map(vec3 frag_pos)
 	d.y = -d.y;
 	shadow = textureCube(sys3DShadowSampler, d).r;
 	
-	if(fz > shadow)
+	return float((fz < shadow));
+	/*if(fz > shadow)
 	{
 		return 0.0;
 	}
-	return 1.0;
+	return 1.0;*/
 }
 
 vec3 project_texture(sampler2D texture_sampler, vec3 frag_pos)
 {
 	vec4 v = sysCameraToLightProjectionMatrix * vec4(frag_pos, 1.0);
 	v /= v.w;
-	v.x = v.x * 0.5 + 0.5;
+	v.x = -v.x * 0.5 + 0.5;
 	v.y = v.y * 0.5 + 0.5;
 
 	return texture2D(texture_sampler, v.xy).rgb;
@@ -232,7 +230,7 @@ void main()
     vec3 light_pos;
     
     
-    vec4 vcolor=gl_LightSource[0].diffuse;
+    vec3 vcolor = gl_LightSource[0].diffuse.rgb;
 	vec2 uv = vec2(gl_FragCoord.x / sysRenderTargetWidth, gl_FragCoord.y / sysRenderTargetHeight);
 	vec3 view_ray;
 	vec3 p;
@@ -249,7 +247,10 @@ void main()
 	float accum=0.0;
 	float shadow;
 	float dFactor;
-	float depth=linearDepth(texture2D(sysDepthSampler, uv).x);	/* 0...1 to 0...far */
+	float depth = texture2D(sysTextureSampler2, uv).x;
+	//float depth=linear_depth(texture2D(sysDepthSampler, uv).x);	/* 0...1 to 0...far */
+	//float depth = texture2D(sysDepthSampler, uv).x;
+	//float depth;
 	float noise=texture2D(sysTextureSampler0, vec2(uv.x, uv.y)*vec2(192.0, 108.0)).x * 10.0;
 
 	
@@ -259,9 +260,11 @@ void main()
 	int step_count = 8;
 	
 	/* this could go to the vertex shader... */
-	vec4 j = gl_ProjectionMatrixInverse * vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, -depth, 1.0);
+	vec4 j = gl_ProjectionMatrixInverse * vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, -gl_FragCoord.z * 2.0 - 1.0, 1.0);
 	j.xyz / j.w;
 	view_vec = normalize(j.xyz);
+	
+	//depth = -j.z;
 
 	
 	if(sysLightType == LIGHT_POINT)
@@ -270,6 +273,7 @@ void main()
 	
 	    start_depth = max(0.0, depth0);
 	  	start_depth=min(depth / (-view_vec.z), start_depth);
+	  	//end_depth = j.z;
 	    end_depth = max(0.0, depth1);
 		end_depth=min(depth / (-view_vec.z), end_depth);
 
@@ -283,7 +287,7 @@ void main()
 		{
 			cur_pos += step_len_world * view_vec;
 			shadow = sample_3d_shadow_map(cur_pos);
-			accum+=shade_point_point(gl_LightSource[0].position.xyz, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow;
+			accum += shade_point_point(gl_LightSource[0].position.xyz, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow;
 		}
 	}
 	else if(sysLightType == LIGHT_SPOT)
@@ -293,26 +297,43 @@ void main()
 	  	start_depth=min(depth / (-view_vec.z), start_depth);
 	    end_depth = max(0.0, depth1);
 		end_depth=min(depth / (-view_vec.z), end_depth);
+		
+		//start_depth = j.z;
 	
 		cur_pos = view_vec * start_depth;
 		step_len_world = (end_depth - start_depth) / float(step_count);
 			
 		cur_pos += view_vec*step_len_world*(2.0*noise-1.0);
 		shadow=1.0;
+		p = 1.0;
 		
-		for(l=0; l<step_count; l++)
+		if(sysProjectTexture == 1)
 		{
-			cur_pos += step_len_world * view_vec;
-			shadow = sample_2d_shadow_map(cur_pos);
-			p = project_texture(sysTextureSampler1, cur_pos);
-			accum += shade_point_spot(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, cur_pos) * p * scattering * step_len_world * shadow;
+			for(l=0; l<step_count; l++)
+			{
+				cur_pos += step_len_world * view_vec;
+				shadow = sample_2d_shadow_map(cur_pos);
+				p = project_texture(sysTextureSampler1, cur_pos);
+				accum += shade_point_spot(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow * p;
+			}
 		}
+		else
+		{
+			for(l=0; l<step_count; l++)
+			{
+				cur_pos += step_len_world * view_vec;
+				shadow = sample_2d_shadow_map(cur_pos);
+				accum += shade_point_spot(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow;
+			}
+		}
+		
+		
 	}
 	
 	
 	
 	
-	gl_FragColor=vcolor*accum;
+	gl_FragColor = vec4(vcolor*accum, 1.0);
 }
 
 

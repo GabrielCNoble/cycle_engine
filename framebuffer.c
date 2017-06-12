@@ -76,6 +76,12 @@ framebuffer_t framebuffer_CreateFramebuffer(int width, int height, int depth_buf
 				type = GL_UNSIGNED_BYTE;
 			break;
 			
+			case GL_R16F:
+				internal_format = GL_R16F;
+				format = GL_R;
+				type = GL_FLOAT;
+			break;
+			
 			case GL_RG:
 				internal_format = GL_RG8;
 				type = GL_UNSIGNED_BYTE;

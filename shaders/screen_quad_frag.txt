@@ -23,14 +23,14 @@ float linearDepth(float depthSample)
 void main()
 {
     vec4 texel;
-    vec4 t_texel;
-    vec3 vec_to_cam;
-    vec2 v;
-    float l;
-    float t;
-    float q;
-    float b=time;
-    float intensity;
+    //vec4 t_texel;
+    //vec3 vec_to_cam;
+    //vec2 v;
+    ////float l;
+    //float t;
+    //float q;
+    //float b=time;
+    //float intensity;
     
     float A = 0.15;
     float B = 0.5;
@@ -41,13 +41,13 @@ void main()
     
     
     
-    if(b>1.0)b=0.0;
-    v=vec2(gl_FragCoord.x/sysRenderTargetWidth, gl_FragCoord.y/sysRenderTargetHeight);
-    t=v.y-0.5;
-    q=v.x-0.5;
-    l=length(v-vec2(0.5, 0.5));
-    l*=2.0;
-    l-=0.5;
+    //if(b>1.0)b=0.0;
+    //v=vec2(gl_FragCoord.x/sysRenderTargetWidth, gl_FragCoord.y/sysRenderTargetHeight);
+    //t=v.y-0.5;
+    //q=v.x-0.5;
+    //l=length(v-vec2(0.5, 0.5));
+    //l*=2.0;
+    //l-=0.5;
     /* very trippy effect... */
     /*vec2(cos((2.0+gl_FragCoord.x/renderTargetWidth)*10.0*l)*0.01, sin((2.0+gl_FragCoord.y/renderTargetHeight)*10.0*l)*0.01);*/
     //texel=texture2D(textureSampler0, UV+vec2(cos((2.0+time+gl_FragCoord.x/renderTargetWidth)*10.0*l)*0.01, sin((2.0+gl_FragCoord.y/renderTargetHeight)*10.0*l)*0.05));

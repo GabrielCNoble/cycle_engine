@@ -515,10 +515,10 @@ shader_SetShaderByIndex
 */
 PEWAPI void shader_SetShaderByIndex(int shader_index)
 {
-	camera_t *active_camera;
+	//camera_t *active_camera;
 	if(shader_index>=0)
 	{
-		active_camera=camera_GetActiveCamera();
+		//active_camera=camera_GetActiveCamera();
 		glUseProgram(shader_a.shaders[shader_index].shader_ID);
 		//glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_Time], renderer.time);
 		//glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_RenderTargetWidth], (float)renderer.width);

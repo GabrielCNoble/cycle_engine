@@ -297,6 +297,7 @@ void main()
     
     gl_FragData[0] = diffv;
     gl_FragData[1] = normv;
+    gl_FragData[2] = vec4(-position.z);
     /*gl_FragData[2] = vec4(position.x - last_position.x, position.y - last_position.y , position.z, sysEntityIndex);
     gl_FragData[2].xy *= 0.1; 
     gl_FragData[2].xy /= max(abs(gl_FragData[2].x), max(abs(gl_FragData[2].y), 1.0));*/
