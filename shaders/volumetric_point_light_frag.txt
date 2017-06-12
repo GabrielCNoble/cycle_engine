@@ -307,7 +307,7 @@ void main()
 		shadow=1.0;
 		p = 1.0;
 		
-		if(sysProjectTexture == 1)
+		/*if(sysProjectTexture == 1)
 		{
 			for(l=0; l<step_count; l++)
 			{
@@ -318,14 +318,14 @@ void main()
 			}
 		}
 		else
-		{
+		{*/
 			for(l=0; l<step_count; l++)
 			{
 				cur_pos += step_len_world * view_vec;
 				shadow = sample_2d_shadow_map(cur_pos);
 				accum += shade_point_spot(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow;
 			}
-		}
+		//}
 		
 		
 	}
