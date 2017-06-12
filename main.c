@@ -780,9 +780,9 @@ void ginit()
 		
 		light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.7, 1);
-		light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
+		light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 10, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		
-		light_CreateLight("lightwow8", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(3.0, -1.0, -15.0, 1.0), &id, vec3(0.6, 0.6, 1.0), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
+		light_CreateLight("lightwow8", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(3.0, -1.0, -15.0, 1.0), &id, vec3(0.6, 0.6, 1.0), 20.0, 10.0, 50, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		
 		/*light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		light_CreateLight("lightwow10", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(20.0, 2.0, -10.0, 1.0), &id, vec3(1.0, 0.6, 1.0), 10.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);

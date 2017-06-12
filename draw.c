@@ -2570,8 +2570,8 @@ void draw_ComposeNoVolBloom()
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	shader_SetShaderByIndex(composite_shader_index);
 	shader_SetCurrentShaderUniform1f(UNIFORM_TextureSampler0, 0);
-	shader_SetCurrentShaderUniform1f(UNIFORM_TextureSampler1, 1);
-	shader_SetCurrentShaderUniform1f(UNIFORM_Exposure, 1.0);
+	//shader_SetCurrentShaderUniform1f(UNIFORM_TextureSampler1, 1);
+	shader_SetCurrentShaderUniform1f(UNIFORM_Exposure, exposure);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
 	glEnableVertexAttribArray(shader_a.shaders[composite_shader_index].v_position);
