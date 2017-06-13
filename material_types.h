@@ -48,6 +48,7 @@ typedef struct
 /* TODO: pbm :) */
 typedef struct
 {
+	unsigned int uniform_buffer;					/* UBO id */
 	color4_t diff_color;
 	//color4_t diff_mult;
 	//color4_t spec_color;
@@ -62,8 +63,6 @@ typedef struct
 	short spec_tex;
 	short gloss_tex;
 	short met_tex;
-	short align0;
-	short align1;
 	char *name;	
 			
 }material_t;	/* 32 bytes long... */

@@ -119,13 +119,9 @@ typedef struct
 	int v_position;
 	int v_normal;
 	int v_tangent;
-	//int v_btangent;
 	int v_tcoord;
 	unsigned int shader_ID;
-	//unsigned char light_uniforms[16];
 	unsigned char *default_uniforms;
-	//unsigned char *light_uniforms;
-	//unsigned char uniforms[48];		/* this is TERRIBLE for the cache... must find a better way to store/access those... */
 	char *name;
 	short flags;
 }shader_t;
@@ -134,6 +130,8 @@ typedef struct
 {
 	int array_size;
 	int shader_count;
+	int stack_top;
+	int *free_stack;
 	shader_t *shaders;
 }shader_array;
 

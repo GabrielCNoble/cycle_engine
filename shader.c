@@ -4,7 +4,15 @@
 #include "camera.h"
 #include "file.h"
 
-#define MAX_SHADER_COMPILE_TRIES 10
+//#define MAX_SHADER_COMPILE_TRIES 10
+
+#define PARANOID
+
+#define MATERIAL_PARAMS_BINDING 0
+#define MATERIAL_PARAMS_MAX_NAME_LEN 64
+#define MATERIAL_PARAMS_FIELDS 5
+
+#define LIGHT_PARAMS_BINDING 1
 //#define PRINT_INFO
 
 static int shader_path_len;
@@ -18,6 +26,20 @@ static char attrib_names[][32]={"vPosition",
 static char capture_varyings[3][10] = {"_vcap_", 
 									   "_ncap_", 
 									   "_tcap_"};
+									   
+static char *material_params_uniform_block = {"sysMaterialParams"};
+
+static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "base",
+																			  "glossiness",
+																			  "metallic",
+																			  "emissive",
+																			  "flags"};
+static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];																			  
+																			  																		  
+													
+													
+
+static char light_params_uniform_block[] = {"sysLightParams"};									   
 
 static char vertex_capture_string[] = "varying vec3 _vcap_;";
 static char normal_capture_string[] = "varying vec3 _ncap_;";
@@ -135,9 +157,32 @@ PEWAPI void shader_Init(char *path)
 	shader_a.shaders=NULL;
 	shader_a.shader_count=0;
 	shader_ResizeShaderArray(16);
+	shader_t *init_shader;
+	int i;
+	int init_shader_index;
+	unsigned int indexes[MATERIAL_PARAMS_FIELDS];
 	
 	strcpy(shader_path, path);
 	shader_path_len = strlen(shader_path);
+	
+	
+	/* got to find a less ugly way to do this... */
+	init_shader_index = shader_LoadShader("init_vert.txt", "init_frag.txt", "init");
+	init_shader = shader_GetShaderByIndex(init_shader_index);
+	if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
+	{
+		//glUniformBlockBinding(init_shader->shader_ID, i, MATERIAL_PARAMS_BINDING);
+		glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
+		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
+	}
+	else
+	{
+		/* something wrong with the init shader... */
+		//printf("")
+	}
+	
+	shader_DeleteShaderByIndex(init_shader_index);
+	
 	
 	screen_quad_shader_index=shader_LoadShader("screen_quad_vert.txt", "screen_quad_frag.txt", "screen_quad");
 	z_prepass_shader_index = shader_LoadShader("z_prepass_vert.txt", "z_prepass_frag.txt", "z_prepass");
@@ -145,21 +190,21 @@ PEWAPI void shader_Init(char *path)
 	lit_shader_index = shader_LoadShader("lit_vert.txt", "lit_frag.txt", "lit");
 	draw_translucent_shader_index = shader_LoadShader("draw_translucent_vert.txt", "draw_translucent_frag.txt", "draw_translucent");
 	blend_translucent_shader_index = shader_LoadShader("blend_translucent_vert.txt", "blend_translucent_frag.txt", "blend_translucent");
-	deferred_process_shader_index=shader_LoadShader("deferred_process_vert.txt", "deferred_process_frag.txt", "deferred_process");
+	deferred_process_shader_index=shader_LoadShader("resolve_gbuffer_vert.txt", "resolve_gbuffer_frag.txt", "resolve_gbuffer");
 	wireframe_shader_index=shader_LoadShader("wireframe_vert.txt", "wireframe_frag.txt", "wireframe");
 	flat_shader_index=shader_LoadShader("flat_vert.txt", "flat_frag.txt", "flat");
 	smap_shader_index=shader_LoadShader("smap_vert.txt", "smap_frag.txt", "smap");
-	plvol_shader_index=shader_LoadShader("volumetric_point_light_vert.txt", "volumetric_point_light_frag.txt", "volumetric_point_light");
-	slvol_shader_index=shader_LoadShader("volumetric_spot_light_vert.txt", "volumetric_spot_light_frag.txt", "volumetric_spot_light");
+	plvol_shader_index=shader_LoadShader("volumetric_light_vert.txt", "volumetric_light_frag.txt", "volumetric_point_light");
+	//slvol_shader_index=shader_LoadShader("volumetric_spot_light_vert.txt", "volumetric_spot_light_frag.txt", "volumetric_spot_light");
 	bl_shader_index=shader_LoadShader("bilateral_blur_vert.txt", "bilateral_blur_frag.txt", "bilateral_blur");
 	gb_shader_index = shader_LoadShader("gaussian_blur_vert.txt", "gaussian_blur_frag.txt", "gaussian_blur");
 	extract_intensity_shader_index = shader_LoadShader("extract_intensity_vert.txt", "extract_intensity_frag.txt", "extract_intensity");
 	bloom_blur_shader_index = shader_LoadShader("bloom_blur_vert.txt", "bloom_blur_frag.txt", "bloom_blur");
 	draw_buffer_shader_index = shader_LoadShader("debug_draw_buffer_vert.txt", "debug_draw_buffer_frag.txt", "draw_buffer");
 	draw_z_buffer_shader_index = shader_LoadShader("debug_draw_z_buffer_vert.txt", "debug_draw_z_buffer_frag.txt", "draw_z_buffer");
-	
 	intensity0_shader_index = shader_LoadShader("intensity_vert.txt", "intensity0_frag.txt", "intensity0");
 	intensity1_shader_index = shader_LoadShader("intensity_vert.txt", "intensity1_frag.txt", "intensity1");
+	
 	
 	//shader_LoadShader("skinner_simple_vert.txt", "skinner_simple_frag.txt", "skinner");
 	
@@ -183,9 +228,7 @@ PEWAPI void shader_Finish()
 	{
 		free(shader_a.shaders[i].default_uniforms);
 	}
-	printf("a\n");
 	free(shader_a.shaders);
-	printf("b\n");
 	return;
 }
 
@@ -259,6 +302,8 @@ shader_LoadShader
 */
 PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_name, char *name)
 {
+	shader_t *shader;
+	int shader_index;
 	char *v_shader_str=NULL;
 	char *f_shader_str=NULL;
 	char *error_str=NULL;
@@ -283,6 +328,9 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	strcat(ffull_path, fragment_shader_name);
 	int capture_count = 0;
 	char *capture[3];
+	
+	//unsigned int indexes[MATERIAL_PARAMS_FIELDS];	
+	//unsigned int offsets[MATERIAL_PARAMS_FIELDS];
 
 	
 	/*if(!(vertex_shader_file=fopen(vfull_path, "r")))
@@ -403,17 +451,28 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	glAttachShader(shader_prog, v_shader_obj);
 	glAttachShader(shader_prog, f_shader_obj);
 	
-	
-	if(shader_a.shader_count>=shader_a.array_size)
+	if(shader_a.stack_top > -1)
 	{
-		shader_ResizeShaderArray(shader_a.array_size*2);
+		shader_index = shader_a.free_stack[shader_a.stack_top--];
+	}
+	else
+	{
+		shader_index = shader_a.shader_count++;
+		if(shader_index >= shader_a.array_size)
+		{
+			shader_ResizeShaderArray(shader_a.array_size << 1);
+		}
 	}
 	
-	shader_a.shaders[shader_a.shader_count].v_position = -1;
-	shader_a.shaders[shader_a.shader_count].v_normal = -1;
-	shader_a.shaders[shader_a.shader_count].v_tangent = -1;
+	shader = &shader_a.shaders[shader_index];
+	
+	
+	
+	shader->v_position = -1;
+	shader->v_normal = -1;
+	shader->v_tangent = -1;
 	//shader_a.shaders[shader_a.shader_count].v_btangent = -1;
-	shader_a.shaders[shader_a.shader_count].v_tcoord = -1;
+	shader->v_tcoord = -1;
 	
 	
 	/* NOTE: attribute location binding MUST be done before shader linking. */
@@ -424,13 +483,13 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	for(i=0; i<t; i++)
 	{
 		glBindAttribLocation(shader_prog, i, attrib_names[attribs[i]]);
-		*(&shader_a.shaders[shader_a.shader_count].v_position+attribs[i])=i;
+		*(&shader->v_position+attribs[i])=i;
 	}
 	
-	if(capture_count)
+	/*if(capture_count)
 	{
 		glTransformFeedbackVaryings(shader_prog, capture_count, (const GLchar **)capture, GL_SEPARATE_ATTRIBS);
-	}
+	}*/
 	
 	glLinkProgram(shader_prog);			
 	glGetProgramiv(shader_prog, GL_LINK_STATUS, &b_compiled);
@@ -446,32 +505,78 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	}
 	else console_Print(MESSAGE_NORMAL, "shader [%s] loaded\n", name);
 	
-	shader_a.shaders[shader_a.shader_count].default_uniforms = (unsigned char *)malloc(UNIFORM_Last + 1);
-
+	shader->default_uniforms = (unsigned char *)malloc(UNIFORM_Last + 1);
+	shader->flags = flags;
 	
-	shader_a.shaders[shader_a.shader_count].flags = flags;
+	
+	if((i = glGetUniformBlockIndex(shader_prog, material_params_uniform_block)) != GL_INVALID_INDEX)
+	{
+		glUniformBlockBinding(shader_prog, i, MATERIAL_PARAMS_BINDING);
+	}
+	
+	
+	/* Flag the shaders for deletion,
+	as soon as the shader program gets deleted.*/
+	glDeleteShader(v_shader_obj);
+	glDeleteShader(f_shader_obj);
+	
 	
 	for(i = 0; i < UNIFORM_Last; i++)
 	{
-		shader_a.shaders[shader_a.shader_count].default_uniforms[UNIFORM_Time + i] = glGetUniformLocation(shader_prog, uniforms[i]);
+		shader->default_uniforms[UNIFORM_Time + i] = glGetUniformLocation(shader_prog, uniforms[i]);
 	}
-	
-	/*for(i = 0; i < UNIFORM_LIGHT_COUNT; i++)
-	{
-		shader_a.shaders[shader_a.shader_count].default_uniforms[UNIFORM_LIGHT_LightPosition + i] = glGetUniformLocation(shader_prog, light_uniforms[i]);
-	}*/
 
 
-	shader_a.shaders[shader_a.shader_count].shader_ID=shader_prog;
-	shader_a.shaders[shader_a.shader_count++].name=name;
+	shader->shader_ID=shader_prog;
+	shader->name=name;
 	
 	free(v_shader_str); 
 	free(f_shader_str);
 	//fclose(vertex_shader_file);
 	//fclose(fragment_shader_file);
 
-	return shader_a.shader_count-1;
+	return shader_index;
 	
+}
+
+PEWAPI void shader_DeleteShaderByIndex(int shader_index)
+{
+	shader_t *shader;
+	if(shader_index >= 0 && shader_index < shader_a.shader_count)
+	{
+		shader = &shader_a.shaders[shader_index];
+		
+		#ifdef PARANOID
+			printf("shader %d:[%s] got deleted. ", shader_index, shader->name);
+		#endif	
+			
+		free(shader->name);
+		free(shader->default_uniforms);
+		
+		glDeleteProgram(shader->shader_ID);
+		shader->shader_ID = 0;
+		if(shader_index == shader_a.shader_count - 1)
+		{
+			shader_a.shader_count--;
+			
+			#ifdef PARANOID
+				printf("%d shaders remain\n", shader_a.shader_count);
+			#endif 
+		}
+		else
+		{
+			shader_a.free_stack[++shader_a.stack_top] = shader_index;
+			#ifdef PARANOID
+				printf("index added to free positions stack\n");
+			#endif	
+		}
+		
+		
+		
+		
+	}
+	
+	return;
 }
 
 
@@ -493,6 +598,15 @@ PEWAPI int shader_GetShaderIndex(char *name)
 		}
 	}
 	return -1;
+}
+
+PEWAPI shader_t *shader_GetShaderByIndex(int shader_index)
+{
+	if(shader_index >= 0 && shader_index < shader_a.shader_count)
+	{
+		return &shader_a.shaders[shader_index];
+	}
+	return NULL;
 }
 
 
@@ -556,13 +670,21 @@ shader_ResizeShaderArray
 */
 void shader_ResizeShaderArray(int new_size)
 {
-	shader_t *temp=(shader_t *)calloc(new_size, sizeof(shader_t));
+	shader_t *temp=(shader_t *)malloc(new_size * sizeof(shader_t));
+	int *i = (int *)malloc(sizeof(int) * new_size);
 	if(shader_a.shaders)
 	{
 		memcpy(temp, shader_a.shaders, sizeof(shader_t)*shader_a.shader_count);
 		free(shader_a.shaders);
+		free(shader_a.free_stack);
+	}
+	else
+	{
+		shader_a.shader_count = 0;
+		shader_a.stack_top = -1;
 	}
 	shader_a.shaders=temp;
+	shader_a.free_stack = i;
 	shader_a.array_size=new_size;
 	return;
 }
@@ -815,21 +937,31 @@ int shader_Preprocess(char **shader_str, int *flags)
 			break;
 			
 			case '/':
+				j = i;
 				if(s[i + 1] == '/')
 				{
 					i += 2;
 					while(s[i] != '\n' && s[i] != '\0') i++;
+					//shader_RemoveCommented(s, j, i);
 				}
 				else if(s[i + 1] == '*')
 				{
 					i += 2;
-					while(s[i] != '*' && s[i] != '\0')
+					
+					while(s[i] != '\0')
 					{
-						i++;
-						if(s[i] == '/') break;
+						if(s[i] == '*' && s[i + 1] == '/')
+						{
+							i += 2;
+							break;
+						}
 						else if(s[i] == '\n') line++;
+						i++;
 					}
+					//shader_RemoveCommented(s, j, i);
 				}
+				
+				shader_RemoveCommented(s, j, i);
 			break;
 			
 			case '\n':
@@ -1144,6 +1276,17 @@ void shader_EraseInBetweenDirectives(char *shader_str, int start_pos, int end_po
 	while(s[k] != ' ' && s[k] != '\n' && s[k] != '\0') s[k++] = ' ';
 	
 	return;
+}
+
+void shader_RemoveCommented(char *shader_str, int start_pos, int end_pos)
+{
+	int i = start_pos;
+	int c = end_pos;
+	
+	for(; i < c; i++)
+	{
+		shader_str[i] = ' ';
+	}
 }
 
 

@@ -29,7 +29,11 @@ PEWAPI char *shader_GetShaderString(FILE *shader_file);
 
 PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_name, char *name);
 
+PEWAPI void shader_DeleteShaderByIndex(int shader_index);
+
 PEWAPI int shader_GetShaderIndex(char *name);
+
+PEWAPI shader_t *shader_GetShaderByIndex(int shader_index);
 
 PEWAPI static inline shader_t *shader_GetActiveShader();
 
@@ -65,6 +69,8 @@ int shader_FindEndif(char *shader_str, int str_len, int cur_index);
 void shader_EraseDirectivesOnly(char *shader_str, int start_pos, int end_pos);
 
 void shader_EraseInBetweenDirectives(char *shader_str, int start_pos, int end_pos);
+
+void shader_RemoveCommented(char *shader_str, int start_pos, int end_pos);
 
 int shader_DoPragma(char *shader_str, int str_len, int start_pos, int cur_pos, int *flags);
 

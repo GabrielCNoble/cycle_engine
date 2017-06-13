@@ -127,6 +127,9 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	material->diff_color.b = 0xff * color.b;
 	material->diff_color.a = 0xff * color.a;
 	
+	glGenBuffers(1, &material->uniform_buffer);
+	//glBindBuffer(GL_UNIFORM_BUFFER, material->uniform_buffer);
+	
 	
 	
 	
@@ -177,7 +180,6 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	if(bm_flags & MATERIAL_Wireframe)
 	{
 		material->shader_index = shader_GetShaderIndex("wireframe");
-		//material->shininess = 0;
 	}
 	else if(bm_flags & (MATERIAL_Shadeless | MATERIAL_Emissive))
 	{
