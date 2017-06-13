@@ -10,7 +10,7 @@ uniform sampler2D sysTextureSampler1;
 uniform sampler2D sysTextureSampler2;
 
 
-//uniform samplerCube sysTextureSamplerCube0;
+
 
 #define BIAS 0.0000006
 #define POINT_LIGHT_BIAS 0.0000006
