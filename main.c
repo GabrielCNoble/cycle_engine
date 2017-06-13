@@ -23,9 +23,10 @@ void gmain(float delta_time)
 	
 	//selected.extra_data = NULL;
 	int s = pew_GetPewState();
+	static float f = 0.0;
 	vec3_t v;
 	mat3_t orientation = mat3_t_id();
-	
+	light_ptr l;
 	if(s != PEW_PLAYING)
 	{
 		if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
@@ -42,6 +43,12 @@ void gmain(float delta_time)
 	else
 	{
 		ginput(delta_time);
+		
+		l = light_GetLight("swing_light");
+		
+		l.position_data->local_position.x = sin(f) * 5.0;
+		f += 0.001 * delta_time;
+		
 	}
 	
 	if(selected.extra_data)
@@ -461,6 +468,7 @@ void ginit()
 	//model_LoadModel("Cube.obj", "cube");
 	model_LoadModel("CubeUV2.obj", "cubeUV");
 	model_LoadModel("ico_uv.obj", "ico");
+	model_LoadModel("wheel.obj", "wheel");
 	//model_LoadModel("single.obj", "single");
 	
 	//model_LoadModel("piramid.dae", "piramid");
@@ -693,8 +701,8 @@ void ginit()
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
-	
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("wheel", 0, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("wheel"), 0.0, 0);
 	entity_CreateEntityDef("pew_plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("pew_plane"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("piramid", ENTITY_DYNAMIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("piramid"), 2.0, COLLISION_SHAPE_CONVEX_HULL);
 	entity_CreateEntityDef("stairs", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("stairs"), 1.0, COLLISION_SHAPE_CONVEX_HULL);
@@ -730,6 +738,9 @@ void ginit()
 	
 	def = entity_GetEntityDef("cube_iron_rusted");
 	entity_SpawnEntity("cube_iron_rusted", def, vec3(0.0, 0.0, -3.0), &id);
+	
+	def = entity_GetEntityDef("wheel");
+	entity_SpawnEntity("wheel", def, vec3(0.0, 5.0, 0.0), &id);
 	
 	
 	/*def = entity_GetEntityDef("ico_red");
@@ -777,13 +788,15 @@ void ginit()
 		//light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 40, 0.5, 0.01, 0.001, 20.5, 64, 4, 256, 256, 2, -1);
 		//light_CreateLight("lightwow6", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(0.0, -3.5, 0.0, 1.0), &id, vec3(1.0, 0.0, 0.0), 10.0, 10.0, 40, 0.5, 0.02, 0.0, 0.03, 32, 32, 2048, 256, 2);
 		
-		light_CreatePointLight("lightwow6", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
+		//light_CreatePointLight("lightwow6", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
 		//light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
-		light_CreatePointLight("lightwow8", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
+		//light_CreatePointLight("lightwow8", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.7, 1);
 		
 		//light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		light_CreateSpotLight("lightwow7", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
+		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
+		light_CreateSpotLight("swing_light", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, 12.0, 0.0, 1.0), &id, vec3(0.9, 0.6, 0.1), 30.0, 10.0, 40, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
 		//light_CreateLight("lightwow8", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(3.0, -1.0, -15.0, 1.0), &id, vec3(0.6, 0.6, 1.0), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		
 		/*light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
