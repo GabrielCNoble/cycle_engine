@@ -1,7 +1,7 @@
-
+#include "material.h"
 varying vec2 UV;
 varying vec3 viewRay;
-//varying vec3 vt;
+
 
 varying mat4 inverse_projection_matrix;
 
