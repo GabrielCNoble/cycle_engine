@@ -1,5 +1,6 @@
-
+#include "material.h"
 //#include "default_uniforms.h"
+#extension GL_EXT_gpu_shader4 : enable
 
 varying vec3 normal;
 varying vec4 position;
@@ -44,12 +45,7 @@ uniform float sysEntityIndex;
 
 
 
-#define MATERIAL_DiffuseTexture 1<<2
-#define MATERIAL_NormalTexture 1<<3
-#define MATERIAL_GlossTexture 1<<4
-#define MATERIAL_MetallicTexture 1<<5
-#define MATERIAL_HeightTexture 1<<6
-#define MATERIAL_FrontAndBack 1<<7
+
 
 
 /*uniform float zNear;
@@ -214,19 +210,22 @@ void main()
 		nUV = UV;
 	}
     
-    if(sysFlagDiffuseTexture == MATERIAL_DiffuseTexture)
+    //if(sysFlagDiffuseTexture == MATERIAL_DiffuseTexture)
+    if(sysMaterialFlags & MATERIAL_DiffuseTexture)
 	{
 		diffv = vec4(texture2D(sysTextureSampler0, nUV));
 	}
 	else
 	{
-		diffv = gl_FrontMaterial.diffuse;
+		//diffv = gl_FrontMaterial.diffuse;
+		diffv = sysMaterialBaseColor;
 	}
 	
 	//diffv.w = float(gl_FrontMaterial.shininess);
 	
 	/* normal mapping */
-	if(sysFlagNormalTexture == MATERIAL_NormalTexture)
+	//if(sysFlagNormalTexture == MATERIAL_NormalTexture)
+	if(sysMaterialFlags & MATERIAL_NormalTexture)
 	{
 		vec3 n = (texture2D(sysTextureSampler1, nUV).xyz * 2.0 - 1.0);
 		//n.y *= n_dir;
@@ -257,66 +256,30 @@ void main()
 	//normv.a = 1.0;
 	//normv.a = gl_FrontMaterial.specular.a;
 	
-	if(sysFlagGlossTexture == MATERIAL_GlossTexture)
+	//if(sysFlagGlossTexture == MATERIAL_GlossTexture)
+	if(sysMaterialFlags & MATERIAL_GlossTexture)
 	{
 		diffv.a = 1.0 - texture2D(sysTextureSampler3, nUV).r;
 	}
 	else
 	{
 		//diffv.a = gl_FrontMaterial.shininess;
-		diffv.a = 0.5;
+		diffv.a = sysMaterialGlossiness;
 	}
 	
-	if(sysFlagMetallicTexture == MATERIAL_MetallicTexture)
+	//if(sysFlagMetallicTexture == MATERIAL_MetallicTexture)
+	if(sysMaterialFlags & MATERIAL_MetallicTexture)
 	{
 		normv.a = texture2D(sysTextureSampler4, nUV).r;
 	}
 	else
 	{
-		normv.a = 0.0;
+		//normv.a = 0.0;
+		normv.a = sysMaterialMetallic;
 	}
-	
-	//diffv.a = 1.0;
-
-    
-    //gl_FragData[0]=gl_FrontMaterial.diffuse;
-    //gl_FragData[1]=vec4(normal.xyz, 0.0);
-    
-    
-    //vec4 temp_pos = cameraProjectionMatrix * vec4(position.xyz, 1.0);
-    
-    //temp_pos /= temp_pos.w;
-    
-    //temp_pos = inverse(cameraProjectionMatrix) * temp_pos;
-    
-    //temp_pos.xyz /= temp_pos.w;
-    
-    //temp_pos = get_view_pos(temp_pos, inverse(cameraProjectionMatrix));
-    
-    //position.xyz = temp_pos.xyz;
     
     gl_FragData[0] = diffv;
     gl_FragData[1] = normv;
     gl_FragData[2] = vec4(-position.z);
-    /*gl_FragData[2] = vec4(position.x - last_position.x, position.y - last_position.y , position.z, sysEntityIndex);
-    gl_FragData[2].xy *= 0.1; 
-    gl_FragData[2].xy /= max(abs(gl_FragData[2].x), max(abs(gl_FragData[2].y), 1.0));*/
-    //gl_FragData[2].x *= gl_FragData[2].x;
-    //gl_FragData[2].y *= gl_FragData[2].y;
-    //gl_FragData[2] = vec4(delta.x, delta.y , 0.0, 0.0);
-	//gl_FragData[2] = vec4(0.0, 0.0, 1.0, 1.0); 
-    //gl_FragData[2]=vec4(abs(position.xyz), 1.0) * 0.1;
-    
-    /*for(i=0; i<320; i++)
-	{
-		f+=0.01;
-		f-=0.01;
-		q|=0x00000001;
-	}
-	gl_FragData[0]+=vec4(f, f, f, 0.0);
-	gl_FragData[0]-=vec4(f, f, f, 0.0);
-	
-	gl_FragData[0]+=vec4(float(q), float(q), float(q), 0.0);
-	gl_FragData[0]-=vec4(float(q), float(q), float(q), 0.0);*/
     
 } 

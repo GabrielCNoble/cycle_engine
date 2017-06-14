@@ -3,6 +3,7 @@
 
 #include "shader_types.h"
 #include "draw_types.h"
+#include "material_types.h"
 
 #include "conf.h"
 #include "includes.h"
@@ -39,6 +40,8 @@ PEWAPI static inline shader_t *shader_GetActiveShader();
 
 PEWAPI void shader_SetShaderByIndex(int shader_index);
 
+PEWAPI void shader_UploadMaterialParams(material_t *material);
+
 PEWAPI static inline void shader_SetCurrentShaderUniform1i(int uniform, int value);
 
 PEWAPI static inline void shader_SetCurrentShaderUniform1f(int uniform, float value);
@@ -59,6 +62,8 @@ void shader_ParseShaderAttributes(char *shader_str, int *attribs_found, int *att
 int shader_Preprocess(char **shader_str, int *flags);
 
 int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int old_len, int *new_len, int line);
+
+int shader_AddGlobalDefine(char *define);
 
 int shader_AddDefine(char *shader_str, define_t **root, int *cur_index);
 

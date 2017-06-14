@@ -3,16 +3,13 @@
 #include "console.h"
 #include "camera.h"
 #include "file.h"
+#include "macros.h"
 
 //#define MAX_SHADER_COMPILE_TRIES 10
 
 #define PARANOID
 
-#define MATERIAL_PARAMS_BINDING 0
-#define MATERIAL_PARAMS_MAX_NAME_LEN 64
-#define MATERIAL_PARAMS_FIELDS 5
 
-#define LIGHT_PARAMS_BINDING 1
 //#define PRINT_INFO
 
 static int shader_path_len;
@@ -29,12 +26,15 @@ static char capture_varyings[3][10] = {"_vcap_",
 									   
 static char *material_params_uniform_block = {"sysMaterialParams"};
 
-static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "base",
-																			  "glossiness",
-																			  "metallic",
-																			  "emissive",
-																			  "flags"};
-static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];																			  
+static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "sysMaterialBaseColor",
+																			  "sysMaterialGlossiness",
+																			  "sysMaterialMetallic",
+																			  "sysMaterialEmissive",
+																			  "sysMaterialFlags"};
+static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];	
+static int material_params_uniform_types[MATERIAL_PARAMS_FIELDS];
+
+int material_params_uniform_buffer_size;																		  
 																			  																		  
 													
 													
@@ -139,6 +139,9 @@ static varying_t *vlast;
 
 static varying_t *froot = NULL;
 static varying_t *flast;
+
+define_t *global_defines = NULL;
+define_t *last_added = NULL;
 //static char **capture;
 
 #ifdef __cplusplus
@@ -168,17 +171,29 @@ PEWAPI void shader_Init(char *path)
 	
 	/* got to find a less ugly way to do this... */
 	init_shader_index = shader_LoadShader("init_vert.txt", "init_frag.txt", "init");
-	init_shader = shader_GetShaderByIndex(init_shader_index);
+	if(!(init_shader = shader_GetShaderByIndex(init_shader_index)))
+	{
+		printf("error loading init shader! aborting...\n");
+		exit(-4);
+	}
 	if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
 	{
 		//glUniformBlockBinding(init_shader->shader_ID, i, MATERIAL_PARAMS_BINDING);
 		glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
+		glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &material_params_uniform_buffer_size);
 		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
+		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
+		
+		/*for(i = 0; i < MATERIAL_PARAMS_FIELDS; i++)
+		{
+			printf("%d\n", material_params_uniform_offsets[i]);
+		}*/
 	}
 	else
 	{
 		/* something wrong with the init shader... */
-		//printf("")
+		printf("init shader appears to have problems! aborting...\n");
+		exit(-5);
 	}
 	
 	shader_DeleteShaderByIndex(init_shader_index);
@@ -645,6 +660,47 @@ PEWAPI void shader_SetShaderByIndex(int shader_index)
 	return;
 }
 
+PEWAPI void shader_UploadMaterialParams(material_t *material)
+{
+	void *b;
+	void *p;
+	if(likely(material))
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, material->uniform_buffer);
+		b = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+		
+		p = b;
+		*((float *)p) = (float)material->diff_color.r / 0xff; 
+		p = ((char *)p) + sizeof(float);
+		*((float *)p) = (float)material->diff_color.g / 0xff; 
+		p = ((char *)p) + sizeof(float);
+		*((float *)p) = (float)material->diff_color.b / 0xff; 
+		p = ((char *)p) + sizeof(float);
+		*((float *)p) = (float)material->diff_color.a / 0xff; 
+		p = ((char *)p) + sizeof(float);
+		
+		p = ((char *)p) + (material_params_uniform_offsets[1] - (((char *)p) - ((char *)b)));
+		
+		*((float *)p) = (float)material->glossiness / 0xffff;
+		
+		p = ((char *)p) + (material_params_uniform_offsets[2] - (((char *)p) - ((char *)b)));
+		
+		*((float *)p) = (float)material->metallic / 0xffff;
+		
+		p = ((char *)p) + (material_params_uniform_offsets[3] - (((char *)p) - ((char *)b)));
+		
+		*((float *)p) = ((float)material->emissive / 0xffff) * MAX_MATERIAL_EMISSIVE;
+		
+		p = ((char *)p) + (material_params_uniform_offsets[4] - (((char *)p) - ((char *)b)));
+		
+		*((int *)p) = (int)material->bm_flags;
+		
+		
+		glUnmapBuffer(GL_UNIFORM_BUFFER);
+		
+	}
+}
+
 
 /*__attribute((always_inline)) PEWAPI void shader_SetCurrentShaderUniform1i(int uniform, int value)
 {
@@ -1082,6 +1138,50 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 
 }
 
+int shader_AddGlobalDefine(char *define_str)
+{
+	define_t *d = (define_t *)malloc(sizeof(define_t));
+	d->str = strdup(define_str);
+	d->next = NULL;
+	
+	if(!global_defines)
+	{
+		global_defines = d;
+	}
+	else
+	{
+		last_added->next = d;
+	}
+	last_added = d;
+}
+
+int shader_RemoveGlobalDefine(char *define_str)
+{
+	define_t *d = global_defines;
+	define_t *p = NULL;
+	while(d)
+	{
+		
+		if(!strcmp(d->str, define_str))
+		{
+			if(!p)
+			{
+				global_defines = d->next;
+			}
+			else
+			{
+				p->next = d->next;
+			}
+			free(d->str);
+			free(d);
+			return 1;
+		}
+		p = d;
+		d = d->next;
+	}
+	return 0;
+}
+
 int shader_AddDefine(char *shader_str, define_t **root, int *cur_index)
 {
 	int index = 0;
@@ -1178,6 +1278,18 @@ int shader_CheckDefine(define_t *root, char *shader_str, int *cur_index)
 		}
 		t = t->next;
 	}
+	
+	t = global_defines;
+	
+	while(t)
+	{
+		if(!strcmp(t->str, name))
+		{
+			return 1;
+		}
+		t = t->next;
+	}
+	
 	return 0;
 }
 

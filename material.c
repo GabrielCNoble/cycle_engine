@@ -10,13 +10,24 @@ extern renderer_t renderer;
 extern texture_array texture_a;
 //#define PRINT_INFO
 
+/* init'ed in shader.c */
+extern int material_params_uniform_buffer_size;
+
 static int material_path_lenght = 0;
 static char material_path[256];
+
+
+
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+PEWAPI void (*material_SetMaterialByIndex)(int material_index);
+
+static void material_SetMaterialByIndexGL3A(int material_index);
+static void material_SetMaterialByIndexGL2B(int material_index);
 
 /*
 =============
@@ -32,9 +43,19 @@ PEWAPI void material_Init(char *path)
 	strcpy(material_path, path);
 	material_path_lenght = strlen(material_path);
 	
-	for(i=0; i<256; i++)
+	/*for(i=0; i<256; i++)
 	{
 		color_conversion_lookup_table[i]=(float)i/255.0;
+	}*/
+	
+	if((glBindBufferBase))
+	{
+		material_SetMaterialByIndex = material_SetMaterialByIndexGL3A; 
+	}
+	else
+	{
+		printf("warning: glBindBufferBase not supported. Using compatibility code...\n");
+		material_SetMaterialByIndex = material_SetMaterialByIndexGL2B;
 	}
 	
 	return;
@@ -93,9 +114,9 @@ PEWAPI void material_CreateMaterialFromData(material_t *material)
 PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic, vec4_t color, float emissive, int bm_flags, tex_info_t *ti)
 {
 	material_t *material = &material_a.materials[material_a.material_count++];
-	color4_t p[2];
+	//color4_t p[2];
 	int i;
-	
+	void *v;
 	material->name = name;
 	if(glossiness > 1.0) glossiness = 1.0;
 	else if(glossiness < 0.0) glossiness = 0.0;
@@ -126,22 +147,7 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	material->diff_color.g = 0xff * color.g;
 	material->diff_color.b = 0xff * color.b;
 	material->diff_color.a = 0xff * color.a;
-	
-	glGenBuffers(1, &material->uniform_buffer);
-	//glBindBuffer(GL_UNIFORM_BUFFER, material->uniform_buffer);
-	
-	
-	
-	
-	//material->shininess = shininess;
-	//material_FloatToBaseMultiplierPair(diffuse_r, diffuse_g, diffuse_b, diffuse_a, p);
-	
-	//material->diff_color = p[0];
-	//material->diff_mult = p[1];
-	
-	//p[0] = material_FloatToColor4_t(specular_r, specular_g, specular_b, specular_intensity);
-	
-	//m.spec_color = p[0];
+
 	
 	material->diff_tex = -1;
 	material->norm_tex = -1;
@@ -150,6 +156,16 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	material->heig_tex = -1;
 	
 	material->bm_flags = bm_flags;
+	
+	
+	glGenBuffers(1, &material->uniform_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, material->uniform_buffer);
+	//glBindBufferBase(GL_UNIFORM_BUFFER, 0, material->uniform_buffer);
+	glBufferData(GL_UNIFORM_BUFFER, material_params_uniform_buffer_size, NULL, GL_DYNAMIC_DRAW);
+	//glBufferStorage(GL_UNIFORM_BUFFER, material_params_uniform_buffer_size, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+	
+	shader_UploadMaterialParams(material);
+	//v = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	
  
 	if(bm_flags & MATERIAL_DiffuseTexture)
@@ -193,27 +209,13 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	{
 		material->shader_index = shader_GetShaderIndex("lit");
 	}
-
-		
 	
-
 	
 	if(material_a.material_count>=material_a.array_size)
 	{
 		material_ResizeMaterialArray(material_a.array_size<<1);
 	}
 	
-	/* copying materials like they're 'objects' in C is error
-	prone. The compiler seems to be capable to generate broken 
-	code for this... */
-	
-	//material_a.materials[material_a.material_count++] = material;
-	
-	//printf("created material %s index %d\n", name, material_a.material_count-1);
-	
-	//printf("%s   diff: %d|%d  norm: %d|%d\n", name,  m.diff_tex[0], texture_a.textures[m.diff_tex[0]].tex_ID, m.norm_tex[0], texture_a.textures[m.norm_tex[0]].tex_ID);
-	
-	//printf("material %s has shader index %d\n", m.name, m.shader_index);
 	
 	return;
 }
@@ -257,13 +259,12 @@ PEWAPI int material_GetMaterialIndex(char *name)
 	return -1;
 }
 
-
 /*
 =============
-material_SetMaterialByIndex
+material_SetMaterialByIndexGL3A (OpenGL 3.0 or above)
 =============
 */
-PEWAPI void material_SetMaterialByIndex(int material_index)
+static void material_SetMaterialByIndexGL3A(int material_index)
 {
 	float c_color[4];
 	float emissive;
@@ -276,6 +277,150 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 		bm_flags = material->bm_flags;
 		
 		renderer.active_material_index = material_index;
+		
+		glBindBufferBase(GL_UNIFORM_BUFFER, MATERIAL_PARAMS_BINDING, material->uniform_buffer);
+		
+		if(bm_flags&MATERIAL_Wireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+	
+		if(bm_flags & MATERIAL_DiffuseTexture)
+		{
+			texture_SetTextureByIndex(material->diff_tex, GL_TEXTURE0, 0);
+		}
+		
+		if(bm_flags & MATERIAL_NormalTexture)
+		{
+			texture_SetTextureByIndex(material->norm_tex, GL_TEXTURE1, 0);
+		}
+
+		if(bm_flags & MATERIAL_HeightTexture)
+		{
+			texture_SetTextureByIndex(material->heig_tex, GL_TEXTURE2, 0);
+		}
+
+		if(bm_flags & MATERIAL_GlossTexture)
+		{
+			texture_SetTextureByIndex(material->gloss_tex, GL_TEXTURE3, 0);
+		}
+
+		if(bm_flags & MATERIAL_MetallicTexture)
+		{
+			texture_SetTextureByIndex(material->met_tex, GL_TEXTURE4, 0);
+		}
+			
+	}
+	return;
+}
+
+/*
+=============
+material_SetMaterialByIndexGL2B (OpenGL 2.0 or bellow)
+=============
+*/
+static void material_SetMaterialByIndexGL2B(int material_index)
+{
+	float c_color[4];
+	float emissive;
+	int bm_flags asm("edi\n");
+	material_t *material asm("esi\n");
+	if(material_index>=0)
+	{
+		renderer.active_material_index = material_index;	
+		material = &material_a.materials[material_index];
+		bm_flags = material->bm_flags;
+		
+		renderer.active_material_index = material_index;
+
+		if(bm_flags&MATERIAL_Wireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+
+		c_color[0] = (float)material->diff_color.r / 255.0;
+		c_color[1] = (float)material->diff_color.g / 255.0;
+		c_color[2] = (float)material->diff_color.b / 255.0;
+		c_color[3] = (float)material->diff_color.a / 255.0;
+		
+		if(bm_flags & MATERIAL_Emissive)
+		{
+			emissive = ((float)material->emissive / (float)(0xffff)) * MAX_MATERIAL_EMISSIVE;
+			c_color[0] *= 1.0 + emissive;
+			c_color[1] *= 1.0 + emissive;
+			c_color[2] *= 1.0 + emissive;
+		}
+		
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&c_color);
+		
+		
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)bm_flags & MATERIAL_Shadeless);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_DiffuseTexture, (int)bm_flags & MATERIAL_DiffuseTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_NormalTexture, (int)bm_flags & MATERIAL_NormalTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_HeightTexture, (int)bm_flags & MATERIAL_HeightTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_GlossTexture, (int)bm_flags & MATERIAL_GlossTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_MetallicTexture, (int)bm_flags & MATERIAL_MetallicTexture);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_FrontAndBack, (int)bm_flags & MATERIAL_FrontAndBack);
+
+		if(bm_flags & MATERIAL_DiffuseTexture)
+		{
+			texture_SetTextureByIndex(material->diff_tex, GL_TEXTURE0, 0);
+		}
+
+		if(bm_flags & MATERIAL_NormalTexture)
+		{
+			texture_SetTextureByIndex(material->norm_tex, GL_TEXTURE1, 0);
+		}
+
+		if(bm_flags & MATERIAL_HeightTexture)
+		{
+			texture_SetTextureByIndex(material->heig_tex, GL_TEXTURE2, 0);
+		}
+
+		if(bm_flags & MATERIAL_GlossTexture)
+		{
+			texture_SetTextureByIndex(material->gloss_tex, GL_TEXTURE3, 0);
+		}
+
+		if(bm_flags & MATERIAL_MetallicTexture)
+		{
+			texture_SetTextureByIndex(material->met_tex, GL_TEXTURE4, 0);
+		}
+			
+	}
+	return;
+}
+
+/*
+=============
+material_SetMaterialByIndex
+=============
+*/
+/*PEWAPI void material_SetMaterialByIndex(int material_index)
+{
+	float c_color[4];
+	float emissive;
+	int bm_flags asm("edi\n");
+	material_t *material asm("esi\n");
+	if(material_index>=0)
+	{
+		renderer.active_material_index = material_index;	
+		material = &material_a.materials[material_index];
+		bm_flags = material->bm_flags;
+		
+		renderer.active_material_index = material_index;
+
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, material->uniform_buffer);
+
 		
 		if(bm_flags&MATERIAL_Wireframe)
 		{
@@ -295,17 +440,8 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 		{
 			glCullFace(GL_BACK);
 			glEnable(GL_CULL_FACE);
-		}*/
-		
-		/* is this really necessary? */
-		/* is this faster? */
-		/* really? A probably uncached memory access
-		/* is faster than a division instruction? */
-		
-		//c_color[0]=color_conversion_lookup_table[material->diff_color.r] * material->diff_mult.r;
-		//c_color[1]=color_conversion_lookup_table[material->diff_color.g] * material->diff_mult.g;
-		//c_color[2]=color_conversion_lookup_table[material->diff_color.b] * material->diff_mult.b;
-		//c_color[3]=color_conversion_lookup_table[material->diff_color.a];
+		}
+
 		
 		c_color[0] = (float)material->diff_color.r / 255.0;
 		c_color[1] = (float)material->diff_color.g / 255.0;
@@ -321,32 +457,7 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 		}
 		
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&c_color);
-		
-	
-		/*if(c_color[3]<1.0 && material_a.materials[material_index].bm_flags & MATERIAL_Translucent)
-		{
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDepthMask(GL_FALSE);
-		}
-		else
-		{
-			glDisable(GL_BLEND); 
-			glDepthMask(GL_TRUE);
-		}*/
-		
-				   
-				   
-		/*c_color[0]=color_conversion_lookup_table[material->spec_color.r];
-		c_color[1]=color_conversion_lookup_table[material->spec_color.g];
-		c_color[2]=color_conversion_lookup_table[material->spec_color.b];
-		c_color[3]=color_conversion_lookup_table[material->spec_color.a];
-		glMaterialfv(GL_FRONT, GL_SPECULAR, (GLfloat *)&c_color);*/
-		
-		//glMateriali(GL_FRONT, GL_SHININESS, material->shininess);
-		
-		
-		//shader_SetCurrentShaderUniform1i(UNIFORM_MaterialFlags, (int)material_a.materials[material_index].bm_flags);
+
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)bm_flags & MATERIAL_Shadeless);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_DiffuseTexture, (int)bm_flags & MATERIAL_DiffuseTexture);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_NormalTexture, (int)bm_flags & MATERIAL_NormalTexture);
@@ -388,7 +499,7 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 			
 	}
 	return;
-}
+}*/
 
 
 
@@ -397,30 +508,27 @@ PEWAPI void material_SetMaterialByIndex(int material_index)
 material_FloatToColor4_t
 =============
 */
-PEWAPI color4_t material_FloatToColor4_t(float r, float g, float b, float a)
+/*PEWAPI color4_t material_FloatToColor4_t(float r, float g, float b, float a)
 {
 	color4_t color;
 	int t;
 	
 	t=255.0*r;
-	/*if(t>255)t=255;*/
 	color.r=t&0x000000ff;
 	
 	t=255.0*g;
-	/*if(t>255)t=255;*/
 	color.g=t&0x000000ff;
 	
 	t=255.0*b;
-	/*if(t>255)t=255;*/
 	color.b=t&0x000000ff;
 	
 	t=255.0*a;
-	/*if(t>255)t=255;*/
+
 	color.a=t&0x000000ff;
 	
 	return color;
 }
-
+*/
 
 
 /*
@@ -428,7 +536,7 @@ PEWAPI color4_t material_FloatToColor4_t(float r, float g, float b, float a)
 material_FloatToBaseMultiplierPair
 =============
 */
-PEWAPI void material_FloatToBaseMultiplierPair(float r, float g, float b, float a, color4_t *pair)
+/*PEWAPI void material_FloatToBaseMultiplierPair(float r, float g, float b, float a, color4_t *pair)
 {
 	int base;
 	int multiplier;
@@ -454,15 +562,15 @@ PEWAPI void material_FloatToBaseMultiplierPair(float r, float g, float b, float 
 	pair[1].a=multiplier;
 	
 	return;
-}
+}*/
 
-PEWAPI void material_SetMaterialDiffuseColor(material_t *material, float r, float g, float b, float a)
+/*PEWAPI void material_SetMaterialDiffuseColor(material_t *material, float r, float g, float b, float a)
 {
-	//color4_t pair[2];
-	//material_FloatToBaseMultiplierPair(r, g, b, a, pair);
-	//material->diff_color=pair[0];
-	//material->diff_mult=pair[1];	
-}
+	color4_t pair[2];
+	material_FloatToBaseMultiplierPair(r, g, b, a, pair);
+	material->diff_color=pair[0];
+	material->diff_mult=pair[1];	
+}*/
 
 
 #ifdef __cplusplus
