@@ -257,7 +257,7 @@ void main()
 	float fz;
 	int l;
 	//int step_count = int(gl_LightSource[2].spotCutoff);
-	int step_count = 32;
+	int step_count = 8;
 	
 	/* this could go to the vertex shader... */
 	vec4 j = gl_ProjectionMatrixInverse * vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, -gl_FragCoord.z * 2.0 - 1.0, 1.0);

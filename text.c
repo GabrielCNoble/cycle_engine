@@ -18,13 +18,12 @@ void text_Init
 */
 PEWAPI void text_Init(char *path)
 {
-	
-	if(FT_Init_FreeType(&text_renderer))
+	if(TTF_Init())
 	{
-		log_LogMessage("FreeType: error initializing FreeType!");
-		//printf("What a terrible fate. FreeType didn't cooperate. Bailing out.\n");
+		log_LogMessage("SDL_ttf: error initializing!");
 		exit(-3);
 	}
+	
 	strcpy(font_path, path);
 	font_path_len = strlen(font_path);
 	font_a.fonts=NULL;
@@ -40,21 +39,18 @@ void text_Finish
 */
 PEWAPI void text_Finish()
 {
-	int i;
+	/*int i;
 	int c;
 
 	c=font_a.font_count;
 	for(i=0; i<c; i++)
 	{
-		//free(font_a.fonts[i].chars);
-		//free(font_a.fonts[i].char_data);
-		//free(font_a.fonts[i].name);
 		free(font_a.fonts[i].chars);
 		free(font_a.fonts[i].buffer);
 	}
 	free(font_a.fonts);
 	
-	FT_Done_FreeType(text_renderer);
+	FT_Done_FreeType(text_renderer);*/
 }
 
 
@@ -102,9 +98,34 @@ void text_LoadFont
 */
 /* TODO: Generalize more this function. Make it able to load all the chars that exist
 inside the file, not just a hardcoded set. */
-PEWAPI void text_LoadFont(char *file_name, char *name, int bm_sizes)
+PEWAPI void text_LoadFont(char *file_name, char *name)
 {
-	int i;
+	
+	char full_path[256];
+	int font_index = font_a.font_count;
+	font_t *font;
+	
+	if(font_index >= font_a.array_size)
+	{
+		text_ResizeFontArray(font_a.array_size + 16);
+	}
+	
+	
+	font = &font_a.fonts[font_index];
+	
+	
+	
+	strcpy(full_path, font_path);
+	strcat(full_path, file_name);
+	
+	if(!(font->font = TTF_OpenFont(file_name, 0)))
+	{
+		return;
+	}
+	
+	font->name = strdup(name);
+	
+	/*int i;
 	int j;
 	int k;
 	int l;
@@ -249,11 +270,7 @@ PEWAPI void text_LoadFont(char *file_name, char *name, int bm_sizes)
 					
 					
 					//printf("%d %d\n", w, h);
-					/* OpenGL specifies that the coordinate (0,0) of any
-					drawing command is the bottom-left corner of whatever
-					is being drawn. Freetype, on the other hand, specifies
-					that the coordinate (0, 0) is the top-left corner, so
-					here the rendered character is being flipped vertically... */			
+			
 					for(k = h - 1 ; k >= 0; k--)
 					{
 						for(l = 0; l < w; l++)
@@ -372,10 +389,7 @@ PEWAPI void text_LoadFont(char *file_name, char *name, int bm_sizes)
 				//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8192, 8192, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 				//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, max_w * f.char_count, max_h, GL_RGBA, GL_UNSIGNED_BYTE, f.buffer);
 				
-				/*for(k = 0; k < 1; k++)
-				{
-					glTexSubImage2D(GL_TEXTURE_2D, 0, 500, 20, f.chars[10].width, f.chars[10].height, GL_LUMINANCE, GL_UNSIGNED_BYTE, f.buffer + f.chars[10].buffer_entry);
-				}*/
+
 				
 				printf("%x\n", glGetError());
 				
@@ -386,7 +400,7 @@ PEWAPI void text_LoadFont(char *file_name, char *name, int bm_sizes)
 			bm_sizes >>= 1;
 		}
 		
-	}
+	}*/
 	
 }
 
@@ -417,7 +431,7 @@ PEWAPI int text_GetFontIndex(char *name)
 void text_CreateFont
 =============
 */
-PEWAPI void text_CreateFont(font_t *font)
+/*PEWAPI void text_CreateFont(font_t *font)
 {
 	if(font)
 	{
@@ -428,7 +442,7 @@ PEWAPI void text_CreateFont(font_t *font)
 		font_a.fonts[font_a.font_count++]=*font;
 	}
 	
-}
+}*/
 
 #ifdef __cplusplus
 }

@@ -350,6 +350,8 @@ void ginit()
 	int animation;
 	int set_index;
 	
+	text_LoadFont("consola.ttf", "consola");
+	
 	//armature_LoadBVH("tri.bvh", NULL, NULL);
 	//armature_index = armature_GetArmatureIndex("Bone");
 	

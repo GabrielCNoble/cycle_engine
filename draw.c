@@ -3996,6 +3996,8 @@ PEWAPI void draw_DrawString(char *str, font_t *font, int x, int y)
 	
 	//while(glGetError()!= GL_NO_ERROR);
 	glRasterPos3f(-0.9, 0.0, -0.2);
+	SDL_Color c = {255, 255, 255, 255};
+	//SDL_Surface *s = TTF_RenderText_Solid(font->font, str, c);
 	
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	glUseProgram(0);
@@ -4004,7 +4006,7 @@ PEWAPI void draw_DrawString(char *str, font_t *font, int x, int y)
 	glColor3f(1.0, 1.0, 0.0);
 	glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
 	//printf("%c\n", font->chars[0].char_code);
-	glDrawPixels(font->max_width * font->char_count, font->max_height, GL_RGBA, GL_UNSIGNED_BYTE, font->buffer + font->max_width * font->max_height * 0);
+	//glDrawPixels(s->pitch , s->h, GL_RGBA, GL_UNSIGNED_BYTE, s->pixels);
 	
 	//printf("%x\n", glGetError());
 	

@@ -48,20 +48,21 @@ enum FONT_SIZE
 //	FT_Library font_renderer;
 //}text_renderer_t;
 
-typedef struct fchar_t
+/*typedef struct fchar_t
 {
 	int char_code;
 	int width;
 	int height;
 	int buffer_entry;
-}fchar_t;
+}fchar_t;*/
 
 typedef struct font_t
 {
-	FT_Face font;
-	int max_chars;
-	int char_count;
-	fchar_t *chars;
+	//FT_Face font;
+	TTF_Font *font;
+	//int max_chars;
+	//int char_count;
+	//fchar_t *chars;
 	unsigned int tex;
 	unsigned int size;
 	int max_width;
@@ -108,7 +109,7 @@ PEWAPI void text_ResizeFontArray(int new_size);
 
 //PEWAPI void text_ExtendFont(font_t *font, int new_size);
 
-PEWAPI void text_LoadFont(char *file_name, char *name, int bm_sizes);
+PEWAPI void text_LoadFont(char *file_name, char *name);
 
 PEWAPI int text_GetFontIndex(char *name);
 

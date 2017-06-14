@@ -3,7 +3,7 @@
 #include "console.h"
 #include "file.h"
 #include "gpu.h"
-#include "ozz\animation\runtime\animation.h"
+//#include "ozz\animation\runtime\animation.h"
 
 #define FLOAT_BUFFER_SIZE 33554432				/* this should be enough floats... */
 
