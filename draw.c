@@ -1074,8 +1074,10 @@ void draw_CloseFrame()
 	//draw_debug_DrawVertexData(vec3(6.0, 0.0 ,0.0), model_GetVertexData("_cone_"));
 	//draw_test_DrawVertexData(vec3(-6.0, 0.0 ,0.0), model_GetVertexData("wow.obj"));
 	//draw_test_DrawVertexData(vec3(0.0, 0.0 ,-6.0), model_GetVertexData("stairs.obj"));
-	
-	
+	int i = text_GetFontIndex("consola");
+	//printf("%d\n", i);
+	font_t *f = &font_a.fonts[i];
+	draw_DrawString("Font test...", f, 1, 1);
 	
 	SDL_GL_SwapWindow(renderer.window);
 	//printf("%f\n", pew_GetDeltaTime());
@@ -3995,18 +3997,25 @@ PEWAPI void draw_DrawString(char *str, font_t *font, int x, int y)
 	//glDisable(GL_LIGHTING);
 	
 	//while(glGetError()!= GL_NO_ERROR);
-	glRasterPos3f(-0.9, 0.0, -0.2);
-	SDL_Color c = {255, 255, 255, 255};
-	//SDL_Surface *s = TTF_RenderText_Solid(font->font, str, c);
 	
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	SDL_Color f = {0, 0xf0, 0xff, 0xff};
+	SDL_Color b = {0, 0, 0, 0};
+	//SDL_Surface *s = TTF_RenderText_Blended(font->font, str, f);
+	SDL_Surface *s = TTF_RenderText_Shaded(font->font, str, f, b);
+	
+	//printf("%d %d %d\n", s->pitch, s->w, s->h);
+	glRasterPos3f(((float)x / (float)renderer.screen_width) * 2.0 - 1.0, ((float)(y + s->h) / (float)renderer.screen_height) * 2.0 - 1.0, -0.2);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glUseProgram(0);
 	glEnable(GL_BLEND);
-	glPixelZoom(1.0, 1.0);
-	glColor3f(1.0, 1.0, 0.0);
-	glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+	glPixelZoom(1.0, -1.0);
+	glColor3f(1.0, 0.0, 0.0);
+	glBlendFunc(GL_ONE, GL_ONE);
 	//printf("%c\n", font->chars[0].char_code);
-	//glDrawPixels(s->pitch , s->h, GL_RGBA, GL_UNSIGNED_BYTE, s->pixels);
+	glDrawPixels(s->w, s->h, GL_LUMINANCE, GL_UNSIGNED_BYTE, s->pixels);
+	
+	//if(!s) printf("null surface\n");
+	SDL_FreeSurface(s);
 	
 	//printf("%x\n", glGetError());
 	
