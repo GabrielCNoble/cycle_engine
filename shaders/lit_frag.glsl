@@ -18,13 +18,13 @@ uniform sampler2D sysTextureSampler2;
 uniform sampler2D sysTextureSampler3;
 uniform sampler2D sysTextureSampler4;
 
-uniform int sysFlagShadeless;
+/*uniform int sysFlagShadeless;
 uniform int sysFlagDiffuseTexture;
 uniform int sysFlagNormalTexture;
 uniform int sysFlagHeightTexture;
 uniform int sysFlagGlossTexture;
 uniform int sysFlagMetallicTexture;
-uniform int sysFlagFrontAndBack;
+uniform int sysFlagFrontAndBack;*/
 uniform float sysTime;
 uniform float sysEntityIndex;
 
@@ -61,9 +61,9 @@ float linearDepth(float depthSample)
     return zlin;
 }*/
 
-vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)
+vec4 get_view_pos(vec4 homogeneous_position, mat4 inverse_projection_matrix)
 {
-	vec4 temp = inverse_projection_matrix * h_pos;
+	vec4 temp = inverse_projection_matrix * homogeneous_position;
 	temp /= temp.w;
 	return temp;
 }
@@ -113,7 +113,8 @@ void main()
     tbn[2] = normal.xyz;
     
     /* parallax occlusion mapping */
-    if(sysFlagHeightTexture == MATERIAL_HeightTexture)
+    //if(sysFlagHeightTexture == MATERIAL_HeightTexture)
+    if(sysMaterialFlags & MATERIAL_HeightTexture)
 	{
 		tangent_eye = transpose(tbn) * normalize(-position.xyz);
 		

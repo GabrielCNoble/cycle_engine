@@ -1074,10 +1074,10 @@ void draw_CloseFrame()
 	//draw_debug_DrawVertexData(vec3(6.0, 0.0 ,0.0), model_GetVertexData("_cone_"));
 	//draw_test_DrawVertexData(vec3(-6.0, 0.0 ,0.0), model_GetVertexData("wow.obj"));
 	//draw_test_DrawVertexData(vec3(0.0, 0.0 ,-6.0), model_GetVertexData("stairs.obj"));
-	int i = text_GetFontIndex("consola");
+	//int i = text_GetFontIndex("consola");
 	//printf("%d\n", i);
-	font_t *f = &font_a.fonts[i];
-	draw_DrawString("Font test...", f, 1, 1);
+	//font_t *f = &font_a.fonts[i];
+	//draw_DrawString("Font test...", f, 1, 1);
 	
 	SDL_GL_SwapWindow(renderer.window);
 	//printf("%f\n", pew_GetDeltaTime());

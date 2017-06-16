@@ -1,5 +1,8 @@
 #extension ARB_uniform_buffer_object : enable
 
+
+#ifdef _GL3A_
+
 layout(shared) uniform sysMaterialParams
 {
 	vec4 sysMaterialBaseColor;
@@ -8,6 +11,18 @@ layout(shared) uniform sysMaterialParams
 	float sysMaterialEmissive;
 	int sysMaterialFlags;
 };
+
+#endif
+
+#ifdef _GL2B_
+
+	uniform sysMaterialBaseColor;
+	uniform float sysMaterialGlossiness;
+	uniform float sysMaterialMetallic;
+	uniform float sysMaterialEmissive;
+	uniform int sysMaterialFlags;
+
+#endif
 
 #define MATERIAL_Wireframe 1<<1
 #define MATERIAL_DiffuseTexture 1<<2
@@ -20,4 +35,5 @@ layout(shared) uniform sysMaterialParams
 #define MATERIAL_Emissive = 1<<9			
 #define MATERIAL_Animated = 1<<10			
 #define MATERIAL_Warp = 1<<11
+
 

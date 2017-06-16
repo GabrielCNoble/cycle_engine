@@ -169,8 +169,22 @@ PEWAPI void shader_Init(char *path)
 	shader_path_len = strlen(shader_path);
 	
 	
+	
+	/* TODO: add support for #else directives to
+	the shader pre-processor */
+	if((glBindBufferBase))
+	{
+		shader_AddGlobalDefine("_GL3A_");
+	}
+	else
+	{
+		shader_AddGlobalDefine("_GL2B_");
+	}
+	
+	
+	
 	/* got to find a less ugly way to do this... */
-	init_shader_index = shader_LoadShader("init_vert.txt", "init_frag.txt", "init");
+	init_shader_index = shader_LoadShader("init_vert.glsl", "init_frag.glsl", "init");
 	if(!(init_shader = shader_GetShaderByIndex(init_shader_index)))
 	{
 		printf("error loading init shader! aborting...\n");
@@ -199,26 +213,30 @@ PEWAPI void shader_Init(char *path)
 	shader_DeleteShaderByIndex(init_shader_index);
 	
 	
-	screen_quad_shader_index=shader_LoadShader("screen_quad_vert.txt", "screen_quad_frag.txt", "screen_quad");
-	z_prepass_shader_index = shader_LoadShader("z_prepass_vert.txt", "z_prepass_frag.txt", "z_prepass");
-	composite_shader_index=shader_LoadShader("composite_vert.txt", "composite_frag.txt", "composite");
-	lit_shader_index = shader_LoadShader("lit_vert.txt", "lit_frag.txt", "lit");
-	draw_translucent_shader_index = shader_LoadShader("draw_translucent_vert.txt", "draw_translucent_frag.txt", "draw_translucent");
-	blend_translucent_shader_index = shader_LoadShader("blend_translucent_vert.txt", "blend_translucent_frag.txt", "blend_translucent");
-	deferred_process_shader_index=shader_LoadShader("resolve_gbuffer_vert.txt", "resolve_gbuffer_frag.txt", "resolve_gbuffer");
-	wireframe_shader_index=shader_LoadShader("wireframe_vert.txt", "wireframe_frag.txt", "wireframe");
-	flat_shader_index=shader_LoadShader("flat_vert.txt", "flat_frag.txt", "flat");
-	smap_shader_index=shader_LoadShader("smap_vert.txt", "smap_frag.txt", "smap");
-	plvol_shader_index=shader_LoadShader("volumetric_light_vert.txt", "volumetric_light_frag.txt", "volumetric_point_light");
+	screen_quad_shader_index=shader_LoadShader("screen_quad_vert.glsl", "screen_quad_frag.glsl", "screen_quad");
+	//z_prepass_shader_index = shader_LoadShader("z_prepass_vert.txt", "z_prepass_frag.txt", "z_prepass");
+	composite_shader_index=shader_LoadShader("composite_vert.glsl", "composite_frag.glsl", "composite");
+	
+	
+	lit_shader_index = shader_LoadShader("lit_vert.glsl", "lit_frag.glsl", "lit");
+	draw_translucent_shader_index = shader_LoadShader("draw_translucent_vert.glsl", "draw_translucent_frag.glsl", "draw_translucent");
+	blend_translucent_shader_index = shader_LoadShader("resolve_translucent_vert.glsl", "resolve_translucent_frag.glsl", "resolve_translucent");
+	deferred_process_shader_index=shader_LoadShader("resolve_gbuffer_vert.glsl", "resolve_gbuffer_frag.glsl", "resolve_gbuffer");
+	wireframe_shader_index=shader_LoadShader("wireframe_vert.glsl", "wireframe_frag.glsl", "wireframe");
+	flat_shader_index=shader_LoadShader("flat_vert.glsl", "flat_frag.glsl", "flat");
+	smap_shader_index=shader_LoadShader("smap_vert.glsl", "smap_frag.glsl", "smap");
+	plvol_shader_index=shader_LoadShader("volumetric_light_vert.glsl", "volumetric_light_frag.glsl", "volumetric_point_light");
 	//slvol_shader_index=shader_LoadShader("volumetric_spot_light_vert.txt", "volumetric_spot_light_frag.txt", "volumetric_spot_light");
-	bl_shader_index=shader_LoadShader("bilateral_blur_vert.txt", "bilateral_blur_frag.txt", "bilateral_blur");
-	gb_shader_index = shader_LoadShader("gaussian_blur_vert.txt", "gaussian_blur_frag.txt", "gaussian_blur");
-	extract_intensity_shader_index = shader_LoadShader("extract_intensity_vert.txt", "extract_intensity_frag.txt", "extract_intensity");
-	bloom_blur_shader_index = shader_LoadShader("bloom_blur_vert.txt", "bloom_blur_frag.txt", "bloom_blur");
-	draw_buffer_shader_index = shader_LoadShader("debug_draw_buffer_vert.txt", "debug_draw_buffer_frag.txt", "draw_buffer");
-	draw_z_buffer_shader_index = shader_LoadShader("debug_draw_z_buffer_vert.txt", "debug_draw_z_buffer_frag.txt", "draw_z_buffer");
-	intensity0_shader_index = shader_LoadShader("intensity_vert.txt", "intensity0_frag.txt", "intensity0");
-	intensity1_shader_index = shader_LoadShader("intensity_vert.txt", "intensity1_frag.txt", "intensity1");
+	bl_shader_index=shader_LoadShader("bilateral_blur_vert.glsl", "bilateral_blur_frag.glsl", "bilateral_blur");
+	gb_shader_index = shader_LoadShader("gaussian_blur_vert.glsl", "gaussian_blur_frag.glsl", "gaussian_blur");
+	extract_intensity_shader_index = shader_LoadShader("extract_intensity_vert.glsl", "extract_intensity_frag.glsl", "extract_intensity");
+	bloom_blur_shader_index = shader_LoadShader("bloom_blur_vert.glsl", "bloom_blur_frag.glsl", "bloom_blur");
+	draw_buffer_shader_index = shader_LoadShader("debug_draw_buffer_vert.glsl", "debug_draw_buffer_frag.glsl", "draw_buffer");
+	draw_z_buffer_shader_index = shader_LoadShader("debug_draw_z_buffer_vert.glsl", "debug_draw_z_buffer_frag.glsl", "draw_z_buffer");
+	intensity0_shader_index = shader_LoadShader("intensity_vert.glsl", "intensity0_frag.glsl", "intensity0");
+	intensity1_shader_index = shader_LoadShader("intensity_vert.glsl", "intensity1_frag.glsl", "intensity1");
+	
+	
 	
 	
 	//shader_LoadShader("skinner_simple_vert.txt", "skinner_simple_frag.txt", "skinner");

@@ -118,7 +118,7 @@ PEWAPI void text_LoadFont(char *file_name, char *name)
 	strcpy(full_path, font_path);
 	strcat(full_path, file_name);
 	
-	printf("%s\n", full_path);
+	//printf("%s\n", full_path);
 	
 	if(!(font->font = TTF_OpenFont(full_path, 32)))
 	{
@@ -127,7 +127,7 @@ PEWAPI void text_LoadFont(char *file_name, char *name)
 	}
 	TTF_SetFontHinting(font->font, TTF_HINTING_NORMAL);
 	TTF_SetFontStyle(font->font, TTF_STYLE_NORMAL);
-	printf("%s\n", TTF_GetError());
+	//printf("%s\n", TTF_GetError());
 	font->name = strdup(name);
 	
 }

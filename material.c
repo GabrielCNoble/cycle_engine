@@ -54,7 +54,7 @@ PEWAPI void material_Init(char *path)
 	}
 	else
 	{
-		printf("warning: glBindBufferBase not supported. Using compatibility code...\n");
+		//printf("warning: glBindBufferBase not supported. Using compatibility code...\n");
 		material_SetMaterialByIndex = material_SetMaterialByIndexGL2B;
 	}
 	
@@ -90,7 +90,7 @@ PEWAPI void material_ResizeMaterialArray(int new_size)
 	material_a.materials=temp;
 	material_a.array_size=new_size;
 	
-	printf("resize array\n");
+	//printf("resize array\n");
 	return;
 }
 
@@ -362,14 +362,18 @@ static void material_SetMaterialByIndexGL2B(int material_index)
 		
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&c_color);
 		
+		shader_SetCurrentShaderUniform1i(UNIFORM_MaterialFlags, (int)(bm_flags & (MATERIAL_Shadeless | MATERIAL_DiffuseTexture |
+																				  MATERIAL_NormalTexture | MATERIAL_HeightTexture |
+																				  MATERIAL_GlossTexture | MATERIAL_MetallicTexture |
+																				  MATERIAL_FrontAndBack)));
 		
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)bm_flags & MATERIAL_Shadeless);
+		/*shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)bm_flags & MATERIAL_Shadeless);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_DiffuseTexture, (int)bm_flags & MATERIAL_DiffuseTexture);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_NormalTexture, (int)bm_flags & MATERIAL_NormalTexture);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_HeightTexture, (int)bm_flags & MATERIAL_HeightTexture);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_GlossTexture, (int)bm_flags & MATERIAL_GlossTexture);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_MetallicTexture, (int)bm_flags & MATERIAL_MetallicTexture);
-		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_FrontAndBack, (int)bm_flags & MATERIAL_FrontAndBack);
+		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_FrontAndBack, (int)bm_flags & MATERIAL_FrontAndBack);*/
 
 		if(bm_flags & MATERIAL_DiffuseTexture)
 		{
