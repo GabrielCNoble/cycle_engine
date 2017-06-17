@@ -18,7 +18,7 @@ PEWAPI void material_Finish();
 
 PEWAPI void material_ResizeMaterialArray(int new_size);
 
-PEWAPI void material_CreateMaterialFromData(material_t *material);
+/*PEWAPI void material_CreateMaterialFromData(material_t *material);*/
 
 PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic, vec4_t color, float emissive, int bm_flags, tex_info_t *ti);
 
