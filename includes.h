@@ -24,10 +24,10 @@
 #include "SDL2/SDL_scancode.h"
 #include "SDL2/SDL_mouse.h"
 
-#include "ft2build.h"
-#include "freetype/freetype.h"
-#include "freetype/ftglyph.h"
-#include "freetype/ftimage.h"
+//#include "ft2build.h"
+//#include "freetype/freetype.h"
+//#include "freetype/ftglyph.h"
+//#include "freetype/ftimage.h"
 
 //#include "Python.h"
 

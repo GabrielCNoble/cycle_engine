@@ -518,11 +518,11 @@ void ginit()
 	//texture_LoadTexture("cnorm.png", "cnorm", 0);
 	//texture_LoadTexture("skydome4.png", "skydome", 0);
 	
-	texture_LoadTexture("Barel_blue_D.tga", "barrel_blue_d", 0);
+	/*texture_LoadTexture("Barel_blue_D.tga", "barrel_blue_d", 0);
 	texture_LoadTexture("Barel_blue_N.tga", "barrel_blue_n", 0);
-	texture_LoadTexture("Barel_blue_S.tga", "barrel_blue_s", 0);
+	texture_LoadTexture("Barel_blue_S.tga", "barrel_blue_s", 0);*/
 	//texture_LoadTexture("soil_t.png", "brick");
-	texture_LoadTexture("ROCK09_N.png", "brick_n", 0);
+//	texture_LoadTexture("ROCK09_N.png", "brick_n", 0);
 	//texture_LoadTexture("brick_07_h.png", "brick_h", 0);
 	
 	//texture_LoadTexture("ROCK09.PNG", "rock_d", 0);
@@ -533,13 +533,13 @@ void ginit()
 	//texture_LoadTexture("ROCK10_N.PNG", "rock3_n", 0);
 	//texture_LoadTexture("ROCK10_H.PNG", "rock3_h", 0);
 	
-	texture_LoadTexture("ROCK11.PNG", "rock4_d", 0);
+	/*texture_LoadTexture("ROCK11.PNG", "rock4_d", 0);
 	texture_LoadTexture("ROCK11_N.PNG", "rock4_n", 0);
-	texture_LoadTexture("ROCK11_H.PNG", "rock4_h", 0);
+	texture_LoadTexture("ROCK11_H.PNG", "rock4_h", 0);*/
 	
-	texture_LoadTexture("sand_diffuse.tga", "sand_diffuse", 0);
+	/*texture_LoadTexture("sand_diffuse.tga", "sand_diffuse", 0);
 	texture_LoadTexture("sand_normal.tga", "sand_normal", 0);
-	texture_LoadTexture("sand_specular.tga", "sand_specular", 0);
+	texture_LoadTexture("sand_specular.tga", "sand_specular", 0);*/
 	//texture_LoadTexture("ROCK00.PNG", "rock2_d", 0);
 	//texture_LoadTexture("ROCK00_N.PNG", "rock2_n", 0);
 	//texture_LoadTexture("ROCK00_H.PNG", "rock2_h", 0);
@@ -549,7 +549,7 @@ void ginit()
 	
 	//texture_LoadTexture("tile_d.png", "tile_d", 0);
 	//texture_LoadTexture("tile_n.png", "tile_n", 0);
-	texture_LoadTexture("pew_logo.png", "tile_h", 0);
+	//texture_LoadTexture("pew_logo.png", "tile_h", 0);
 	
 	texture_LoadTexture("greasy-pan-2-albedo.png", "greasy_diffuse", 0);
 	texture_LoadTexture("greasy-pan-2-normal.png", "greasy_normal", 0);
@@ -561,19 +561,34 @@ void ginit()
 	texture_LoadTexture("iron-rusted4-roughness.png", "iron_rusted_gloss", 0);
 	texture_LoadTexture("iron-rusted4-metalness.png", "iron_rusted_mettalic", 0);
 	
-	texture_LoadTexture("oakfloor_basecolor.png", "dungeon_diffuse", 0);
-	texture_LoadTexture("oakfloor_normal.png", "dungeon_normal", 0);
-	texture_LoadTexture("oakfloor_roughness.png", "dungeon_gloss", 0);
-	texture_LoadTexture("dungeon-stone1-metalness.png", "dungeon_mettalic", 0);
-	texture_LoadTexture("dungeon-stone1-height.png", "dungeon_height", 0);
+	texture_LoadTexture("TexturesCom_BrushedStainless_1024_albedo.png", "brushed_metal_diffuse", 0);
+	texture_LoadTexture("TexturesCom_BrushedStainless_1024_normal.png", "brushed_metal_normal", 0);
+	texture_LoadTexture("TexturesCom_BrushedStainless_1024_roughness.png", "brushed_metal_gloss", 0);
+	texture_LoadTexture("TexturesCom_BrushedStainless_1024_metallic.png", "brushed_metal_mettalic", 0);
 	
-	texture_LoadTexture("scifi tile 1_COLOR.png", "scifi_d", 0);
+	texture_LoadTexture("TexturesCom_PaintedMetal_1024_albedo.png", "painted_metal_diffuse", 0);
+	texture_LoadTexture("TexturesCom_PaintedMetal_1024_normal.png", "painted_metal_normal", 0);
+	texture_LoadTexture("TexturesCom_PaintedMetal_1024_roughness.png", "painted_metal_gloss", 0);
+	texture_LoadTexture("TexturesCom_PaintedMetal_1024_metallic.png", "painted_metal_mettalic", 0);
+	
+	texture_LoadTexture("TexturesCom_TuftedLeather_1024_albedo.png", "tufted_leather_diffuse", 0);
+	texture_LoadTexture("TexturesCom_TuftedLeather_1024_normal.png", "tufted_leather_normal", 0);
+	texture_LoadTexture("TexturesCom_TuftedLeather_1024_roughness.png", "tufted_leather_gloss", 0);
+	texture_LoadTexture("TexturesCom_TuftedLeather_1024_height.png", "tufted_leather_height", 0);
+	
+	texture_LoadTexture("oakfloor_basecolor.png", "oakfloor_diffuse", 0);
+	texture_LoadTexture("oakfloor_normal.png", "oakfloor_normal", 0);
+	texture_LoadTexture("oakfloor_roughness.png", "oakfloor_gloss", 0);
+	//texture_LoadTexture("harsh_metalness.png", "oakfloor_mettalic", 0);
+	//texture_LoadTexture("oakfloor_Height.png", "oakfloor_height", 0);
+	
+	/*texture_LoadTexture("scifi tile 1_COLOR.png", "scifi_d", 0);
 	texture_LoadTexture("scifi tile 1_NRM.png", "scifi_n", 0);
-	texture_LoadTexture("scifi tile 1_SPEC.png", "scifi_s", 0);
+	texture_LoadTexture("scifi tile 1_SPEC.png", "scifi_s", 0);*/
 	
 	//texture_LoadTexture("Pilip.tga", "pilip", 0);
 	
-	texture_LoadTexture("pew_logo.png", "pew", 0);
+	//texture_LoadTexture("pew_logo.png", "pew", 0);
 	
 	//text_LoadFont("fixedsys.ttf", "fixedsys", FONT_SIZE_8);
 	
@@ -675,12 +690,32 @@ void ginit()
 	material_CreateMaterial("iron_rusted", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
-	tif.diff_tex = (short)texture_GetTextureIndex("dungeon_diffuse");
-	tif.norm_tex = (short)texture_GetTextureIndex("dungeon_normal");
-	tif.gloss_tex = (short)texture_GetTextureIndex("dungeon_gloss");
-	tif.met_tex = (short)texture_GetTextureIndex("dungeon_mettalic");
-	tif.heig_tex = (short)texture_GetTextureIndex("dungeon_height");
-	material_CreateMaterial("dungeon", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture, &tif);
+	tif.diff_tex = (short)texture_GetTextureIndex("painted_metal_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("painted_metal_normal");
+	tif.gloss_tex = (short)texture_GetTextureIndex("painted_metal_gloss");
+	tif.met_tex = (short)texture_GetTextureIndex("painted_metal_mettalic");
+	material_CreateMaterial("painted_metal", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	
+	
+	tif.diff_tex = (short)texture_GetTextureIndex("brushed_metal_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("brushed_metal_normal");
+	tif.gloss_tex = (short)texture_GetTextureIndex("brushed_metal_gloss");
+	tif.met_tex = (short)texture_GetTextureIndex("brushed_metal_mettalic");
+	material_CreateMaterial("brushed_metal", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	
+	tif.diff_tex = (short)texture_GetTextureIndex("tufted_leather_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("tufted_leather_normal");
+	tif.gloss_tex = (short)texture_GetTextureIndex("tufted_leather_gloss");
+	tif.heig_tex = (short)texture_GetTextureIndex("tufted_leather_height");
+	material_CreateMaterial("tufted_leather", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
+	
+	
+	tif.diff_tex = (short)texture_GetTextureIndex("oakfloor_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("oakfloor_normal");
+	tif.gloss_tex = (short)texture_GetTextureIndex("oakfloor_gloss");
+	//tif.met_tex = (short)texture_GetTextureIndex("dungeon_mettalic");
+	//tif.heig_tex = (short)texture_GetTextureIndex("dungeon_height");
+	material_CreateMaterial("oakfloor", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture, &tif);
 	
 	/*tif.diff_tex = (short)texture_GetTextureIndex("brick_d");
 	tif.norm_tex = (short)texture_GetTextureIndex("brick_n");
@@ -707,43 +742,60 @@ void ginit()
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("white"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("oakfloor"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	entity_CreateEntityDef("wheel", 0, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("wheel"), 0.0, 0);
 	entity_CreateEntityDef("pew_plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("pew_plane"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("piramid", ENTITY_DYNAMIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("piramid"), 2.0, COLLISION_SHAPE_CONVEX_HULL);
 	entity_CreateEntityDef("stairs", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("stairs"), 1.0, COLLISION_SHAPE_CONVEX_HULL);
-	entity_CreateEntityDef("ico_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("ico_brushed_metal", ENTITY_COLLIDES, material_GetMaterialIndex("brushed_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("ico_painted_metal", ENTITY_COLLIDES, material_GetMaterialIndex("painted_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("ico_tufted_leather", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("cube_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_blue", ENTITY_COLLIDES, material_GetMaterialIndex("translucent3"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("spiral", ENTITY_STATIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("spiral"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("rigged", 0, material_GetMaterialIndex("red"), 0, model_GetMeshPtr("rig"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
-	entity_def_t *def;
+	entity_def_t *def0;
+	entity_def_t *def1;
+	entity_def_t *def2;
 	//entity_def_t *def = entity_GetEntityDef("piramid");
 	//entity_SpawnEntity("piramid", def, vec3(0.0, 0.0, 0.0), &id);
-	def = entity_GetEntityDef("plane");
-	entity_SpawnEntity("plane", def, vec3(0.0, -6.0, 0.0), &id);
+	def0 = entity_GetEntityDef("plane");
+	entity_SpawnEntity("plane", def0, vec3(0.0, -6.0, 0.0), &id);
 	//entity_SpawnEntity("plane2", def, vec3(0.0, -6.0, 100.0), &id);
-	def = entity_GetEntityDef("stairs");
-
+	//def = entity_GetEntityDef("stairs");
 	
 	id = mat3_t_id();
-	def = entity_GetEntityDef("ico_greasy");
-	entity_SpawnEntity("ico_greasy", def, vec3(3.0, 0.0, 0.0), &id);
+	def0 = entity_GetEntityDef("ico_brushed_metal");
+	//entity_SpawnEntity("ico_brushed_metal", def, vec3(3.0, 0.0, 0.0), &id);
 	
-	def = entity_GetEntityDef("ico_iron_rusted");
-	entity_SpawnEntity("ico_iron_rusted", def, vec3(-3.0, 0.0, 0.0), &id);
+	def1 = entity_GetEntityDef("ico_painted_metal");
+	//entity_SpawnEntity("ico_painted_metal", def, vec3(-3.0, 0.0, 0.0), &id);
+	
+	def2 = entity_GetEntityDef("ico_tufted_leather");
+	//entity_SpawnEntity("ico_tufted_leather", def, vec3(-5.0, 0.0, 0.0), &id);
+	
+	for(i = 0; i < 10; i++)
+	{
+		
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 0.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 0.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 0.0, -5.0 + i), &id);
+
+	}
 	
 	
-	def = entity_GetEntityDef("cube_greasy");
+	
+	
+	
+	/*def = entity_GetEntityDef("cube_greasy");
 	entity_SpawnEntity("cube_greasy", def, vec3(0.0, 0.0, 3.0), &id);
 	
 	def = entity_GetEntityDef("cube_iron_rusted");
-	entity_SpawnEntity("cube_iron_rusted", def, vec3(0.0, 0.0, -3.0), &id);
+	entity_SpawnEntity("cube_iron_rusted", def, vec3(0.0, 0.0, -3.0), &id);*/
 	
 	//def = entity_GetEntityDef("wheel");
 	//entity_SpawnEntity("wheel", def, vec3(0.0, 5.0, 0.0), &id);
@@ -797,12 +849,15 @@ void ginit()
 		//light_CreatePointLight("lightwow6", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
 		//light_CreateLight("lightwow8", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
 		//light_CreatePointLight("lightwow8", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 1.0, 0.5), 15.0, 10.0, 0.02, 0.0, 0.03, 8, 512);
-		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.7, 1);
+		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+		
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(5.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 20.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-5.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 20.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		
 		//light_CreateLight("lightwow7", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
-		light_CreateSpotLight("lightwow7", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
-		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
-		light_CreateSpotLight("swing_light", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, 12.0, 0.0, 1.0), &id, vec3(0.9, 0.9, 0.9), 30.0, 10.0, 40, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
+		//light_CreateSpotLight("lightwow7", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-3.0, -1.0, -15.0, 1.0), &id, vec3(1.0, 0.6, 0.6), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
+		//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
+		//light_CreateSpotLight("swing_light", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, 12.0, 0.0, 1.0), &id, vec3(0.9, 0.9, 0.9), 30.0, 10.0, 40, 0.05, 0.02, 0.0, 0.03, 8, 512, -1);
 		//light_CreateLight("lightwow8", LIGHT_SPOT|LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(3.0, -1.0, -15.0, 1.0), &id, vec3(0.6, 0.6, 1.0), 20.0, 10.0, 25, 0.05, 0.02, 0.0, 0.03, 32, 32, 512, 512, 2, -1);
 		
 		/*light_CreateLight("lightwow9", LIGHT_POINT|LIGHT_GENERATE_SHADOWS, vec4(10.0, -1.0, 0.0, 1.0), &id, vec3(0.5, 0.5, 1.0), 20.0, 10.0, 40, 0.0, 0.02, 0.0, 0.03, 32, 32, 512, 512, 1, -1);
@@ -822,7 +877,7 @@ void ginit()
 	id = mat3_t_id();
 	cptr=camera_GetActiveCamera();
 	camera_TranslateCamera(cptr, vec3(0.0, 1.0 ,0.0), 1.7, 1);
-	int col_index = physics_CreateCollider("_player_", COLLIDER_CHARACTER_CONTROLLER, COLLISION_SHAPE_CAPSULE, COLLIDER_CREATE_SCENEGRAPH_NODE, -1, 0.0, 0.0, 2.0, 0.5, 5.0, 14.7, 50.0, NULL, vec3(0.0, 0.0, 0.0), &id, NULL);
+	int col_index = physics_CreateCollider("_player_", COLLIDER_CHARACTER_CONTROLLER, COLLISION_SHAPE_CAPSULE, COLLIDER_CREATE_SCENEGRAPH_NODE, -1, 0.0, 0.0, 2.0, 0.5, 5.0, 14.7, 50.0, NULL, vec3(0.0, 0.0, -10.0), &id, NULL);
 	general_collider_t *c = physics_GetColliderByIndex(col_index);
 	scenegraph_SetParent(cptr->assigned_node, c->base.assigned_node, 0);
 	

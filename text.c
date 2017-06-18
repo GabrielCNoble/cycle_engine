@@ -1,6 +1,6 @@
 #include "text.h"
 #include "log.h"
-static FT_Library text_renderer;
+//static FT_Library text_renderer;
 font_array font_a;
 
 static int font_path_len = 0;

@@ -147,7 +147,7 @@ void main()
 	   	   i++;
 	   	   // new depth from heightmap
 	   	   heightFromTexture = abs(texture2D(sysTextureSampler2, currentTextureCoords).r - 1.0);
-	  	 }
+	  	}
 	
 	 	  ///////////////////////////////////////////////////////////
 	
@@ -230,7 +230,7 @@ void main()
 	{
 		vec3 n = (texture2D(sysTextureSampler1, nUV).xyz * 2.0 - 1.0);
 		//n.y *= n_dir;
-		n.y = -n.y;
+		//n.y = -n.y;
 		normv = vec4(tbn * n, 1.0);
 		
 		/*if(sysFlagFrontAndBack == MATERIAL_FrontAndBack)
@@ -260,7 +260,7 @@ void main()
 	//if(sysFlagGlossTexture == MATERIAL_GlossTexture)
 	if(sysMaterialFlags & MATERIAL_GlossTexture)
 	{
-		diffv.a = 1.0 - texture2D(sysTextureSampler3, nUV).r;
+		diffv.a = texture2D(sysTextureSampler3, nUV).r;
 	}
 	else
 	{

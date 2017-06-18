@@ -1,4 +1,7 @@
 #include "material.h"
+#include "brdf.h"
+
+
 varying vec2 UV;
 varying vec3 viewRay;
 
@@ -30,7 +33,7 @@ uniform sampler2D sysTextureSampler2;
 #define RENDER_DRAWMODE_FLAT 2
 #define RENDER_DRAWMODE_WIREFRAME 3
 
-#define PI 3.14159265
+//#define PI 3.14159265
 
 
 uniform sampler2D sysDepthSampler;
@@ -107,12 +110,13 @@ void sample_2D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 	{
 		shadow=texture2D(sys2DShadowSampler, v.xy).x;
 		
-		if(v.z > shadow + n)
+		/*if(v.z > shadow + n)
 		{
 			factor -= sub;
-		}
+		}*/
+		factor = float(v.z < shadow + n);
 		
-		for(i = 1; i <= count; i++)
+	/*	for(i = 1; i <= count; i++)
 		{
 			shadow=texture2D(sys2DShadowSampler, v.xy + vec2(delta_s, delta_t)).x;
 		
@@ -141,7 +145,7 @@ void sample_2D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 			{
 				factor -= sub;
 			}
-		}
+		}*/
 	}
 }
 
@@ -168,8 +172,8 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 	float n = ((1.0 - dot(normalize(q), frag_norm)) * POINT_LIGHT_BIAS) + ((POINT_LIGHT_BIAS * 100.0 * (float(count + 1))) / dot(q, q));
 	
 	int i;
-	factor = 1.0;
-	float sub = float(1.0 / (1.0 + float(count) * 4.0));
+	//factor = 1.0;
+	//float sub = float(1.0 / (1.0 + float(count) * 4.0));
 	
 	d=normalize(v.xyz);
 	
@@ -180,7 +184,7 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 	fz = fz * 0.5 + 0.5;
 	
 	
-	if(m == av.x)
+	/*if(m == av.x)
 	{
 		tex_delta_arr[0].x = 0.0;
 		tex_delta_arr[0].y = delta_s;
@@ -197,23 +201,6 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 		tex_delta_arr[3].x = 0.0;
 		tex_delta_arr[3].y = delta_s;
 		tex_delta_arr[3].z = -delta_t;
-		
-		
-		/*tex_delta_arr[4].x = 0.0;
-		tex_delta_arr[4].y = delta_s;
-		tex_delta_arr[4].z = 0.0;
-		
-		tex_delta_arr[5].x = 0.0;
-		tex_delta_arr[5].y = -delta_s;
-		tex_delta_arr[5].z = 0.0;
-		
-		tex_delta_arr[6].x = 0.0;
-		tex_delta_arr[6].y = 0.0;
-		tex_delta_arr[6].z = delta_t;
-		
-		tex_delta_arr[7].x = 0.0;
-		tex_delta_arr[7].y = 0.0;
-		tex_delta_arr[7].z = -delta_t;*/
 		
 	}
 	else if(m == av.y)
@@ -233,23 +220,6 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 		tex_delta_arr[3].x = delta_s;
 		tex_delta_arr[3].y = 0.0;
 		tex_delta_arr[3].z = -delta_t;
-		
-		
-		/*tex_delta_arr[4].x = delta_s;
-		tex_delta_arr[4].y = 0.0;
-		tex_delta_arr[4].z = 0.0;
-		
-		tex_delta_arr[5].x = -delta_s;
-		tex_delta_arr[5].y = 0.0;
-		tex_delta_arr[5].z = 0.0;
-		
-		tex_delta_arr[6].x = 0.0;
-		tex_delta_arr[6].y = 0.0;
-		tex_delta_arr[6].z = delta_t;
-		
-		tex_delta_arr[7].x = 0.0;
-		tex_delta_arr[7].y = 0.0;
-		tex_delta_arr[7].z = -delta_t;*/
 	}
 	else
 	{
@@ -268,24 +238,7 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 		tex_delta_arr[3].x = delta_s;
 		tex_delta_arr[3].y = -delta_t;
 		tex_delta_arr[3].z = 0.0;
-		
-		
-		/*tex_delta_arr[4].x = delta_s;
-		tex_delta_arr[4].y = 0.0;
-		tex_delta_arr[4].z = 0.0;
-		
-		tex_delta_arr[5].x = -delta_s;
-		tex_delta_arr[5].y = 0.0;
-		tex_delta_arr[5].z = 0.0;
-		
-		tex_delta_arr[6].x = 0.0;
-		tex_delta_arr[6].y = delta_t;
-		tex_delta_arr[6].z = 0.0;
-		
-		tex_delta_arr[7].x = 0.0;
-		tex_delta_arr[7].y = -delta_t;
-		tex_delta_arr[7].z = 0.0;*/
-	}
+	}*/
 	
 	
 	
@@ -293,12 +246,14 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 	d.y = -d.y;
 	shadow = textureCube(sys3DShadowSampler, d).r;
 	
-	if(fz > shadow + n)
+	/*if(fz > shadow + n)
 	{
 		factor -= sub;
-	}
+	}*/
+	
+	factor = float(fz < shadow + n);
 
-	for(i = 1; i <= count; i++)
+	/*for(i = 1; i <= count; i++)
 	{
 		shadow = textureCube(sys3DShadowSampler, d + tex_delta_arr[0] * float(i)).r;
 		if(fz > shadow + n)
@@ -323,33 +278,8 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 		{
 			factor -= sub;
 		}
-		
-		
-		
-		/*shadow = textureCube(sys3DShadowSampler, d + tex_delta_arr[4] * i).r;
-		if(fz > shadow + n)
-		{
-			factor -= sub;
-		}
-		
-		shadow = textureCube(sys3DShadowSampler, d + tex_delta_arr[5] * i).r;
-		if(fz > shadow + n)
-		{
-			factor -= sub;
-		}
-		
-		shadow = textureCube(sys3DShadowSampler, d + tex_delta_arr[6] * i).r;
-		if(fz > shadow + n)
-		{
-			factor -= sub;
-		}
-		
-		shadow = textureCube(sys3DShadowSampler, d + tex_delta_arr[7] * i).r;
-		if(fz > shadow + n)
-		{
-			factor -= sub;
-		}*/
-	}
+
+	}*/
 
 }
 
@@ -392,79 +322,9 @@ float attenuate_spot(vec3 light_vec, vec3 spot_direction, float light_distance, 
 	return a;
 }
 
-float ndf_ggx(vec3 normal, vec3 half_vec, float roughness)
-{
-	//vec3 h = normalize(light_vec + view_vec);
-	float q = dot(normal, half_vec);
-	float a = roughness * roughness;
-	a *= a;
-	float b = q * q * (a - 1.0) + 1.0;
-	b = b * b * PI;
-	return a / b;
-}
-
-float g_schlick_ggx(vec3 normal, vec3 direction, float roughness)
-{
-	float k = (roughness + 1.0);
-	k = (k * k) / 8.0;
-	float d = max(dot(normal, direction), 0.0);
-	return d / (d * (1.0 - k) + k);
-}
-
-float g_smith(vec3 normal, vec3 view_vec, vec3 light_vec, float roughness)
-{
-	return g_schlick_ggx(normal, view_vec, roughness) * g_schlick_ggx(normal, light_vec, roughness);
-}
-
-vec3 f_schlick(vec3 normal, vec3 direction, vec3 base, float metalness)
-{
-	float q = 1.0 - max(dot(normal, direction), 0.0) + 0.001;
-	//q = pow(q, 5.0);
-	
-	vec3 f = mix(vec3(0.04), base, metalness);
-	//q = q * q * q * q * q;
-	//return (f + (vec3(1.0) - f) * q);
-	return (f + (1.0 - f) * pow(q, 5.0));
-}
-
-
-
-void phong(vec3 light_vec, vec3 view_vec, vec3 normal, float spec_power, float spec_mask, out float d_factor, out float s_factor)
-{
-	d_factor = max(0.0, dot(light_vec, normal));
-	s_factor = max(0.0, dot(normalize(view_vec + light_vec), normal));	
-	//s_factor = min(pow(s_factor, spec_power), spec_power);
-	s_factor = pow(s_factor,  spec_power) * spec_mask;
-	//s_factor = pow(s_factor, 64.0);
-}
-
-vec3 cook_torrance(vec3 light_vec, vec3 view_vec, vec3 normal, vec3 base, float roughness, float metalness)
-{
-	vec3 half_vec = normalize(light_vec + view_vec);
-	//float t = max(dot(normal, half_vec), 0.0);
-	
-	vec3 f = f_schlick(normal, view_vec, base, metalness);
-	vec3 a = ndf_ggx(normal, half_vec, roughness) *  
-			 g_smith(normal, view_vec, light_vec, roughness) * f;
-			 
-	float q = max(dot(normal, light_vec), 0.0);		  
-	float b = 4.0 * max(dot(normal, view_vec), 0.0) * q + 0.001;		  	
-			  
-	vec3 s = a / b;
-	vec3 d = (vec3(1.0) - f) * (1.0 - metalness);
-	return vec3(d * base / PI + s) * q; 
-}
-
-
-
 
 void main()
-{
-    //int i;
-    //float depth=linearDepth(texture2D(depthSampler, UV).x);	/* 0...1 to 0...far */
-    
-    
-    
+{    
     
     vec2 uv = vec2(gl_FragCoord.x / sysRenderTargetWidth, gl_FragCoord.y / sysRenderTargetHeight);
     
