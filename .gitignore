@@ -1,3 +1,5 @@
 *.o
 *.exe
+/models2
+/textures2
 
