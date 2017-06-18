@@ -137,18 +137,21 @@ PEWAPI void pew_MainLoop()
 	vec4_t q;
 	vec4_t v;
 	
-
+	
 	pew.gameinit_function();
-	float f;
-	float lastf = 0.0;
-	float fps_sum;
-	float fps_disp;
+	float f = 0.0;
+	static int frame_count = 0;
+	static float time_count = 0.0;
+	static int fps_sum;
+	static int fps_disp;
 	static float max = -1.0;
 	static float min = 100000000.0;
 	long long unsigned int c0;
 	long long unsigned int c1;
 	pew_Resume();
 	pew_UpdateDeltaTime();
+	
+	int fps_font = text_GetFontIndex("consola");
 	while(pew.pew_state)
 	{
 		
@@ -170,26 +173,36 @@ PEWAPI void pew_MainLoop()
 		pew.gamemain_function(pew.ti.ms_elapsed * pew.time_scale);
 		
 		
-		//f = pew_GetDeltaTime();
-		lastf = pew_GetDeltaTime();
+		//f += pew_GetDeltaTime();
+		//lastf = pew_GetDeltaTime();
 		
 		//printf("processing: %.02f ", lastf - f);
 		
 		
 		draw_DrawFrame();
 		
-		draw_CloseFrame();
+		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 40, "%d", fps_disp);
 		
+		draw_CloseFrame();
 		//lastf = pew_GetDeltaTime();
 		
 		//printf("rendition: %.02f ", pew_GetDeltaTime() - lastf);
 		
-		fps_sum = 1000.0 / pew_GetDeltaTime();
-		//if(fps_sum > max) max = fps_sum;
-		//if(fps_sum < min) min = fps_sum;
-		//printf("fps: %0.2f max: %0.2f min: %0.2f	\r",  fps_sum, max, min);
-		printf("fps: %0.2f	\r",  fps_sum);
+		//f += pew_GetDeltaTime();
+		f = pew_GetDeltaTime();
+		fps_sum += (int)(1000.0 / f) + 1;
+		frame_count++;
+		time_count += f;
+		//if(!(renderer.frame_count % 5))
+		if(time_count > 500.0)
+		{
+			fps_disp = fps_sum / frame_count;
+			fps_sum = 0;
+			frame_count = 0;
+			time_count = 0.0;
+		}		
 		
+			
 	}
 
 }

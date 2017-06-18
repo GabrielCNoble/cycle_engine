@@ -52,7 +52,7 @@ PEWAPI int light_CreatePointLight(char *name, int flags, vec4_t position, mat3_t
 	return light_CreateLight(name, (flags & (~(LIGHT_SPOT | LIGHT_DIRECTIONAL))) | LIGHT_POINT, position, orientation, color, radius, energy, 0.0, 0.0, lin_fallof, sqrd_fallof, scattering, volume_samples, shadow_map_res, 0, -1);
 }
 
-PEWAPI static inline int light_CreateSpotLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float distance, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int tex_index)
+PEWAPI int light_CreateSpotLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float distance, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int tex_index)
 {
 	return light_CreateLight(name, (flags & (~(LIGHT_POINT | LIGHT_DIRECTIONAL))) | LIGHT_SPOT, position, orientation, color, distance, energy, spot_angle, spot_blend, lin_fallof, sqrd_fallof, scattering, volume_samples, shadow_map_res, 0, tex_index);
 }

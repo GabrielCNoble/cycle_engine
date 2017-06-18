@@ -43,7 +43,7 @@ PEWAPI void camera_RotateCamera(camera_t *camera, vec3_t axis, float angle, int 
 
 PEWAPI void camera_ApplyPitchYawToCamera(camera_t *camera, float yaw, float pitch, vec3_t yaw_axis, vec3_t pitch_axis);
 
-PEWAPI static inline camera_t *camera_GetActiveCamera();
+PEWAPI inline camera_t *camera_GetActiveCamera();
 
 PEWAPI frustum_t camera_GetActiveCameraFrustum();
 
@@ -59,13 +59,13 @@ PEWAPI vec3_t camera_GetCameraWorldUpVector(camera_t *camera);
 
 PEWAPI vec3_t camera_GetCameraWorldForwardVector(camera_t *camera);
 
-
+#include "camera.inl"
 
 #ifdef __cplusplus
 }
 #endif
 
-#include "camera.inl"
+
 
 
 #endif /* CAMERA_H */

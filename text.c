@@ -120,7 +120,7 @@ PEWAPI void text_LoadFont(char *file_name, char *name)
 	
 	//printf("%s\n", full_path);
 	
-	if(!(font->font = TTF_OpenFont(full_path, 32)))
+	if(!(font->font = TTF_OpenFont(full_path, MAX_FONT_PSIZE)))
 	{
 		printf("couldn't open font. %s\n", TTF_GetError());
 		return;

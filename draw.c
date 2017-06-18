@@ -18,6 +18,7 @@
 #include "gui.h"
 #include "gpu.h"
 
+#include <stdarg.h>
 //extern unsigned int _512_extra_map;
 //extern unsigned int extra_framebuffer;
 extern font_array font_a;
@@ -32,6 +33,8 @@ extern int widget_count;
 extern unsigned int screen_area_mesh_gpu_buffer;
 
 extern float screen_quad[3 * 4];
+
+static char formated_str[8192];
 
 int resolutions[7][2]=
 {
@@ -1073,11 +1076,11 @@ void draw_CloseFrame()
 	//draw_debug_DrawVertexData(vec3(6.0, 0.0 ,0.0), model_GetVertexData("_convex_polygon_"));
 	//draw_debug_DrawVertexData(vec3(6.0, 0.0 ,0.0), model_GetVertexData("_cone_"));
 	//draw_test_DrawVertexData(vec3(-6.0, 0.0 ,0.0), model_GetVertexData("wow.obj"));
-	//draw_test_DrawVertexData(vec3(0.0, 0.0 ,-6.0), model_GetVertexData("stairs.obj"));
-	//int i = text_GetFontIndex("consola");
-	//printf("%d\n", i);
-	//font_t *f = &font_a.fonts[i];
-	//draw_DrawString("Font test...", f, 1, 1);
+	draw_debug_DrawVertexData(vec3(0.0, 0.0 ,-6.0), model_GetVertexData("stairs.obj"));
+	
+	/*int i = text_GetFontIndex("consola");
+	font_t *f = &font_a.fonts[i];
+	draw_DrawString(f, 16, 1, 400, "Testing... %d TESTING!!!", 5);*/
 	
 	SDL_GL_SwapWindow(renderer.window);
 	//printf("%f\n", pew_GetDeltaTime());
@@ -3985,7 +3988,7 @@ PEWAPI int draw_GetBloomParam(int param)
 	return 0;
 }
 
-PEWAPI void draw_DrawString(char *str, font_t *font, int x, int y)
+PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, char *str, ...)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -3994,54 +3997,113 @@ PEWAPI void draw_DrawString(char *str, font_t *font, int x, int y)
 	glPushMatrix();
 	glLoadIdentity();
 	
-	//glDisable(GL_LIGHTING);
+	char cparm[64];
 	
-	//while(glGetError()!= GL_NO_ERROR);
+	font_t *font = &font_a.fonts[font_index];
 	
-	SDL_Color f = {0, 0xf0, 0xff, 0xff};
+	
+	int iparm;
+	float fparm;
+	char *strparm;
+	
+	va_list args;
+	va_start(args, str);
+	
+	int i;
+	int decimal;
+	int sign;
+	//void *parms = ((char *)&str) + sizeof(char *);
+	char *p = str;
+	char *o = formated_str;
+	char *q = cparm;
+	char *t;
+	
+	if(size > MAX_FONT_PSIZE) size = MAX_FONT_PSIZE;
+	else if(size < MIN_FONT_PSIZE) size = MIN_FONT_PSIZE;
+	
+	float zoom = size * FONT_ZOOM_STEP;
+	
+	while(*p)
+	{
+		if(*p == '%')
+		{
+			p++;
+			q = cparm;
+
+			switch(*p)
+			{
+				case 'd':
+					iparm = va_arg(args, int);
+					itoa(iparm, q, 10);
+					while(*q)
+					{
+						*o++ = *q++;
+					}
+					p++;
+				break;
+				
+				case 'f':
+					fparm = va_arg(args, double);
+					
+					i = 0;
+					q = ecvt(fparm, 12, &decimal, &sign);
+					if(sign)
+					{
+						*o++ = '-';
+					}
+					if(decimal < 0)
+					{
+						*o++ = '0';
+						*o++ = '.';
+						while(*q)
+						{
+							*o++ = *q++;
+						}
+					}
+					else
+					{
+						while(*q && i < decimal)
+						{
+							*o++ = *q++;
+							i++;
+						}
+						*o++ = '.';
+						while(*q)
+						{
+							*o++ = *q++;
+							i++;
+						}
+					}
+					
+				
+					
+					
+					p++;
+				break;
+			}
+		}
+		else
+		{
+			*o++ = *p++;
+		}
+	}
+	
+	*o = '\0';
+	
+	SDL_Color f = {255, 255, 255, 255};
 	SDL_Color b = {0, 0, 0, 0};
-	//SDL_Surface *s = TTF_RenderText_Blended(font->font, str, f);
-	SDL_Surface *s = TTF_RenderText_Shaded(font->font, str, f, b);
-	
-	//printf("%d %d %d\n", s->pitch, s->w, s->h);
-	glRasterPos3f(((float)x / (float)renderer.screen_width) * 2.0 - 1.0, ((float)(y + s->h) / (float)renderer.screen_height) * 2.0 - 1.0, -0.2);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	SDL_Surface *s = TTF_RenderUTF8_Blended(font->font, formated_str, f);
+
+	glRasterPos2f(((float)x / (float)renderer.screen_width) * 2.0 - 1.0, ((float)(y + s->h) / (float)renderer.screen_height) * 2.0 - 1.0);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	glUseProgram(0);
 	glEnable(GL_BLEND);
-	glPixelZoom(1.0, -1.0);
+	glPixelZoom(zoom, -zoom);
 	glColor3f(1.0, 0.0, 0.0);
-	glBlendFunc(GL_ONE, GL_ONE);
-	//printf("%c\n", font->chars[0].char_code);
-	glDrawPixels(s->w, s->h, GL_LUMINANCE, GL_UNSIGNED_BYTE, s->pixels);
-	
-	//if(!s) printf("null surface\n");
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDrawPixels(s->w, s->h, GL_BGRA, GL_UNSIGNED_BYTE, s->pixels);
+
 	SDL_FreeSurface(s);
-	
-	//printf("%x\n", glGetError());
-	
-	
-	/*glEnable(GL_TEXTURE_2D);
-	glDisable(GL_LIGHTING);
-	glBindTexture(GL_TEXTURE_2D, font->tex);
-	
-	glBegin(GL_QUADS);
-	glColor3f(1.0, 1.0, 1.0);
-	glTexCoord2f(0.0, 1.0);
-	glVertex3f(-0.9, 0.5, 0.0);
-	
-	glTexCoord2f(0.0, 0.0);
-	glVertex3f(-0.9, -0.5, 0.0);
-	
-	glTexCoord2f(1.0, 0.0);
-	glVertex3f(0.9, -0.5, 0.0);
-	
-	glTexCoord2f(1.0, 1.0);
-	glVertex3f(0.9, 0.5, 0.0);
-	
-	glEnd();
-	
-	glDisable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, 0);*/
 	
 	glDisable(GL_BLEND);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);

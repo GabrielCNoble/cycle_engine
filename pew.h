@@ -114,18 +114,14 @@ void pew_HandleSigSeg(int signal);
 
 char *pew_StackBacktrace();
 
-PEWAPI static inline unsigned long long pew_GetCycleCount();
+PEWAPI inline unsigned long long pew_GetCycleCount();
 
-
+#include "pew.inl"
 
 #ifdef __cplusplus
 }
 #endif
 
-
-#ifndef PEW_INLINES_INL
-#include "pew.inl"
-#endif /* ifndef PEW_INLINES_INL */
 
 
 #endif /* PEW_H */

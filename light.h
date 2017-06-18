@@ -53,9 +53,9 @@ void light_ResizeAffectingLightList(int new_size);
 
 PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int max_shadow_aa_samples, int tex_index);
 
-PEWAPI static inline int light_CreatePointLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float radius, float energy, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res);
+PEWAPI inline int light_CreatePointLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float radius, float energy, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res);
 
-PEWAPI static inline int light_CreateSpotLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float distance, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int tex_index);
+PEWAPI inline int light_CreateSpotLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float distance, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int tex_index);
 
 //PEWAPI void light_DestroyLight(light_t *light);
 
@@ -99,22 +99,21 @@ PEWAPI light_ptr light_GetLightByIndex(int light_index);
 
 PEWAPI int light_GetLightCount();
 
-PEWAPI static inline unsigned char light_FloatToChar(float f);
+PEWAPI inline unsigned char light_FloatToChar(float f);
 
-PEWAPI static inline vec3_t light_GetLightForwardVector(light_data0 *pdata);
+PEWAPI inline vec3_t light_GetLightForwardVector(light_data0 *pdata);
 
-PEWAPI static inline vec3_t light_GetLightUpVector(light_data0 *pdata);
+PEWAPI inline vec3_t light_GetLightUpVector(light_data0 *pdata);
 
-PEWAPI static inline vec3_t light_GetLightRightVector(light_data0 *pdata);
+PEWAPI inline vec3_t light_GetLightRightVector(light_data0 *pdata);
+
+#include "light.inl"
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#ifndef LIGHT_INL
-#include "light.inl"
-#endif
 
 
 #endif /* LIGHT_H */

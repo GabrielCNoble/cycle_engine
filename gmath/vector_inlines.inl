@@ -68,7 +68,7 @@ PEWAPI vec3_t vec4vec3(vec4_t vec)
 	return v;
 }
 
-PEWAPI static inline vec4_t vec3vec4(vec3_t vec)
+PEWAPI vec4_t vec3vec4(vec3_t vec)
 {
 	vec4_t v;
 	v.floats[0]=vec.floats[0];
@@ -253,7 +253,7 @@ PEWAPI quaternion_t qinverse(quaternion_t *q)
 	return r;	  
 }
 
-PEWAPI static inline quaternion_t qmult(quaternion_t *a, quaternion_t *b)
+PEWAPI quaternion_t qmult(quaternion_t *a, quaternion_t *b)
 {
 	quaternion_t q;
 	

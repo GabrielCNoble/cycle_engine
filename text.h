@@ -30,7 +30,7 @@ workflow is as follows:
 	OFFSET_32_2=6
 };*/
 
-enum FONT_SIZE
+/*enum FONT_SIZE
 {
 	FONT_SIZE_4 = 1,
 	FONT_SIZE_8 = 2,
@@ -41,7 +41,13 @@ enum FONT_SIZE
 	FONT_SIZE_24 = 64,
 	FONT_SIZE_28 = 128,
 	FONT_SIZE_32 = 256
-};
+};*/
+
+#define MAX_FONT_PSIZE 28
+#define MIN_FONT_PSIZE 10
+#define MAX_FONT_ZOOM 1.0
+#define MIN_FONT_ZOOM 0.2
+#define FONT_ZOOM_STEP ((MAX_FONT_ZOOM - MIN_FONT_ZOOM)/(MAX_FONT_PSIZE - MIN_FONT_PSIZE))
 
 //typedef struct text_renderer_t
 //{

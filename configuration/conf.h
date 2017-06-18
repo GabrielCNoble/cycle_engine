@@ -1,15 +1,17 @@
 
+/*#define BUILD
+#define BUILDING_DLL*/
 
 
 #ifdef BUILD
-	#if BUILDING_DLL
+	#ifdef BUILDING_DLL
 		#define DLLIMPORT __declspec(dllexport)
-		#define PEWAPI DLLIMPORT
+		//#define PEWAPI DLLIMPORT
 	#else
 		#define DLLIMPORT __declspec(dllimport)
 	#endif
-	#define PEWAPI DLLIMPORT
 	
+	#define PEWAPI DLLIMPORT
 #else 
 	#define PEWAPI	
 #endif /* BUILD */

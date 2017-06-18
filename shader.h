@@ -36,21 +36,21 @@ PEWAPI int shader_GetShaderIndex(char *name);
 
 PEWAPI shader_t *shader_GetShaderByIndex(int shader_index);
 
-PEWAPI static inline shader_t *shader_GetActiveShader();
+PEWAPI inline shader_t *shader_GetActiveShader();
 
 PEWAPI void shader_SetShaderByIndex(int shader_index);
 
 PEWAPI void shader_UploadMaterialParams(material_t *material);
 
-PEWAPI static inline void shader_SetCurrentShaderUniform1i(int uniform, int value);
+PEWAPI inline void shader_SetCurrentShaderUniform1i(int uniform, int value);
 
-PEWAPI static inline void shader_SetCurrentShaderUniform1f(int uniform, float value);
+PEWAPI inline void shader_SetCurrentShaderUniform1f(int uniform, float value);
 
-PEWAPI static inline void shader_SetCurrentShaderUniform4fv(int uniform, float *value);
+PEWAPI inline void shader_SetCurrentShaderUniform4fv(int uniform, float *value);
 
-PEWAPI static inline void shader_SetCurrentShaderUniformMatrix4fv(int uniform, float *value);
+PEWAPI inline void shader_SetCurrentShaderUniformMatrix4fv(int uniform, float *value);
 
-PEWAPI static inline void shader_SetCurrentShaderVertexAttribArray(int vertex_array);
+PEWAPI inline void shader_SetCurrentShaderVertexAttribArray(int vertex_array);
 
 
 
@@ -81,16 +81,13 @@ int shader_DoPragma(char *shader_str, int str_len, int start_pos, int cur_pos, i
 
 void shader_ReleaseDefines(define_t *root);
 
-
+#include "shader.inl"
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#ifndef SHADER_INL
-#include "shader.inl"
-#endif /* SHADER_INL */
 
 
 #endif /* SHADER_H */

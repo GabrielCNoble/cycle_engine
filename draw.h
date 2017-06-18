@@ -54,11 +54,11 @@ void draw_CloseFrame();
 
 PEWAPI void draw_GetScreenResolution(int *width, int *height);
 
-static inline void draw_ResizeRenderQueue(render_queue *r_queue, int new_size);
+inline void draw_ResizeRenderQueue(render_queue *r_queue, int new_size);
 
-static inline void draw_ResetRenderQueue();
+inline void draw_ResetRenderQueue();
 
-static inline void draw_ResetShadowQueue();
+inline void draw_ResetShadowQueue();
 
 void draw_SortRenderQueue(render_queue *queue, int left, int right);
 
@@ -156,7 +156,7 @@ PEWAPI int draw_GetBloomParam(int param);
 
 //PEWAPI void draw_DrawTextToTexture(char *str, int x, int y);
 
-PEWAPI void draw_DrawString(char *str, font_t *font, int x, int y);
+PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, char *str, ...);
 
 void draw_DrawWidgets();
 
@@ -210,13 +210,13 @@ PEWAPI void draw_Disable(int param);
 
 //PEWAPI void draw_SetBlendMode(int blend_mode);
 
-
+#include "draw.inl"
 
 #ifdef __cplusplus
 }
 #endif
 
-#include "draw.inl"
+
 
 
 #endif /* DRAW_H */

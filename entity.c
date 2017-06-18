@@ -6,8 +6,8 @@
 #include "material.h"
 #include "input.h"
 #include "scenegraph.h"
-#include "btBulletDynamicsCommon.h"
-#include "BulletCollision\CollisionShapes\btShapeHull.h"
+//#include "btBulletDynamicsCommon.h"
+//#include "BulletCollision\CollisionShapes\btShapeHull.h"
 
 extern input_cache input;
 
@@ -34,7 +34,7 @@ extern material_array material_a;
 extern armature_list_t armature_list;					
 extern camera_array camera_a;
 extern renderer_t renderer;
-extern btDiscreteDynamicsWorld *physics_world;	/* this shouldn't be here. Create physics_*** functions to handle this. */
+//extern btDiscreteDynamicsWorld *physics_world;	/* this shouldn't be here. Create physics_*** functions to handle this. */
 extern collider_array collider_a;
 
 extern int get_entity_under_cursor;
@@ -430,6 +430,12 @@ PEWAPI int entity_CreateEntityDef(char *name, short flags, short material_index,
 	if(likely(index < entity_defs.size))
 	{
 		_add_entity_def:
+			
+		if(!mesh)
+		{
+			console_Print(MESSAGE_ERROR, "null mesh ptr for entity_def_t [%s]\n", name);
+			return -1;
+		}
 		
 		index = entity_defs.count;
 		entity_defs.defs[index].name = strdup(name);
@@ -526,6 +532,8 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 		//MatrixCopy3(&entity_a.extra_data[index].local_orientation, orientation);
 		memcpy(&entity_a.extra_data[index].local_orientation, orientation, sizeof(mat3_t));
 		
+		//entity_RotateEntity()
+		
 		entity_a.extra_data[index].local_position = position;
 		entity_a.extra_data[index].name = strdup(name);
 		entity_a.position_data[index].bm_flags = entity_def->flags;
@@ -534,6 +542,8 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 		entity_a.draw_data[index].start = entity_def->start;
 		entity_a.draw_data[index].vert_count = entity_def->vert_count;
 		entity_a.draw_data[index].draw_flags = entity_def->draw_flags;
+		
+		//entity_CalculateAABB(&entity_a.aabb_data[index], &entity_a.position_data[index]);
 		
 		if(!entity_def->mesh)
 		{
@@ -598,6 +608,8 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 		entity_a.aabb_data[index].origin.x = entity_a.position_data[index].world_position.x;
 		entity_a.aabb_data[index].origin.y = entity_a.position_data[index].world_position.y;
 		entity_a.aabb_data[index].origin.z = entity_a.position_data[index].world_position.z;
+		
+		entity_CalculateAABB(&entity_a.aabb_data[index], &entity_a.position_data[index]);
 		
 		if(entity_def->flags & ENTITY_COLLIDES)
 		{
@@ -1051,6 +1063,10 @@ PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float a
 void entity_CalculateAABB(entity_aabb_t *aabb, entity_position_t *position)
 {
 	float v[24];
+	int i;
+	float x = -9999999999999.0;
+	float y = -9999999999999.0;
+	float z = -9999999999999.0;
 	
 	v[0]=-aabb->o_maxmins[0]*position->world_orientation.floats[0][0] + 
 	 	aabb->o_maxmins[1]*position->world_orientation.floats[1][0] - 
@@ -1153,8 +1169,17 @@ void entity_CalculateAABB(entity_aabb_t *aabb, entity_position_t *position)
 	v[23]=aabb->o_maxmins[0]*position->world_orientation.floats[0][2] + 
 		  aabb->o_maxmins[1]*position->world_orientation.floats[1][2] + 
 		  aabb->o_maxmins[2]*position->world_orientation.floats[2][2];
-		  
-	model_GetMaxMinsFromVertexData(v, &aabb->c_maxmins[0], 8);	  
+		 
+	for(i = 0; i < 8; i++)
+	{
+		if(v[i * 3] > x) x = v[i * 3];
+		if(v[i * 3 + 1] > y) y = v[i * 3 + 1];
+		if(v[i * 3 + 2] > z) z = v[i * 3 + 2];
+	}
+	aabb->c_maxmins[0] = x;
+	aabb->c_maxmins[1] = y;
+	aabb->c_maxmins[2] = z;	  
+	//model_GetMaxMinsFromVertexData(v, &aabb->c_maxmins[0], 8);	  
 	
 	aabb->origin = position->world_position;
 }
