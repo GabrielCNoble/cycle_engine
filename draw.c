@@ -756,7 +756,7 @@ draw_Init
 	free(dither_bytes);
 	
 	
-	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width *0.005, renderer.width *0.005, renderer.height *0.005, -renderer.height *0.005, 0.001, 1.5, NULL);
+	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width * 0.5, renderer.width * 0.5, renderer.height * 0.5, -renderer.height * 0.5, 0.001, 1.5, NULL);
 	
 	draw_debug_Init();
 	
@@ -3988,7 +3988,7 @@ PEWAPI int draw_GetBloomParam(int param)
 	return 0;
 }
 
-PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, char *str, ...)
+PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, vec3_t color, char *str, ...)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -4090,7 +4090,17 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, ch
 	
 	*o = '\0';
 	
-	SDL_Color f = {255, 255, 255, 255};
+	if(color.r > 1.0) color.r = 1.0;
+	else if(color.r < 0.0) color.r = 0.0;
+	
+	if(color.g > 1.0) color.g = 1.0;
+	else if(color.g < 0.0) color.g = 0.0;
+	
+	if(color.b > 1.0) color.b = 1.0;
+	else if(color.b < 0.0) color.b = 0.0;
+	
+	
+	SDL_Color f = {255 * color.r, 255 * color.g, 255 * color.b, 255};
 	SDL_Color b = {0, 0, 0, 0};
 	SDL_Surface *s = TTF_RenderUTF8_Blended(font->font, formated_str, f);
 
@@ -4104,7 +4114,7 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, ch
 	glDrawPixels(s->w, s->h, GL_BGRA, GL_UNSIGNED_BYTE, s->pixels);
 
 	SDL_FreeSurface(s);
-	
+	glPixelZoom(1.0, 1.0);
 	glDisable(GL_BLEND);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	glMatrixMode(GL_PROJECTION);
@@ -4119,18 +4129,31 @@ PEWAPI void draw_DrawWidgets()
 	wbase_t *cwidget = widgets->next;
 	wbase_t *cswidget;
 	
-	float x_scale = 2.0/(renderer.width * 0.01);
-	float y_scale = 2.0/(renderer.height * 0.01);
+	float x_scale = 2.0 / renderer.screen_width;
+	float y_scale = 2.0 / renderer.screen_height;
 	
-	float scissor_x;
-	float scissor_y;
-	float scissor_w;
-	float scissor_h;
+	float r;
+	float g;
+	float b;
+	float a;
 	
-	float header_x;
-	float header_y;
-	float header_w;
-	float header_h;
+	//float scissor_x;
+	//float scissor_y;
+	//float scissor_w;
+	//float scissor_h;
+	
+	//float header_x;
+	//float header_y;
+	//float header_w;
+	//float header_h;
+	
+	float hw;
+	float hh;
+	
+	float sh0;
+	float sh1;
+	//float sw0;
+	//float sw1;
 	
 	framebuffer_BindFramebuffer(&backbuffer);
 	
@@ -4159,10 +4182,10 @@ PEWAPI void draw_DrawWidgets()
 	{
 		
 		 
-		if(!(cwidget->bm_flags & WIDGET_VISIBLE))
+		/*if(!(cwidget->bm_flags & WIDGET_VISIBLE))
 		{
 			goto _skip_widget0;
-		}
+		}*/
 		
 		if(cwidget->a < 1.0)
 		{
@@ -4183,20 +4206,35 @@ PEWAPI void draw_DrawWidgets()
 		glStencilFunc(GL_ALWAYS, 0xff, 0xff);
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 		
+		hw = cwidget->w / 2.0;
+		hh = cwidget->h / 2.0;
+		
+		r = cwidget->r;
+		g = cwidget->g;
+		b = cwidget->b;
+		a = cwidget->a;
+		
+		if(!(cwidget->bm_flags & WIDGET_MOUSE_OVER))
+		{
+			r *= 0.8;	
+			g *= 0.8;
+			b *= 0.8;
+		}
+		
 		if(cwidget->tex_handle > 0)
 		{
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, cwidget->tex_handle);
 			glBegin(GL_QUADS);
-			glColor4f(cwidget->r, cwidget->g, cwidget->b, cwidget->a);
-			glVertex3f(cwidget->x - cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0, -0.5);
+			glColor4f(r, g, b, a);
+			glVertex3f(cwidget->x - hw, cwidget->y + hh, -0.5);
 			glTexCoord2f(0.0, 1.0);
-			glVertex3f(cwidget->x - cwidget->w / 2.0, cwidget->y - cwidget->h / 2.0, -0.5);
+			glVertex3f(cwidget->x - hw, cwidget->y - hh, -0.5);
 			glTexCoord2f(1.0, 1.0);
-			glVertex3f(cwidget->x + cwidget->w / 2.0, cwidget->y - cwidget->h / 2.0, -0.5);
+			glVertex3f(cwidget->x + hw, cwidget->y - hh, -0.5);
 			glTexCoord2f(1.0, 0.0);
-			glVertex3f(cwidget->x + cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0, -0.5);
+			glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
 			glTexCoord2f(0.0, 0.0);
 			glEnd();
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -4205,37 +4243,98 @@ PEWAPI void draw_DrawWidgets()
 		{
 			glDisable(GL_TEXTURE_2D);
 			glBegin(GL_QUADS);
-			glColor4f(cwidget->r, cwidget->g, cwidget->b, cwidget->a);
-			glVertex3f(cwidget->x - cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0, -0.5);
-			glVertex3f(cwidget->x - cwidget->w / 2.0, cwidget->y - cwidget->h / 2.0, -0.5);
-			glVertex3f(cwidget->x + cwidget->w / 2.0, cwidget->y - cwidget->h / 2.0, -0.5);
-			glVertex3f(cwidget->x + cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0, -0.5);
+			glColor4f(r, g, b, a);
+			glVertex3f(cwidget->x - hw, cwidget->y + hh, -0.5);
+			glVertex3f(cwidget->x - hw, cwidget->y - hh, -0.5);
+			glVertex3f(cwidget->x + hw, cwidget->y - hh, -0.5);
+			glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
 			glEnd();
 		}
 		
-		if(cwidget->bm_flags & WIDGET_HEADER)
+		if(cwidget->bm_flags & WIDGET_HIGHTLIGHT_BORDERS)
 		{
-			glStencilFunc(GL_ALWAYS, 0x00, 0xff);
-			glBegin(GL_QUADS);
-			glColor4f(cwidget->r * 0.5, cwidget->g * 0.5, cwidget->b * 0.5, 1.0);
-			glVertex3f(cwidget->x - cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0, -0.5);
-			glVertex3f(cwidget->x - cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0 - 0.2, -0.5);
-			glVertex3f(cwidget->x + cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0 - 0.2, -0.5);
-			glVertex3f(cwidget->x + cwidget->w / 2.0, cwidget->y + cwidget->h / 2.0, -0.5);
-			glEnd();
-			//header_h = 0.2 * y_scale * 0.25;
+			sh0 = cwidget->y + hh;
+			sh1 = cwidget->y - hh;
+			if(cwidget->bm_flags & WIDGET_HEADER)
+			{
+				sh0 -= WIDGET_HEADER_PIXEL_HEIGHT;
+				if(cwidget->bm_flags & WIDGET_MOUSE_OVER_HEADER)
+				{
+					r *= 0.8;	
+					g *= 0.8;
+					b *= 0.8;
+				}
+				else
+				{
+					r *= 0.5;	
+					g *= 0.5;
+					b *= 0.5;
+				}
+				
+				glStencilFunc(GL_ALWAYS, 0x00, 0xff);
+				glBegin(GL_QUADS);
+				glColor4f(r, g, b, 1.0);
+				glVertex3f(cwidget->x - hw, cwidget->y + hh, -0.5);
+				glVertex3f(cwidget->x - hw, cwidget->y + hh - WIDGET_HEADER_PIXEL_HEIGHT, -0.5);
+				glVertex3f(cwidget->x + hw, cwidget->y + hh - WIDGET_HEADER_PIXEL_HEIGHT, -0.5);
+				glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
+				glEnd();
+			}
+			else if(cwidget->bm_flags & WIDGET_MOUSE_OVER_TOP_BORDER)
+			{
+				sh0 -= WIDGET_BORDER_PIXEL_WIDTH;
+				
+				glBegin(GL_QUADS);
+				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
+				glVertex3f(cwidget->x - hw, cwidget->y + hh, -0.5);
+				glVertex3f(cwidget->x - hw, cwidget->y + hh - WIDGET_BORDER_PIXEL_WIDTH, -0.5);
+				glVertex3f(cwidget->x + hw, cwidget->y + hh - WIDGET_BORDER_PIXEL_WIDTH, -0.5);
+				glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
+				glEnd();
+			}
+			
+			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_BOTTOM_BORDER)
+			{
+				sh1 += WIDGET_BORDER_PIXEL_WIDTH;
+				glBegin(GL_QUADS);
+				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
+				glVertex3f(cwidget->x - hw, cwidget->y - hh + WIDGET_BORDER_PIXEL_WIDTH, -0.5);
+				glVertex3f(cwidget->x - hw, cwidget->y - hh, -0.5);
+				glVertex3f(cwidget->x + hw, cwidget->y - hh, -0.5);
+				glVertex3f(cwidget->x + hw, cwidget->y - hh + WIDGET_BORDER_PIXEL_WIDTH, -0.5);
+				glEnd();
+			}
+			
+			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_LEFT_BORDER)
+			{
+				glBegin(GL_QUADS);
+				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
+				glVertex3f(cwidget->x - hw, sh0, -0.5);
+				glVertex3f(cwidget->x - hw, sh1, -0.5);
+				glVertex3f(cwidget->x - hw + WIDGET_BORDER_PIXEL_WIDTH, sh1, -0.5);
+				glVertex3f(cwidget->x - hw + WIDGET_BORDER_PIXEL_WIDTH, sh0, -0.5);
+				glEnd();
+			}
+			else if(cwidget->bm_flags & WIDGET_MOUSE_OVER_RIGHT_BORDER)
+			{
+				glBegin(GL_QUADS);
+				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
+				glVertex3f(cwidget->x + hw - WIDGET_BORDER_PIXEL_WIDTH, sh0, -0.5);
+				glVertex3f(cwidget->x + hw - WIDGET_BORDER_PIXEL_WIDTH, sh1, -0.5);
+				glVertex3f(cwidget->x + hw, sh1, -0.5);
+				glVertex3f(cwidget->x + hw, sh0, -0.5);
+				glEnd();
+			}
 		}
 		
 		
-		
-		//glScissor((scissor_x - scissor_w)*renderer.width, (scissor_y - scissor_h)*renderer.height, scissor_w*renderer.width * 2.0, (scissor_h - header_h)*renderer.height * 2.0);
 		
 		
 		
 		glStencilFunc(GL_EQUAL, 0xff, 0xff);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 		
-		cswidget = cwidget->w_widgets;
+		/*cswidget = cwidget->w_widgets;
 		while(cswidget)
 		{
 			swidget_x = (cswidget->relative_x + cwidget->x);
@@ -4309,7 +4408,7 @@ PEWAPI void draw_DrawWidgets()
 			cswidget = cswidget->next;
 		}
 		
-		_skip_widget0:
+		_skip_widget0:*/
 		
 		cwidget = cwidget->next;
 	}

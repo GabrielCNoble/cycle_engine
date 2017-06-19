@@ -156,7 +156,7 @@ PEWAPI int draw_GetBloomParam(int param);
 
 //PEWAPI void draw_DrawTextToTexture(char *str, int x, int y);
 
-PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, char *str, ...);
+PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, vec3_t color, char *str, ...);
 
 void draw_DrawWidgets();
 

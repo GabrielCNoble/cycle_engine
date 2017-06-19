@@ -149,6 +149,8 @@ typedef struct var_t
 	window_class *classes;
 }window_class_array;*/
 
+
+
 enum WIDGET_TYPES
 {
 	WIDGET_ROOT,						/* not a real widget, just to avoid updating the list's root pointer... */
@@ -164,30 +166,33 @@ enum WIDGET_TYPES
 enum WIDGET_FLAGS
 {
 	WIDGET_GRABBABLE = 1,
-	WIDGET_MOVABLE = 2,
-	WIDGET_RESIZABLE = 4,
-	WIDGET_HEADER = 8,						/* just draws a dark header on the top of the widget */
-	WIDGET_MOUSE_OVER = 16,
-	WIDGET_MOUSE_OVER_HEADER = 32,
-	WIDGET_MOUSE_OVER_LEFT_BORDER = 64,
-	WIDGET_MOUSE_OVER_RIGHT_BORDER = 128,
-	WIDGET_MOUSE_OVER_TOP_BORDER = 256,
-	WIDGET_MOUSE_OVER_BOTTOM_BORDER = 512,
-	WIDGET_GRABBED_HEADER = 1024,
-	WIDGET_GRABBED_LEFT_BORDER = 2048,
-	WIDGET_GRABBED_RIGHT_BORDER = 4096,
-	WIDGET_GRABBED_TOP_BORDER = 8192,
-	WIDGET_GRABBED_BOTTOM_BORDER = 16384,
-	WIDGET_ON_TOP = 32768,
-	WIDGET_TRANSLUCENT = 65536,
-	WIDGET_VISIBLE = 131072,
-	WIDGET_RECEIVED_LEFT_BUTTON_DOWN = 262144,
-	WIDGET_RECEIVED_LEFT_BUTTON_UP = 524288,
-	WIDGET_RECEIVED_RIGHT_BUTTON_DOWN = 1048576,
-	WIDGET_RECEIVED_RIGHT_BUTTON_UP = 2097152,
+	WIDGET_MOVABLE = 1<<1,
+	WIDGET_RESIZABLE = 1<<2,
+	WIDGET_HEADER = 1<<3,						/* just draws a dark header on the top of the widget */
+	WIDGET_MOUSE_OVER = 1<<4,
+	WIDGET_MOUSE_OVER_HEADER = 1<<5,
+	WIDGET_MOUSE_OVER_LEFT_BORDER = 1<<6,
+	WIDGET_MOUSE_OVER_RIGHT_BORDER = 1<<7,
+	WIDGET_MOUSE_OVER_TOP_BORDER = 1<<8,
+	WIDGET_MOUSE_OVER_BOTTOM_BORDER = 1<<9,
+	WIDGET_GRABBED_HEADER = 1<<10,
+	WIDGET_GRABBED_LEFT_BORDER = 1<<11,
+	WIDGET_GRABBED_RIGHT_BORDER = 1<<12,
+	WIDGET_GRABBED_TOP_BORDER = 1<<13,
+	WIDGET_GRABBED_BOTTOM_BORDER = 1>>14,
+	WIDGET_ON_TOP = 1<<15,
+	WIDGET_TRANSLUCENT = 1<<16,
+	WIDGET_VISIBLE = 1<<17,
+	WIDGET_RECEIVED_LEFT_BUTTON_DOWN = 1<<18,
+	WIDGET_RECEIVED_LEFT_BUTTON_UP = 1<<19,
+	WIDGET_RECEIVED_RIGHT_BUTTON_DOWN = 1<<20,
+	WIDGET_RECEIVED_RIGHT_BUTTON_UP = 1<<21,
+	WIDGET_HIGHTLIGHT_BORDERS = 1<<22
 };
 
 #define WIDGET_NO_TEXTURE 0
+#define WIDGET_BORDER_PIXEL_WIDTH 8
+#define WIDGET_HEADER_PIXEL_HEIGHT 12
 
 
 typedef struct
@@ -200,10 +205,10 @@ typedef struct
 
 typedef struct
 {
-	char r;
-	char g;
-	char b;
-	char a;
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+	unsigned char a;
 }wcolor_t;
 
 
@@ -214,12 +219,15 @@ typedef struct wbase_t
 	float y;
 	float w;
 	float h;
+
 	
 	float relative_x;
 	float relative_y;
 	float relative_w;
 	float relative_h;
 	
+	/* values within the range [-1.0, 1.0] are inside the widget, 
+	regardless its dimensions... */
 	float relative_mouse_x;
 	float relative_mouse_y;
 	
@@ -231,11 +239,10 @@ typedef struct wbase_t
 	unsigned int tex_handle;			/* if this handle is different from -1, the engine will use as a GL texture handle. */
 	struct wbase_t *next;
 	struct wbase_t *prev;
-	struct wbase_t *base;				/* so the subwidget can reference its base widget. Also used for checking if a subwidget is not
-										being bound to two base widgets */
-	struct wbase_t *w_widgets;			/* this is the list of widgets this base has (in the case this widget is a base). */
-	struct wbase_t *w_last;
-	struct wbase_t *affect;				/* the widget this widget will affect through its functions */
+	//struct wbase_t *base;				
+	//struct wbase_t *w_widgets;			/* this is the list of widgets this base has (in the case this widget is a base). */
+	//struct wbase_t *w_last;
+	//struct wbase_t *affect;				/* the widget this widget will affect through its functions */
 	char *name;
 	int bm_flags;
 	short type;

@@ -161,7 +161,6 @@ PEWAPI void pew_MainLoop()
 		draw_OpenFrame();
 		//sound_ProcessSound();
 		input_GetInput();
-		gui_ProcessWidgets();
 		console_ProcessConsole();
 		if(!(pew.pew_state&PEW_PAUSED) && !(pew.b_console))
 		{
@@ -172,6 +171,8 @@ PEWAPI void pew_MainLoop()
 		scenegraph_ProcessScenegraph();	
 		pew.gamemain_function(pew.ti.ms_elapsed * pew.time_scale);
 		
+		gui_ProcessWidgets();
+		
 		
 		//f += pew_GetDeltaTime();
 		//lastf = pew_GetDeltaTime();
@@ -181,7 +182,7 @@ PEWAPI void pew_MainLoop()
 		
 		draw_DrawFrame();
 		
-		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 40, "%d", fps_disp);
+		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 40, vec3(1.0, 1.0, 0.5), "%d", fps_disp);
 		
 		draw_CloseFrame();
 		//lastf = pew_GetDeltaTime();

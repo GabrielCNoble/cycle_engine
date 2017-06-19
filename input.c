@@ -15,6 +15,8 @@ SDL_Cursor *ibeam;
 SDL_Cursor *arrow;
 SDL_Cursor *h_arrows;
 SDL_Cursor *v_arrows;
+SDL_Cursor *dl_arrows;
+SDL_Cursor *dr_arrows;
 
 
 #ifdef __cplusplus
@@ -34,6 +36,8 @@ PEWAPI void input_Init()
 	arrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 	h_arrows = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 	v_arrows = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	dl_arrows = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+	dr_arrows = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
 	
 	input.mouse_dx=0.0;
 	input.mouse_dy=0.0;
@@ -83,6 +87,16 @@ PEWAPI void input_GetInput()
 		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_JUST_CLICKED;
 	}
 	
+	if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_RELEASED)
+	{
+		input.bm_mouse &= ~MOUSE_LEFT_BUTTON_JUST_RELEASED;
+	}
+	
+	if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_RELEASED)
+	{
+		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_JUST_RELEASED;
+	}
+	
 	if(bm & 1)
 	{
 		if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
@@ -94,19 +108,27 @@ PEWAPI void input_GetInput()
 	}
 	else
 	{
+		if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED)
+		{
+			input.bm_mouse |= MOUSE_LEFT_BUTTON_JUST_RELEASED;
+		}
 		input.bm_mouse &= ~MOUSE_LEFT_BUTTON_CLICKED;
 	}
+	
 	if(bm & 4)
 	{
 		if(!(input.bm_mouse & MOUSE_RIGHT_BUTTON_CLICKED))
 		{
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_CLICKED;
 		}
-		
 		input.bm_mouse |= MOUSE_RIGHT_BUTTON_CLICKED;
 	}
 	else
 	{
+		if(input.bm_mouse & MOUSE_RIGHT_BUTTON_CLICKED)
+		{
+			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_RELEASED;
+		}
 		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_CLICKED;
 	}
 	
@@ -119,7 +141,7 @@ PEWAPI void input_GetInput()
 	input.normalized_mouse_y*=2.0;
 	input.normalized_mouse_y-=1.0;
 	
-	input.bm_mouse &= ~MOUSE_OVER_WIDGET;
+	//input.bm_mouse &= ~MOUSE_OVER_WIDGET;
 	
 	//if(!pew.b_console)
 	if(pew.pew_state == PEW_PLAYING)
@@ -172,6 +194,14 @@ PEWAPI void input_SetCursor(int cursor)
 		case CURSOR_I_BEAM:
 			SDL_SetCursor(ibeam);
 		break;
+		
+		case CURSOR_LEFT_DIAGONAL_ARROWS:
+			SDL_SetCursor(dl_arrows);
+		break;
+		
+		case CURSOR_RIGHT_DIAGONAL_ARROWS:
+			SDL_SetCursor(dr_arrows);
+		break;
 	}
 }
 
@@ -189,14 +219,7 @@ PEWAPI int input_GetMouseButton(int button)
 	switch(button)
 	{
 		case SDL_BUTTON_LEFT:
-			if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED)
-			{
-				i |= MOUSE_LEFT_BUTTON_CLICKED;
-				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
-				{
-					i |= MOUSE_LEFT_BUTTON_JUST_CLICKED;
-				}
-			}
+			i = input.bm_mouse & (MOUSE_LEFT_BUTTON_CLICKED | MOUSE_LEFT_BUTTON_JUST_CLICKED | MOUSE_LEFT_BUTTON_JUST_RELEASED);
 		break;
 		
 		case  SDL_BUTTON_MIDDLE:
@@ -204,14 +227,7 @@ PEWAPI int input_GetMouseButton(int button)
 		break;
 		
 		case SDL_BUTTON_RIGHT:
-			if(input.bm_mouse & MOUSE_RIGHT_BUTTON_CLICKED)
-			{
-				i |= MOUSE_RIGHT_BUTTON_CLICKED;
-				if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
-				{
-					i |= MOUSE_RIGHT_BUTTON_JUST_CLICKED;
-				}
-			}
+			i = input.bm_mouse & (MOUSE_RIGHT_BUTTON_CLICKED | MOUSE_RIGHT_BUTTON_JUST_CLICKED | MOUSE_RIGHT_BUTTON_JUST_RELEASED);
 		break;
 	}
 	

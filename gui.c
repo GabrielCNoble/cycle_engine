@@ -13,9 +13,12 @@ extern console_font font;
 
 int widget_count;
 
-#define MIN_WIDGET_WIDTH 1.0
-#define MIN_WIDGET_HEIGHT 1.0
+#define MIN_WIDGET_WIDTH 32.0
+#define MIN_WIDGET_HEIGHT 32.0 
 #define SCROLLER_FIXED_DIMENSION 0.34
+
+
+
 
 wbase_t *widgets = NULL;
 static wbase_t *last = NULL;
@@ -42,7 +45,7 @@ PEWAPI void gui_Init()
 	widgets->type = WIDGET_ROOT;
 	widgets->next = NULL;
 	widgets->prev = NULL;
-	widgets->affect = NULL;
+	//widgets->affect = NULL;
 	widgets->x = 0.0;
 	widgets->y = 0.0;
 	widgets->w = 0.0;
@@ -74,14 +77,14 @@ PEWAPI void gui_Finish()
 	{
 		q = t->next;
 		free(t->name);
-		r = t->w_widgets;
+		/*r = t->w_widgets;
 		while(r)
 		{
 			s = r->next;
 			free(r->name);
 			free(r);
 			r = s;
-		}
+		}*/
 		free(t);
 		t = q;
 	}
@@ -94,21 +97,11 @@ PEWAPI wbase_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, flo
 {
 	wbase_t *temp;
 	
-	/*if(!widgets)
-	{
-		widgets = (wbase_t *)malloc(sizeof(wbase_t *));
-		widgets->type = WIDGET_ROOT;
-		widgets->next = NULL;
-		widgets->prev = NULL;
-		widgets->affect = NULL;
-		last = widgets;		
-	}*/
-	
 	temp = (wbase_t *)malloc(sizeof(wbase_t));
 	temp->name = strdup(name);
 	temp->type = WIDGET_BASE;						/* to it be updated in the first frame */
 	temp->bm_flags = bm_flags | WIDGET_VISIBLE | WIDGET_GRABBED_HEADER;
-	temp->affect = NULL;
+	//temp->affect = NULL;
 	
 	if(w < MIN_WIDGET_WIDTH) w = MIN_WIDGET_WIDTH;
 	if(h < MIN_WIDGET_HEIGHT) h = MIN_WIDGET_HEIGHT;
@@ -126,11 +119,11 @@ PEWAPI wbase_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, flo
 	
 	temp->next = NULL;
 	temp->prev = last;
-	temp->base = temp;						/* base widget points to itself. */
-	temp->affect = NULL;
-	temp->w_widgets = NULL;
-	temp->w_last = NULL;
-	temp->widget_count = 0;
+	//temp->base = temp;						/* base widget points to itself. */
+	//temp->affect = NULL;
+	//temp->w_widgets = NULL;
+	//temp->w_last = NULL;
+	//temp->widget_count = 0;
 
 	
 	
@@ -173,14 +166,14 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 			
 				btemp->base.type = WIDGET_BUTTON;
 				btemp->base.name = strdup(name);
-				btemp->base.w_widgets = NULL;
-				btemp->base.w_last = NULL;
-				btemp->base.base = base;
-				btemp->base.affect = affected_widget;
+				//btemp->base.w_widgets = NULL;
+				//btemp->base.w_last = NULL;
+				//btemp->base.base = base;
+				//btemp->base.affect = affected_widget;
 				
 				
 				btemp->base.next = NULL;
-				btemp->base.prev = base->w_last;
+				//btemp->base.prev = base->w_last;
 				
 				
 				btemp->base.bm_flags = bm_flags & ~(WIDGET_GRABBABLE);
@@ -208,7 +201,7 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 				
 				btemp->affect_fn = (void(*)(wbase_t *))affect_function;
 				
-				if(!base->w_widgets)
+				/*if(!base->w_widgets)
 				{
 					base->w_widgets = (wbase_t *)btemp;
 					base->w_last = base->w_widgets;
@@ -218,7 +211,7 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 					base->w_last->next = (wbase_t*) btemp;
 					base->w_last = (wbase_t *) btemp;
 				}
-				base->widget_count++;
+				base->widget_count++;*/
 			
 				return (wbase_t *)btemp;
 			break;
@@ -228,14 +221,14 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 			
 				vstemp->base.type = WIDGET_VERTICAL_SCROLLER;
 				vstemp->base.name = strdup(name);
-				vstemp->base.w_widgets = NULL;
-				vstemp->base.w_last = NULL;
-				vstemp->base.base = base;
-				vstemp->base.affect = (wbase_t *)affected_widget;
+				//vstemp->base.w_widgets = NULL;
+				//vstemp->base.w_last = NULL;
+				//vstemp->base.base = base;
+				//vstemp->base.affect = (wbase_t *)affected_widget;
 				
 				
 				vstemp->base.next = NULL;
-				vstemp->base.prev = base->w_last;
+				//vstemp->base.prev = base->w_last;
 				
 				
 				vstemp->base.bm_flags = bm_flags & ~(WIDGET_GRABBABLE);
@@ -259,7 +252,7 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 				vstemp->max = scroller_max;
 				vstemp->min = scroller_min;
 				
-				if(!base->w_widgets)
+				/*if(!base->w_widgets)
 				{
 					base->w_widgets = (wbase_t *)vstemp;
 					base->w_last = base->w_widgets;
@@ -269,7 +262,7 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 					base->w_last->next = (wbase_t*) vstemp;
 					base->w_last = (wbase_t *) vstemp;
 				}
-				base->widget_count++;
+				base->widget_count++;*/
 			
 				return (wbase_t *)vstemp;
 			break;
@@ -343,11 +336,17 @@ void gui_ProcessWidgets()
 	wbase_t *cswidget;
 	int mouse_over_widgets = 0;
 	
-	float x_scale = 2.0/(renderer.width * 0.01);
-	float y_scale = 2.0/(renderer.height * 0.01);
+	float x_scale = 2.0 / renderer.width;
+	float y_scale = 2.0 / renderer.height;
 	
 	float rel_x;
 	float rel_y;
+	
+	int pw;
+	int ph;
+	
+	int rel_ix;
+	int rel_iy;
 	
 	float dw;
 	float c_dw;
@@ -355,94 +354,89 @@ void gui_ProcessWidgets()
 	float dx;
 	float dy;
 	
+	input.bm_mouse &= ~MOUSE_OVER_WIDGET;
+	
 	while(cwidget)
 	{
 		
-		if(!(cwidget->bm_flags & WIDGET_VISIBLE))
+		/*if(!(cwidget->bm_flags & WIDGET_VISIBLE))
 		{
 			goto _skip_widget1;
-		}
+		}*/
 		
-		cwidget->relative_mouse_x = ((cwidget->x  * x_scale - input.normalized_mouse_x) * -2.0) / (cwidget->w * x_scale);
+		cwidget->relative_mouse_x = ((cwidget->x * x_scale - input.normalized_mouse_x) * -2.0) / (cwidget->w * x_scale);
 		cwidget->relative_mouse_y = ((cwidget->y * y_scale - input.normalized_mouse_y) * -2.0) / (cwidget->h * y_scale);
 		
 		if(cwidget->relative_mouse_x <= 1.0 && cwidget->relative_mouse_x >= -1.0)
 		{
 			if(cwidget->relative_mouse_y <= 1.0 && cwidget->relative_mouse_y >= -1.0)
 			{
+				pw = renderer.screen_width * cwidget->w * x_scale * 0.5;
+				ph = renderer.screen_height * cwidget->h * y_scale * 0.5;
+				
+				rel_ix = pw * (cwidget->relative_mouse_x * 0.5 + 0.5);
+				rel_iy = ph * (cwidget->relative_mouse_y * 0.5 + 0.5);
+				
 				cwidget->bm_flags |= WIDGET_MOUSE_OVER;
 				input.bm_mouse |= MOUSE_OVER_WIDGET;
-				mouse_over_widgets++;
-				
-				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED && (!(last->bm_flags & WIDGET_MOUSE_OVER)))
-				{
-					//top_widget = cwidget;
-					gui_SetFocused(cwidget);
-				}
-				
-				if(cwidget->relative_mouse_y >= 0.7)
-				{
-					cwidget->bm_flags |= WIDGET_MOUSE_OVER_HEADER;
-					input_SetCursor(CURSOR_ARROW);
-				}
-				else
-				{
-					cwidget->bm_flags &= ~WIDGET_MOUSE_OVER_HEADER;
-				}
-				
-				
-				if(cwidget->relative_mouse_x < -0.9 && cwidget->relative_mouse_x > -0.99)
-				{
-					cwidget->bm_flags |= WIDGET_MOUSE_OVER_LEFT_BORDER;
-					input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
-				}
-				else
-				{
-					cwidget->bm_flags &= ~WIDGET_MOUSE_OVER_LEFT_BORDER;
-				}
-				
-				
-				
-				if(cwidget->relative_mouse_x > 0.9 && cwidget->relative_mouse_x < 0.99)
-				{
-					cwidget->bm_flags |= WIDGET_MOUSE_OVER_RIGHT_BORDER;
-					input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
-				}
-				else
-				{
-					cwidget->bm_flags &= ~WIDGET_MOUSE_OVER_RIGHT_BORDER;
-				}
-				
-				
-				
-				if(cwidget->relative_mouse_y < -0.9 && cwidget->relative_mouse_y > -0.99)
-				{
-					cwidget->bm_flags |= WIDGET_MOUSE_OVER_BOTTOM_BORDER;
-					input_SetCursor(CURSOR_VERTICAL_ARROWS);
-				}
-				else
-				{
-					cwidget->bm_flags &= ~WIDGET_MOUSE_OVER_BOTTOM_BORDER;
-				}
-				
-				
-				
-				if(cwidget->relative_mouse_y > 0.9 && cwidget->relative_mouse_y < 0.99)
+
+				if(rel_iy >= ph - WIDGET_BORDER_PIXEL_WIDTH)
 				{
 					cwidget->bm_flags |= WIDGET_MOUSE_OVER_TOP_BORDER;
-					input_SetCursor(CURSOR_VERTICAL_ARROWS);
+				}
+				else if(rel_iy <= WIDGET_BORDER_PIXEL_WIDTH)
+				{
+					cwidget->bm_flags |= WIDGET_MOUSE_OVER_BOTTOM_BORDER;
 				}
 				else
 				{
-					cwidget->bm_flags &= ~WIDGET_MOUSE_OVER_TOP_BORDER;
+					cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER_TOP_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER);
 				}
 				
 				
-				
-				/* top widget has the final word over the cursor */
-				if(!(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER | WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER)))
+				if(rel_ix >= pw - WIDGET_BORDER_PIXEL_WIDTH)
 				{
-					input_SetCursor(CURSOR_ARROW);
+					cwidget->bm_flags |= WIDGET_MOUSE_OVER_RIGHT_BORDER;
+				}
+				else if(rel_ix <= WIDGET_BORDER_PIXEL_WIDTH)
+				{
+					cwidget->bm_flags |= WIDGET_MOUSE_OVER_LEFT_BORDER;
+				}
+				else
+				{
+					cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER);
+				}	
+				
+				if(cwidget->bm_flags & WIDGET_HEADER)
+				{
+					if(rel_iy >= ph - WIDGET_HEADER_PIXEL_HEIGHT || (cwidget->bm_flags & WIDGET_GRABBED_HEADER))
+					{
+						cwidget->bm_flags |= WIDGET_MOUSE_OVER_HEADER;
+						cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER_TOP_BORDER | WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER);
+					}
+					else
+					{
+						cwidget->bm_flags &= ~WIDGET_MOUSE_OVER_HEADER;
+					}
+				}
+				
+				
+				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+				{
+					cwidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+				}
+				else
+				{
+					cwidget->bm_flags &= ~WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+				}
+				
+				if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
+				{
+					cwidget->bm_flags |= WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
+				}
+				else
+				{
+					cwidget->bm_flags &= ~WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
 				}
 				
 			}	
@@ -456,11 +450,55 @@ void gui_ProcessWidgets()
 			cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER | WIDGET_MOUSE_OVER_HEADER | WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER);
 		}
 		
-		/* if mouse is not hovering this  */
-		if(!(cwidget->bm_flags & (WIDGET_MOUSE_OVER | WIDGET_GRABBED_HEADER | WIDGET_GRABBED_LEFT_BORDER | WIDGET_GRABBED_RIGHT_BORDER | WIDGET_GRABBED_BOTTOM_BORDER)))
+		switch(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | 
+									WIDGET_MOUSE_OVER_BOTTOM_BORDER |
+									WIDGET_MOUSE_OVER_LEFT_BORDER | 
+									WIDGET_MOUSE_OVER_RIGHT_BORDER))
+									
+		{
+			case WIDGET_MOUSE_OVER_BOTTOM_BORDER:
+			case WIDGET_MOUSE_OVER_TOP_BORDER:
+				input_SetCursor(CURSOR_VERTICAL_ARROWS);
+			break;
+			
+			case WIDGET_MOUSE_OVER_LEFT_BORDER:
+			case WIDGET_MOUSE_OVER_RIGHT_BORDER:
+				input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
+			break;	
+			
+			case WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER:
+			case WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER:
+				input_SetCursor(CURSOR_LEFT_DIAGONAL_ARROWS);
+			break;
+			
+			
+			case WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER:
+			case WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER:
+				input_SetCursor(CURSOR_RIGHT_DIAGONAL_ARROWS);
+			break;
+			
+			default:
+				input_SetCursor(CURSOR_ARROW);
+			break;
+				
+		}							
+		/*if(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER))
+		{
+			input_SetCursor(CURSOR_VERTICAL_ARROWS);
+		}
+		else if(cwidget->bm_flags & (WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER))
+		{
+			input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
+		}
+		else
+		{
+			input_SetCursor(CURSOR_ARROW);
+		}*/
+		
+		/*if(!(cwidget->bm_flags & (WIDGET_MOUSE_OVER | WIDGET_GRABBED_HEADER | WIDGET_GRABBED_LEFT_BORDER | WIDGET_GRABBED_RIGHT_BORDER | WIDGET_GRABBED_BOTTOM_BORDER)))
 		{
 			goto _skip_widget1;
-		}
+		}*/
 		
 		
 		if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
@@ -474,8 +512,6 @@ void gui_ProcessWidgets()
 				cwidget->bm_flags &= ~WIDGET_GRABBED_HEADER;
 			}
 			
-			
-			
 			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_LEFT_BORDER)
 			{
 				cwidget->bm_flags |= WIDGET_GRABBED_LEFT_BORDER;
@@ -485,8 +521,6 @@ void gui_ProcessWidgets()
 				cwidget->bm_flags &= ~WIDGET_GRABBED_LEFT_BORDER;
 			}
 			
-			
-			
 			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_RIGHT_BORDER)
 			{
 				cwidget->bm_flags |= WIDGET_GRABBED_RIGHT_BORDER;
@@ -495,8 +529,6 @@ void gui_ProcessWidgets()
 			{
 				cwidget->bm_flags &= ~WIDGET_GRABBED_RIGHT_BORDER;
 			}
-			
-			
 			
 			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_BOTTOM_BORDER)
 			{
@@ -509,7 +541,7 @@ void gui_ProcessWidgets()
 		}
 		
 		
-		if(cwidget->bm_flags & WIDGET_GRABBABLE && cwidget->bm_flags & WIDGET_MOVABLE && cwidget == last)
+		if((cwidget->bm_flags & WIDGET_GRABBABLE) && (cwidget->bm_flags & WIDGET_MOVABLE) && cwidget == last)
 		{
 			if(cwidget->bm_flags & WIDGET_GRABBED_HEADER)
 			{
@@ -571,7 +603,6 @@ void gui_ProcessWidgets()
 			}
 			
 			
-			
 			else if(cwidget->bm_flags & WIDGET_GRABBED_BOTTOM_BORDER)
 			{
 				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
@@ -596,22 +627,11 @@ void gui_ProcessWidgets()
 		
 		
 
-		cswidget = cwidget->w_widgets;
+		/*cswidget = cwidget->w_widgets;
 		
 		while(cswidget)
 		{
 			
-			
-			/* scrollers shouldn't be moving around the widget
-			when it gets scalled... */
-			/*if(cswidget->type == WIDGET_VERTICAL_SCROLLER)
-			{
-				cswidget->relative_y = cswidget->y * cwidget->h * 0.5;
-			}
-			else if(cswidget->type == WIDGET_HORIZONTAL_SCROLLER)
-			{
-				cswidget->relative_x = cswidget->x * cwidget->w * 0.5;
-			}*/
 			
 			switch(cswidget->type)
 			{
@@ -636,20 +656,6 @@ void gui_ProcessWidgets()
 			cswidget->relative_mouse_x = (((cswidget->relative_x + cwidget->x) * x_scale - input.normalized_mouse_x) * -2.0) / (cswidget->relative_w * x_scale);
 			cswidget->relative_mouse_y = (((cswidget->relative_y + cwidget->y) * y_scale - input.normalized_mouse_y) * -2.0) / (cswidget->relative_h * y_scale);
 			
-			/* this sub-widget should get scaled with the widget, so 
-			adjust the relative mouse position so the value is consistent
-			with the scaling... This is due the scroller not being
-			scaled here, since we need to keep the original scales of it, 
-			but instead in the draw function. Not scaling it here would 
-			yeld visually incorrect detections.*/
-			/*if(cswidget->type == WIDGET_VERTICAL_SCROLLER)
-			{
-				cswidget->relative_mouse_y *= cwidget->h * y_scale * 0.5;
-			}
-			else if(cswidget->type == WIDGET_HORIZONTAL_SCROLLER)
-			{
-				cswidget->relative_mouse_x *= cwidget->w * x_scale * 0.5;
-			}*/
 			
 			if(cswidget->relative_mouse_x < 1.0 && cswidget->relative_mouse_x > -1.0)
 			{
@@ -657,7 +663,6 @@ void gui_ProcessWidgets()
 				{
 					cswidget->bm_flags |= WIDGET_MOUSE_OVER;
 					
-					/* sub-widgets have priority over borders and widget translation */
 					cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER_HEADER | WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER);
 				}	
 				else
@@ -692,15 +697,15 @@ void gui_ProcessWidgets()
 		}
 
 
-		_skip_widget1:
+		_skip_widget1:*/
 		
 		cwidget = cwidget->next;
 	}
 	
-	if(!mouse_over_widgets)
+	/*if(!mouse_over_widgets)
 	{
 		input_SetCursor(CURSOR_ARROW);
-	}
+	}*/
 }
 
 
