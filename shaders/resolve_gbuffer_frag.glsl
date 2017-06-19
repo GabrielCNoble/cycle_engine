@@ -328,7 +328,8 @@ void main()
     
     vec2 uv = vec2(gl_FragCoord.x / sysRenderTargetWidth, gl_FragCoord.y / sysRenderTargetHeight);
     
-    float depth = texture2D(sysDepthSampler, uv).x;
+    //float depth = texture2D(sysDepthSampler, uv).x;
+    float depth = texelFetch(sysDepthSampler, ivec2(gl_FragCoord.xy), 0).r;
     vec4 d_texel;
     vec4 n_texel;
   
@@ -363,7 +364,8 @@ void main()
 	
 	if(sysRenderDrawMode == RENDER_DRAWMODE_WIREFRAME || sysRenderDrawMode == RENDER_DRAWMODE_FLAT)
 	{
-		f_color = texture2D(sysTextureSampler0, uv);
+		//f_color = texture2D(sysTextureSampler0, uv);
+		f_color = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
 	}
 	else if(sysRenderDrawMode == RENDER_DRAWMODE_LIT)
 	{
@@ -407,7 +409,8 @@ void main()
 			}
 		}*/
 		
-		n_texel = texture2D(sysTextureSampler1, uv);
+		//n_texel = texture2D(sysTextureSampler1, uv);
+		n_texel = texelFetch(sysTextureSampler1, ivec2(gl_FragCoord.xy), 0);
 		
 		if(length(n_texel.xyz) == 0.0)
 		{
@@ -415,7 +418,8 @@ void main()
 		}
 		
 		n_texel.xyz = normalize(n_texel.xyz);
-    	d_texel = texture2D(sysTextureSampler0, uv);
+    	//d_texel = texture2D(sysTextureSampler0, uv);
+    	d_texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
     	
     	
 
