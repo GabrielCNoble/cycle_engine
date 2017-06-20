@@ -168,7 +168,7 @@ enum WIDGET_FLAGS
 	WIDGET_GRABBABLE = 1,
 	WIDGET_MOVABLE = 1<<1,
 	WIDGET_RESIZABLE = 1<<2,
-	WIDGET_HEADER = 1<<3,						/* just draws a dark header on the top of the widget */
+	WIDGET_HEADER = 1<<3,						/* just draws a dark header on the top of the widget... */
 	WIDGET_MOUSE_OVER = 1<<4,
 	WIDGET_MOUSE_OVER_HEADER = 1<<5,
 	WIDGET_MOUSE_OVER_LEFT_BORDER = 1<<6,
@@ -179,7 +179,7 @@ enum WIDGET_FLAGS
 	WIDGET_GRABBED_LEFT_BORDER = 1<<11,
 	WIDGET_GRABBED_RIGHT_BORDER = 1<<12,
 	WIDGET_GRABBED_TOP_BORDER = 1<<13,
-	WIDGET_GRABBED_BOTTOM_BORDER = 1>>14,
+	WIDGET_GRABBED_BOTTOM_BORDER = 1<<14,
 	WIDGET_ON_TOP = 1<<15,
 	WIDGET_TRANSLUCENT = 1<<16,
 	WIDGET_VISIBLE = 1<<17,
@@ -187,7 +187,12 @@ enum WIDGET_FLAGS
 	WIDGET_RECEIVED_LEFT_BUTTON_UP = 1<<19,
 	WIDGET_RECEIVED_RIGHT_BUTTON_DOWN = 1<<20,
 	WIDGET_RECEIVED_RIGHT_BUTTON_UP = 1<<21,
-	WIDGET_HIGHTLIGHT_BORDERS = 1<<22
+	
+	WIDGET_HIGHTLIGHT_BORDERS = 1<<22,			/* whether the borders of the widget should be highlighted when the mouse 
+												   hovers over it */
+												   
+	WIDGET_CLICK_TO_FOCUS = 1<<23				/* whether the user needs to click to focus the widget or just 
+												   hover the mouse over it... */
 };
 
 #define WIDGET_NO_TEXTURE 0
@@ -221,10 +226,10 @@ typedef struct wbase_t
 	float h;
 
 	
-	float relative_x;
-	float relative_y;
-	float relative_w;
-	float relative_h;
+	//float relative_x;
+	//float relative_y;
+	//float relative_w;
+	//float relative_h;
 	
 	/* values within the range [-1.0, 1.0] are inside the widget, 
 	regardless its dimensions... */

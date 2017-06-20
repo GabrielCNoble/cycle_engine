@@ -187,8 +187,8 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 				
 				btemp->base.tex_handle = tex_handle;
 				
-				btemp->base.relative_x = x * base->w * 0.5;
-				btemp->base.relative_y = y * base->h * 0.5;
+				//btemp->base.relative_x = x * base->w * 0.5;
+				//btemp->base.relative_y = y * base->h * 0.5;
 				
 				/* scaling is relative to the widget base. A scale of 
 				1.0 means this scroller goes from the top to the bottom
@@ -196,8 +196,8 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 				btemp->base.w = w;
 				btemp->base.h = h;
 				
-				btemp->base.relative_w = w;
-				btemp->base.relative_h = h;
+				//btemp->base.relative_w = w;
+				//btemp->base.relative_h = h;
 				
 				btemp->affect_fn = (void(*)(wbase_t *))affect_function;
 				
@@ -239,14 +239,14 @@ PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *
 				
 				vstemp->base.x = x;
 				vstemp->base.y = y;
-				vstemp->base.relative_x = x * base->w * 0.5;
-				vstemp->base.relative_y = y * base->h * 0.5;
+				//vstemp->base.relative_x = x * base->w * 0.5;
+				//vstemp->base.relative_y = y * base->h * 0.5;
 				
 				vstemp->base.w = SCROLLER_FIXED_DIMENSION;
 				vstemp->base.h = h;							/* this height is relative to the top of the widget,
 															  				 and scales up and down with the window */
-				vstemp->base.relative_w = SCROLLER_FIXED_DIMENSION;
-				vstemp->base.relative_h = h * base->h * 0.5;
+				//vstemp->base.relative_w = SCROLLER_FIXED_DIMENSION;
+				//vstemp->base.relative_h = h * base->h * 0.5;
 															   
 				vstemp->cur = 0.5;
 				vstemp->max = scroller_max;
@@ -379,6 +379,8 @@ void gui_ProcessWidgets()
 				
 				cwidget->bm_flags |= WIDGET_MOUSE_OVER;
 				input.bm_mouse |= MOUSE_OVER_WIDGET;
+				
+				mouse_over_widgets++;
 
 				if(rel_iy >= ph - WIDGET_BORDER_PIXEL_WIDTH)
 				{
@@ -478,27 +480,11 @@ void gui_ProcessWidgets()
 			break;
 			
 			default:
+				//if(!mouse_over_widgets)
 				input_SetCursor(CURSOR_ARROW);
 			break;
 				
 		}							
-		/*if(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER))
-		{
-			input_SetCursor(CURSOR_VERTICAL_ARROWS);
-		}
-		else if(cwidget->bm_flags & (WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER))
-		{
-			input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
-		}
-		else
-		{
-			input_SetCursor(CURSOR_ARROW);
-		}*/
-		
-		/*if(!(cwidget->bm_flags & (WIDGET_MOUSE_OVER | WIDGET_GRABBED_HEADER | WIDGET_GRABBED_LEFT_BORDER | WIDGET_GRABBED_RIGHT_BORDER | WIDGET_GRABBED_BOTTOM_BORDER)))
-		{
-			goto _skip_widget1;
-		}*/
 		
 		
 		if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
@@ -541,8 +527,9 @@ void gui_ProcessWidgets()
 		}
 		
 		
-		if((cwidget->bm_flags & WIDGET_GRABBABLE) && (cwidget->bm_flags & WIDGET_MOVABLE) && cwidget == last)
+		if((cwidget->bm_flags & WIDGET_GRABBABLE) && (cwidget->bm_flags & WIDGET_MOVABLE))
 		{
+			
 			if(cwidget->bm_flags & WIDGET_GRABBED_HEADER)
 			{
 				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
@@ -555,7 +542,6 @@ void gui_ProcessWidgets()
 					cwidget->y += input.mouse_dy / y_scale;
 				}
 			}
-			
 			
 			
 			else if(cwidget->bm_flags & WIDGET_GRABBED_LEFT_BORDER)
@@ -603,7 +589,7 @@ void gui_ProcessWidgets()
 			}
 			
 			
-			else if(cwidget->bm_flags & WIDGET_GRABBED_BOTTOM_BORDER)
+			if(cwidget->bm_flags & WIDGET_GRABBED_BOTTOM_BORDER)
 			{
 				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
 				{

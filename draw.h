@@ -148,6 +148,10 @@ PEWAPI void draw_SetBloomParam(int param, int value);
 
 PEWAPI int draw_GetBloomParam(int param);
 
+PEWAPI unsigned int draw_GetCompositeBufferTexture();
+
+PEWAPI void draw_EnableOutputToBackbuffer(int enable);
+
 //PEWAPI void draw_SetBloomRadius(int bloom, float radius);
 
 //PEWAPI void draw_SetBloomIntensity(float intensity);

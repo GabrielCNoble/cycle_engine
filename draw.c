@@ -3897,6 +3897,10 @@ void draw_BlitToScreen()
 	framebuffer_BindFramebuffer(&backbuffer);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	
+	
+	
+	framebuffer_BindFramebuffer(&composite_buffer);
+	
 	shader_SetShaderByIndex(screen_quad_shader_index);
 	glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
 	glEnableVertexAttribArray(shader_a.shaders[screen_quad_shader_index].v_position);
@@ -3904,8 +3908,8 @@ void draw_BlitToScreen()
 	glActiveTexture(GL_TEXTURE0);
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
 	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_ONE, GL_ONE);
 	
 	glBindTexture(GL_TEXTURE_2D, composite_buffer.color_out1);
 	//glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out3);
@@ -3982,10 +3986,27 @@ PEWAPI int draw_GetBloomParam(int param)
 		break;
 		
 		case BLOOM_INTENSITY:
-			return (int)(bloom_intensity*100.0);
+			return bloom_intensity * 100.0;
 		break;
 	}
 	return 0;
+}
+
+PEWAPI unsigned int draw_GetCompositeBufferTexture()
+{
+	return composite_buffer.color_out1;
+}
+
+PEWAPI void draw_EnableOutputToBackbuffer(int enable)
+{
+	if(enable)
+	{
+		
+	}
+	else
+	{
+		
+	}
 }
 
 PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, vec3_t color, char *str, ...)
@@ -4228,14 +4249,15 @@ PEWAPI void draw_DrawWidgets()
 			glBindTexture(GL_TEXTURE_2D, cwidget->tex_handle);
 			glBegin(GL_QUADS);
 			glColor4f(r, g, b, a);
-			glVertex3f(cwidget->x - hw, cwidget->y + hh, -0.5);
 			glTexCoord2f(0.0, 1.0);
-			glVertex3f(cwidget->x - hw, cwidget->y - hh, -0.5);
-			glTexCoord2f(1.0, 1.0);
-			glVertex3f(cwidget->x + hw, cwidget->y - hh, -0.5);
-			glTexCoord2f(1.0, 0.0);
-			glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
+			glVertex3f(cwidget->x - hw, cwidget->y + hh, -0.5);
 			glTexCoord2f(0.0, 0.0);
+			glVertex3f(cwidget->x - hw, cwidget->y - hh, -0.5);
+			glTexCoord2f(1.0, 0.0);
+			glVertex3f(cwidget->x + hw, cwidget->y - hh, -0.5);
+			glTexCoord2f(1.0, 1.0);
+			glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
+			
 			glEnd();
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
@@ -4327,88 +4349,9 @@ PEWAPI void draw_DrawWidgets()
 			}
 		}
 		
-		
-		
-		
-		
 		glStencilFunc(GL_EQUAL, 0xff, 0xff);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 		
-		/*cswidget = cwidget->w_widgets;
-		while(cswidget)
-		{
-			swidget_x = (cswidget->relative_x + cwidget->x);
-			swidget_y = (cswidget->relative_y + cwidget->y);
-			
-			if(cswidget->a < 1.0)
-			{
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-			else
-			{
-				glDisable(GL_BLEND);
-			}
-			
-			switch(cswidget->type)
-			{
-				case WIDGET_BUTTON:
-					
-					if(cswidget->tex_handle > 0)
-					{
-						glEnable(GL_TEXTURE_2D);
-						glActiveTexture(GL_TEXTURE0);
-						glBindTexture(GL_TEXTURE_2D, cswidget->tex_handle);
-						glBegin(GL_QUADS);
-						glColor4f(cswidget->r, cswidget->g, cswidget->b, cswidget->a);
-						glVertex3f(swidget_x - cswidget->relative_w / 2.0, swidget_y + cswidget->relative_h / 2.0, -0.5);
-						glTexCoord2f(0.0, 1.0);
-						glVertex3f(swidget_x - cswidget->relative_w / 2.0, swidget_y - cswidget->relative_h / 2.0, -0.5);
-						glTexCoord2f(1.0, 1.0);
-						glVertex3f(swidget_x + cswidget->relative_w / 2.0, swidget_y - cswidget->relative_h / 2.0, -0.5);
-						glTexCoord2f(1.0, 0.0);
-						glVertex3f(swidget_x + cswidget->relative_w / 2.0, swidget_y + cswidget->relative_h / 2.0, -0.5);
-						glTexCoord2f(0.0, 0.0);
-						glEnd();
-						glBindTexture(GL_TEXTURE_2D, 0);
-					}
-					else
-					{
-						glBegin(GL_QUADS);
-						glColor4f(cswidget->r, cswidget->g, cswidget->b, cswidget->a);
-						glVertex3f(swidget_x - cswidget->relative_w / 2.0, swidget_y + cswidget->relative_h / 2.0, -0.5);
-						glVertex3f(swidget_x - cswidget->relative_w / 2.0, swidget_y - cswidget->relative_h / 2.0, -0.5);
-						glVertex3f(swidget_x + cswidget->relative_w / 2.0, swidget_y - cswidget->relative_h / 2.0, -0.5);
-						glVertex3f(swidget_x + cswidget->relative_w / 2.0, swidget_y + cswidget->relative_h / 2.0, -0.5);
-						glEnd();
-					}
-					
-					
-				break;
-				
-				case WIDGET_VERTICAL_SCROLLER:
-					glBegin(GL_QUADS);
-					glColor4f(cswidget->r * 0.5, cswidget->g * 0.5, cswidget->b * 0.5, cswidget->a);
-					glVertex3f(swidget_x - cswidget->relative_w / 2.0, swidget_y + (cswidget->relative_h / 2.0), -0.5);
-					glVertex3f(swidget_x - cswidget->relative_w / 2.0, swidget_y - (cswidget->relative_h / 2.0), -0.5);
-					glVertex3f(swidget_x + cswidget->relative_w / 2.0, swidget_y - (cswidget->relative_h / 2.0), -0.5);
-					glVertex3f(swidget_x + cswidget->relative_w / 2.0, swidget_y + (cswidget->relative_h / 2.0), -0.5);
-					
-					glColor4f(cswidget->r, cswidget->g , cswidget->b, cswidget->a);
-					glVertex3f(swidget_x - (cswidget->relative_w / 2.0) * 0.85, swidget_y + (cswidget->relative_h / 2.0) - 0.05, -0.5);
-					glVertex3f(swidget_x - (cswidget->relative_w / 2.0) * 0.85, swidget_y - (cswidget->relative_h / 2.0) - 0.05, -0.5);
-					glVertex3f(swidget_x + (cswidget->relative_w / 2.0) * 0.85, swidget_y - (cswidget->relative_h / 2.0) - 0.05, -0.5);
-					glVertex3f(swidget_x + (cswidget->relative_w / 2.0) * 0.85, swidget_y + (cswidget->relative_h / 2.0) - 0.05, -0.5);
-					
-					glEnd();
-				break;
-			}
-			//glDisable(GL_BLEND);
-			
-			cswidget = cswidget->next;
-		}
-		
-		_skip_widget0:*/
 		
 		cwidget = cwidget->next;
 	}
