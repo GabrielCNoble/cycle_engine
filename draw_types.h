@@ -181,6 +181,9 @@ typedef struct varying_t
 }varying_t;
 
 
+
+
+
 /*typedef struct
 {
 	mat4_t light_model_view_projection_matrix;

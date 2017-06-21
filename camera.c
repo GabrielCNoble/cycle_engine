@@ -4,6 +4,8 @@
 extern renderer_t renderer;
 extern camera_array camera_a;
 
+#define CLUSTER_WIDTH 32
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -49,7 +51,18 @@ camera_Finish
 */
 PEWAPI void camera_Finish()
 {
+	int i;
 	free(camera_a.cameras);
+	
+	for(i = 0; i < camera_a.camera_count; i++)
+	{
+		free(camera_a.clusters[i].aabbs);
+		free(camera_a.clusters[i].light_lists);
+	}
+	free(camera_a.clusters);
+	
+	//free(camera_a.clusters_light_lists);
+	//free(camera_a.clusters_aabbs);
 	return;
 }
 
@@ -62,13 +75,25 @@ camera_ResizeCameraArray
 PEWAPI void camera_ResizeCameraArray(int new_size)
 {
 	camera_t *temp=(camera_t *)calloc(new_size, sizeof(camera_t));
+	cluster_list_t *c = (cluster_list_t *)malloc(new_size * sizeof(cluster_list_t));
+	//cluster_ll_t **a = (cluster_ll_t **)malloc(new_size * sizeof(cluster_ll_t *));
+	//cluster_aabb_t **b = (cluster_aabb_t **)malloc(new_size * sizeof(cluster_aabb_t *));
 	if(camera_a.cameras)
 	{
 		memcpy(temp, camera_a.cameras, sizeof(camera_t)*camera_a.camera_count);
+		memcpy(c, camera_a.clusters, sizeof(cluster_list_t) * camera_a.camera_count);
+		//memcpy(a, camera_a.clusters_light_lists, sizeof(cluster_ll_t *) * camera_a.camera_count);
+		//memcpy(b, camera_a.clusters_aabbs, sizeof(cluster_aabb_t *) * camera_a.camera_count);
 		free(camera_a.cameras);
+		free(camera_a.clusters);
+		//free(camera_a.clusters_light_lists);
+		//free(camera_a.clusters_aabbs);
 	}
-	camera_a.cameras=temp;
-	camera_a.array_size=new_size;
+	camera_a.cameras = temp;
+	camera_a.clusters = c;
+	//camera_a.clusters_light_lists = a;
+	//camera_a.clusters_aabbs = b;
+	camera_a.array_size = new_size;
 	return;
 }
 
@@ -77,24 +102,63 @@ PEWAPI void camera_ResizeCameraArray(int new_size)
 PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation, float fovy, float width, float height, float znear, float zfar)
 {
 	int camera_index = camera_a.camera_count;
+	int clusters_per_row;
+	int cluster_rows;
+	int z_divs;
+	int i;
+	int j;
+	int k;
+	
 	if(camera_index >= camera_a.array_size)
 	{
 		camera_ResizeCameraArray(camera_a.camera_count + 2);
 	}
-	camera_a.cameras[camera_index].name = strdup(name);
-	camera_a.cameras[camera_index].local_position = position;
-	memcpy(&camera_a.cameras[camera_index].local_orientation, orientation, sizeof(mat3_t));
-	CreatePerspectiveMatrix(&camera_a.cameras[camera_index].projection_matrix, fovy, width/height, znear, zfar, &camera_a.cameras[camera_index].frustum);
-	camera_a.cameras[camera_index].width = width;
-	camera_a.cameras[camera_index].height = height;
-	camera_a.cameras[camera_index].zoom = 1.0;
-	camera_a.cameras[camera_index].exposure = 1.0;
-	camera_a.cameras[camera_index].camera_index = camera_index;
-	camera_a.cameras[camera_index].assigned_node=scenegraph_AddNode(NODE_CAMERA, camera_index, -1, camera_a.cameras[camera_index].name);
-	camera_ComputeWorldToCameraMatrix(&camera_a.cameras[camera_index]);
+	
+	camera_t *camera = &camera_a.cameras[camera_index];
+	cluster_list_t *clusters = &camera_a.clusters[camera_index];
+	cluster_ll_t *cll;
+	cluster_aabb_t *caabb;
+	
+	camera->name = strdup(name);
+	camera->local_position = position;
+	memcpy(&camera->local_orientation, orientation, sizeof(mat3_t));
+	CreatePerspectiveMatrix(&camera->projection_matrix, fovy, width/height, znear, zfar, &camera->frustum);
+	camera->width = width;
+	camera->height = height;
+	camera->zoom = 1.0;
+	camera->exposure = 1.0;
+	camera->camera_index = camera_index;
+	camera->assigned_node=scenegraph_AddNode(NODE_CAMERA, camera_index, -1, camera->name);
+	camera_ComputeWorldToCameraMatrix(camera);
+	
+	
+	clusters_per_row = width / CLUSTER_WIDTH;
+	cluster_rows = height / CLUSTER_WIDTH;
+	z_divs = log(zfar / znear) / log(1.0 + (2.0 * (tan(fovy / 2.0) / CLUSTER_WIDTH)));
+	
+	
+	
+	clusters->light_lists = (cluster_ll_t *)malloc(sizeof(cluster_ll_t) * clusters_per_row * cluster_rows * z_divs);
+	clusters->aabbs = (cluster_aabb_t *)malloc(sizeof(cluster_aabb_t ) * clusters_per_row * cluster_rows * z_divs);
+	
+	cll = clusters->light_lists;
+	caabb = clusters->aabbs;
+	
+	for(k = 0; k < z_divs; k++)
+	{
+		for(i = 0; i < clusters_per_row; i++)
+		{
+			for(j = 0; j < cluster_rows; j++)
+			{
+				
+			}
+		}
+	}
+		
+	
+	
 	
 	camera_a.camera_count++;
-	
 	return camera_index;
 }
 

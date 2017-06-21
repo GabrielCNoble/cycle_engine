@@ -19,6 +19,9 @@
 #include "gpu.h"
 
 #include <stdarg.h>
+
+
+
 //extern unsigned int _512_extra_map;
 //extern unsigned int extra_framebuffer;
 extern font_array font_a;
@@ -217,6 +220,11 @@ static float bloom_intensity;
 
 
 
+/*int clusters_per_row;
+int cluster_rows;
+int cluster_z_divs;
+cluster_ll_t *clusters_light_lists;
+cluster_aabb_t *clusters_aabbs;*/
 
 
 
@@ -677,7 +685,7 @@ draw_Init
 	
 	draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
 	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS);
-	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
+	draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
 	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
 	//draw_SetDebugFlag(DEBUG_DRAW_ARMATURES);
 	//draw_SetDebugFlag(DEBUG_DRAW_ENTITY_ORIGIN);
@@ -2856,8 +2864,9 @@ void draw_ResolveGBuffer()
 				}
 				else if(position->bm_flags&LIGHT_POINT)
 				{
-					
-					if(position->bm_flags & LIGHT_VIEWPOINT_INSIDE_VOLUME)
+					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
+					draw_count = DRAW_SPHERE_LOD0_COUNT;
+					/*if(position->bm_flags & LIGHT_VIEWPOINT_INSIDE_VOLUME)
 					{
 						draw_begin = DRAW_SCREEN_QUAD_BEGIN;
 						draw_count = DRAW_SCREEN_QUAD_COUNT;
@@ -2879,7 +2888,11 @@ void draw_ResolveGBuffer()
 						
 						draw_mode = GL_TRIANGLES;
 						area_type = LIGHT_POINT;
-					}
+					}*/
+					
+					draw_mode = GL_TRIANGLES;
+					area_type = LIGHT_POINT;
+					
 					light_type = LIGHT_POINT;
 				
 					
@@ -3895,7 +3908,7 @@ void draw_BlitToScreen()
 	
 	/* tone mapping is done here... */
 	framebuffer_BindFramebuffer(&backbuffer);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	
 	
@@ -3908,6 +3921,7 @@ void draw_BlitToScreen()
 	glActiveTexture(GL_TEXTURE0);
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
 	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_BLEND);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	
@@ -4386,6 +4400,14 @@ PEWAPI void draw_DrawWidgets()
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 }
+
+/*void draw_BuildClusters()
+{
+	clusters_per_row = renderer.width / CLUSTER_WIDTH;
+	clusters_rows = renderer.height / CLUSTER_WIDTH;
+	
+	
+}*/
 
  void draw_DrawConsole()
 {

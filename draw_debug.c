@@ -322,6 +322,36 @@ void draw_debug_Draw()
 				glEnable(GL_DEPTH_TEST);
 			break;
 			
+			case DRAW_LINE_HOMOGENEOUS:
+				
+				glMatrixMode(GL_PROJECTION);
+				glPushMatrix();
+				glLoadIdentity();
+				glMatrixMode(GL_MODELVIEW);
+				glPushMatrix();
+				glLoadIdentity();
+				
+				glLineWidth(draw_cmds[i].data[9]);
+				if(draw_cmds[i].data[10])
+				{
+					glDisable(GL_DEPTH_TEST);
+				}
+
+				glBegin(GL_LINES);
+				glColor3f(draw_cmds[i].data[0], draw_cmds[i].data[1], draw_cmds[i].data[2]);
+				glVertex3f(draw_cmds[i].data[3], draw_cmds[i].data[4], draw_cmds[i].data[5]);
+				glVertex3f(draw_cmds[i].data[6], draw_cmds[i].data[7], draw_cmds[i].data[8]);
+				glEnd();
+				glLineWidth(1.0);
+				glEnable(GL_DEPTH_TEST);
+				
+				glMatrixMode(GL_PROJECTION);
+				glPopMatrix();
+				glMatrixMode(GL_MODELVIEW);
+				glPopMatrix();
+				
+			break;
+			
 			case DRAW_POINT:
 
 				glPointSize(draw_cmds[i].data[6]);
@@ -335,6 +365,32 @@ void draw_debug_Draw()
 				glPointSize(1.0);
 				glDisable(GL_POINT_SMOOTH);
 				
+			break;
+			
+			case DRAW_POINT_HOMOGENEOUS:
+				glMatrixMode(GL_PROJECTION);
+				glPushMatrix();
+				glLoadIdentity();
+				glMatrixMode(GL_MODELVIEW);
+				glPushMatrix();
+				glLoadIdentity();
+				
+				glPointSize(draw_cmds[i].data[6]);
+				glEnable(GL_POINT_SMOOTH);
+				
+				glBegin(GL_POINTS);
+				glColor3f(draw_cmds[i].data[0], draw_cmds[i].data[1], draw_cmds[i].data[2]);
+				glVertex3f(draw_cmds[i].data[3], draw_cmds[i].data[4], draw_cmds[i].data[5]);
+				glEnd();
+				
+				glPointSize(1.0);
+				glDisable(GL_POINT_SMOOTH);
+				
+				glMatrixMode(GL_PROJECTION);
+				glPopMatrix();
+				glMatrixMode(GL_MODELVIEW);
+				glPopMatrix();
+			
 			break;
 			
 			case DRAW_OUTLINE:
@@ -812,7 +868,7 @@ PEWAPI void draw_debug_DrawTriangle(vec3_t a, vec3_t b, vec3_t c, vec3_t a_color
 	}
 }
 
-PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray)
+PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int homogeneous)
 {
 	debug_draw_t d;
 	
@@ -820,7 +876,10 @@ PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line
 	{
 		d.data = &float_buffer[used_floats];
 		d.count = 1;
-		d.type = DRAW_LINE;
+		if(!homogeneous)
+			d.type = DRAW_LINE;
+		else
+			d.type = DRAW_LINE_HOMOGENEOUS;
 		
 		float_buffer[used_floats++] = color.r;
 		float_buffer[used_floats++] = color.g;
@@ -863,7 +922,7 @@ PEWAPI void draw_debug_Draw2DLine(vec2_t from, vec2_t to, vec3_t color)
 	glUseProgram(shader_a.shaders[renderer.active_shader_index].shader_ID);*/
 }
 
-PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size)
+PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size, int homogeneous)
 {
 	debug_draw_t d;
 	
@@ -871,8 +930,12 @@ PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size
 	{
 		d.data = &float_buffer[used_floats];
 		d.count = 1;
-		d.type = DRAW_POINT;
-		
+		if(!homogeneous)
+			d.type = DRAW_POINT;
+		else
+			d.type = DRAW_POINT_HOMOGENEOUS;
+			
+			
 		float_buffer[used_floats++] = color.r;
 		float_buffer[used_floats++] = color.g;
 		float_buffer[used_floats++] = color.b;
@@ -885,6 +948,11 @@ PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size
 		draw_cmds[draw_cmd_count++] = d;
 	}
 
+}
+
+PEWAPI void draw_debug_DrawPointHomogeneous(vec3_t position, vec3_t color, float point_size)
+{
+	
 }
 
 

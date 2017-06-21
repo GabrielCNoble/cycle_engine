@@ -32,7 +32,9 @@ enum DRAW_TYPE
 	DRAW_BONE,
 	DRAW_CONSTRAINT,
 	DRAW_POINT,						/* this allow general debug drawing, so vertex color will be uploaded in the float buffer */
+	DRAW_POINT_HOMOGENEOUS,
 	DRAW_LINE,
+	DRAW_LINE_HOMOGENEOUS,
 	DRAW_TRIANGLE,
 	DRAW_MESH,								
 	DRAW_OUTLINE, 					/* useful for drawing object outline... */
@@ -60,11 +62,15 @@ void draw_debug_Draw();
 
 PEWAPI void draw_debug_DrawTriangle(vec3_t a, vec3_t b, vec3_t c, vec3_t a_color, vec3_t b_color, vec3_t c_color);
 
-PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray);
+PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int homogeneous);
 
 //PEWAPI void draw_debug_Draw2DLine(vec2_t from, vec2_t to, vec3_t color);
 
-PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size);
+PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size, int homogenous);
+
+PEWAPI void draw_debug_DrawPointHomogeneous(vec3_t position, vec3_t color, float point_size);
+
+
 
 PEWAPI void draw_debug_DrawOutline(vec3_t position, mat3_t *orientation, mesh_t *mesh, vec3_t color, float line_thickness, int b_xray);
 

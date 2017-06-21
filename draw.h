@@ -164,6 +164,8 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 
 void draw_DrawWidgets();
 
+//void draw_BuildClusters();
+
 //PEWAPI void draw_DrawBitmap();
 
 //PEWAPI void draw_DrawChar(char c, font_t *font, int x, int y);

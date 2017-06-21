@@ -7,6 +7,25 @@
 #include "frustum_types.h"
 #include "framebuffer.h"
 
+
+typedef struct
+{
+	int offset;
+	int count;
+}cluster_ll_t;
+
+typedef struct
+{
+	vec3_t max;
+	vec3_t min;
+}cluster_aabb_t;
+
+typedef struct
+{
+	cluster_ll_t *light_lists;
+	cluster_aabb_t *aabbs;
+}cluster_list_t;
+
 typedef struct camera_t
 {
 	mat4_t projection_matrix;
@@ -32,7 +51,13 @@ typedef struct
 	int array_size;
 	int camera_count;
 	camera_t *cameras;
+	cluster_list_t *clusters;
+	//cluster_ll_t **clusters_light_lists;
+	//cluster_aabb_t **clusters_aabbs;
 }camera_array;
+
+
+
 
 
 #endif /* CAMERA_TYPES_H */

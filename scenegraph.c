@@ -1,5 +1,6 @@
 #include "scenegraph.h"
 #include "draw.h"
+#include "draw_debug.h"
 #include "entity.h"
 #include "camera.h"
 #include "particle.h"
@@ -1213,32 +1214,32 @@ static void scenegraph_CullLights()
 	{
 		//light_a.lights[i].bm_status|= LIGHT_FRUSTUM_CULLED;
 		
-		l_org3 = vec4vec3(light_a.position_data[i].world_position);
+		l_org4 = light_a.position_data[i].world_position;
 		l_rad = light_a.position_data[i].radius;
 		
 
 		/* top plane */
-		distance=dot3(l_org3, top.normal) - top.d;
+		distance=dot3(l_org4.vec3, top.normal) - top.d;
 		if(distance<-l_rad) continue;
 
 		/* bottom plane */
-		distance=dot3(l_org3, bottom.normal) - bottom.d;
+		distance=dot3(l_org4.vec3, bottom.normal) - bottom.d;
 		if(distance<-l_rad) continue;
 
 		/* left plane */
-		distance=dot3(l_org3, left.normal) - left.d;
+		distance=dot3(l_org4.vec3, left.normal) - left.d;
 		if(distance<-l_rad) continue;
 
 		/* right plane */
-		distance=dot3(l_org3, right.normal) - right.d;
+		distance=dot3(l_org4.vec3, right.normal) - right.d;
 		if(distance<-l_rad) continue;
 
 		/* near plane */
-		distance=dot3(l_org3, near.normal) - near.d;
+		distance=dot3(l_org4.vec3, near.normal) - near.d;
 		if(distance<-l_rad) continue;
 		
 		/* far plane */
-		distance=dot3(l_org3, far.normal) - far.d;
+		distance=dot3(l_org4.vec3, far.normal) - far.d;
 		if(distance<-l_rad) continue;
 		//printf("light inside frustum\n");
 		if(likely(active_light_a.light_count<active_light_a.array_size))
@@ -1255,12 +1256,89 @@ static void scenegraph_CullLights()
 			//active_light_a.extra_data[active_light_a.light_count]=light_a.extra_data[i];
 			//active_light_a.params[active_light_a.light_count]=light_a.params[i];
 			
-			light_vec = sub3(l_org3, cpos);
+			
+			
+			//light_vec = sub3(l_org3, cpos);
+			//l_org4 = MultiplyVector4(&active_camera->world_to_camera_matrix, light_a.position_data[i].world_position);
+			l_org3.x = l_org4.x * active_camera->world_to_camera_matrix.floats[0][0] + 
+					   l_org4.y * active_camera->world_to_camera_matrix.floats[1][0] + 
+					   l_org4.z * active_camera->world_to_camera_matrix.floats[2][0] + 
+					   active_camera->world_to_camera_matrix.floats[3][0]; 
+			
+			l_org3.y = l_org4.x * active_camera->world_to_camera_matrix.floats[0][1] + 
+					   l_org4.y * active_camera->world_to_camera_matrix.floats[1][1] + 
+					   l_org4.z * active_camera->world_to_camera_matrix.floats[2][1] + 
+					   active_camera->world_to_camera_matrix.floats[3][1];
+					   
+			l_org3.z = l_org4.x * active_camera->world_to_camera_matrix.floats[0][2] + 
+					   l_org4.y * active_camera->world_to_camera_matrix.floats[1][2] + 
+					   l_org4.z * active_camera->world_to_camera_matrix.floats[2][2] + 
+					   active_camera->world_to_camera_matrix.floats[3][2];		   		   
+			
+			/*light_vec = l_org3;*/
+			
+			printf("%f %f\n", l_org3.x, l_org3.y);
+			
 			
 			if(light_a.position_data[i].bm_flags&LIGHT_POINT)
 			{
 				
-				if(dot3(light_vec, light_vec) < active_light_a.position_data[active_light_a.light_count].radius * active_light_a.position_data[active_light_a.light_count].radius)
+				
+				corners[0].x = l_org3.x - l_rad;
+				corners[0].y = l_org3.y + l_rad;
+				corners[0].z = l_org3.z + l_rad;
+				
+				corners[1].x = l_org3.x - l_rad;
+				corners[1].y = l_org3.y - l_rad;
+				corners[1].z = l_org3.z - l_rad;
+				
+				corners[2].x = l_org3.x + l_rad;
+				corners[2].y = l_org3.y - l_rad;
+				
+				corners[3].x = l_org3.x + l_rad;
+				corners[3].y = l_org3.y + l_rad;
+				
+				
+				
+				corners[4].x = l_org3.x - l_rad;
+				corners[4].y = l_org3.y + l_rad;
+				
+				corners[5].x = l_org3.x - l_rad;
+				corners[5].y = l_org3.y - l_rad;
+				
+				corners[6].x = l_org3.x + l_rad;
+				corners[6].y = l_org3.y - l_rad;
+				
+				corners[7].x = l_org3.x + l_rad;
+				corners[7].y = l_org3.y + l_rad;
+				
+				
+				
+				for(s = 0; s < 4; s++)
+				{
+					corners[s].x = ((nznear / nright) * corners[s].x) / corners[0].z;
+					corners[s].y = ((nznear / ntop) * corners[s].y) / corners[0].z;
+				}
+				
+				for(s = 4; s < 8; s++)
+				{
+					corners[s].x = ((nznear / nright) * corners[s].x) / corners[1].z;
+					corners[s].y = ((nznear / ntop) * corners[s].y) / corners[1].z;
+				}
+				
+				draw_debug_DrawLine(vec3(corners[0].x, corners[0].y, -0.5), vec3(corners[1].x, corners[1].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[1].x, corners[1].y, -0.5), vec3(corners[2].x, corners[2].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[2].x, corners[2].y, -0.5), vec3(corners[3].x, corners[3].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[3].x, corners[3].y, -0.5), vec3(corners[0].x, corners[0].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
+				
+				
+				draw_debug_DrawLine(vec3(corners[4].x, corners[4].y, -0.5), vec3(corners[5].x, corners[5].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[5].x, corners[5].y, -0.5), vec3(corners[6].x, corners[6].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[6].x, corners[6].y, -0.5), vec3(corners[7].x, corners[7].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[7].x, corners[7].y, -0.5), vec3(corners[4].x, corners[4].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
+				
+				
+				/*if(dot3(light_vec, light_vec) < active_light_a.position_data[active_light_a.light_count].radius * active_light_a.position_data[active_light_a.light_count].radius)
 				{
 					active_light_a.position_data[active_light_a.light_count].bm_flags |= LIGHT_VIEWPOINT_INSIDE_VOLUME;
 				}
@@ -1271,7 +1349,18 @@ static void scenegraph_CullLights()
 				
 				factor = (active_light_a.position_data[active_light_a.light_count].radius / (length3(light_vec) + active_light_a.position_data[active_light_a.light_count].radius)) * 2.0; 
 				
-				active_light_a.position_data[active_light_a.light_count].screen_value = factor;
+				active_light_a.position_data[active_light_a.light_count].screen_value = factor;*/
+				
+				
+				//printf("%f\n", factor);
+				//printf("%f %f\n", ((nznear / nright) * l_org3.x) / l_org3.z,  ((nznear / ntop) * l_org3.y) / l_org3.z);
+				
+				/*draw_debug_DrawPoint(l_org4.vec3, vec3(1.0, 0.0, 0.0), 8.0, 1);
+				draw_debug_DrawPoint(vec3(l_org4.x + factor, l_org4.y, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);
+				draw_debug_DrawPoint(vec3(l_org4.x - factor, l_org4.y, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);
+				draw_debug_DrawPoint(vec3(l_org4.x, l_org4.y + factor, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);
+				draw_debug_DrawPoint(vec3(l_org4.x, l_org4.y - factor, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);*/
+				
 			}
 			else if(active_light_a.position_data[active_light_a.light_count].bm_flags & LIGHT_SPOT)
 			{
