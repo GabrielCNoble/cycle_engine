@@ -115,7 +115,7 @@ PEWAPI void text_ResizeFontArray(int new_size);
 
 //PEWAPI void text_ExtendFont(font_t *font, int new_size);
 
-PEWAPI void text_LoadFont(char *file_name, char *name);
+PEWAPI void text_LoadFont(char *file_name, char *name, int size);
 
 PEWAPI int text_GetFontIndex(char *name);
 

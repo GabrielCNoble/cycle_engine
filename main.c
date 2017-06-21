@@ -350,7 +350,8 @@ void ginit()
 	int animation;
 	int set_index;
 	
-	text_LoadFont("consola.ttf", "consola");
+	text_LoadFont("consola.ttf", "consola_16", 16);
+	text_LoadFont("consola.ttf", "consola_12", 12);
 
 	id = mat3_t_id();
 
@@ -449,7 +450,7 @@ void ginit()
 
 	
 	//wbase_t *test = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT, -4.5, -2.0, 4.0, 4.0, 0.3, 0.3, 0.3, 0.5, texture_GetTextureID("pilip"), 0);
-	gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 0.0, 0.0, renderer.screen_width, renderer.screen_height, 1.0, 1.0, 1.0, 1.0, draw_GetCompositeBufferTexture(), 0);
+	gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 0.0, 0.0, 320, 240, 0.5, 0.3, 0.2, 0.2, WIDGET_NO_TEXTURE, 0);
 	
 	//gui_CreateWidget("test2", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -10.0, 0.0, 640.0, 240.0, 0.5, 0.5, 1.0, 1.0, WIDGET_NO_TEXTURE, 0);
 	//gui_AddSubWidget(test, 0, WIDGET_BUTTON, "test_button", -0.8, 0.0, 0.5, 0.3, 0.0, 0.0, 0.5, 0.0, 0.0, 0.9, texture_GetTextureID("pew"), test, (void *)gui_test_CloseWidget);
@@ -633,13 +634,40 @@ void ginit()
 	def2 = entity_GetEntityDef("ico_tufted_leather");
 	//entity_SpawnEntity("ico_tufted_leather", def, vec3(-5.0, 0.0, 0.0), &id);
 	
-	for(i = 0; i < 10; i++)
+	/*for(i = 0; i < 10; i++)
 	{
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 0.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 0.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 0.0, -5.0 + i), &id);
 	}
 	
+	for(i = 0; i < 10; i++)
+	{
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 2.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 2.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 2.0, -5.0 + i), &id);
+	}
+	
+	for(i = 0; i < 10; i++)
+	{
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 4.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 4.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 4.0, -5.0 + i), &id);
+	}
+	
+	for(i = 0; i < 10; i++)
+	{
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 6.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 6.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 6.0, -5.0 + i), &id);
+	}
+	
+	for(i = 0; i < 10; i++)
+	{
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 8.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 8.0, -5.0 + i), &id);
+	}*/
 
 	
 	
@@ -649,10 +677,10 @@ void ginit()
 	{	
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
 	
 	

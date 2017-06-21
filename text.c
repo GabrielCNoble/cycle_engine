@@ -29,6 +29,9 @@ PEWAPI void text_Init(char *path)
 	font_a.fonts=NULL;
 	font_a.font_count=0;
 	text_ResizeFontArray(8);
+	
+	text_LoadFont("fixedsys.ttf", "fixedsys_22", 22);
+	
 }
 
 
@@ -98,7 +101,7 @@ void text_LoadFont
 */
 /* TODO: Generalize more this function. Make it able to load all the chars that exist
 inside the file, not just a hardcoded set. */
-PEWAPI void text_LoadFont(char *file_name, char *name)
+PEWAPI void text_LoadFont(char *file_name, char *name, int size)
 {
 	
 	char full_path[256];
@@ -120,7 +123,10 @@ PEWAPI void text_LoadFont(char *file_name, char *name)
 	
 	//printf("%s\n", full_path);
 	
-	if(!(font->font = TTF_OpenFont(full_path, MAX_FONT_PSIZE)))
+	if(size < MIN_FONT_PSIZE) size = MIN_FONT_PSIZE;
+	else if(size > MAX_FONT_PSIZE) size = MAX_FONT_PSIZE;
+	
+	if(!(font->font = TTF_OpenFont(full_path, size)))
 	{
 		printf("couldn't open font. %s\n", TTF_GetError());
 		return;

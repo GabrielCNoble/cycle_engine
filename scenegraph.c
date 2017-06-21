@@ -1789,10 +1789,9 @@ static void scenegraph_FillShadowQueue()
 					
 					bm_sides <<= 2;
 					
-					/* NOTE: big objects will intersect
-					ALL six planes... remember, planes are infinite...
-					will need to take some sort of 'near' plane into
-					consideration...*/
+					/* TODO: implement some sort of near plane checking. Not
+					having this is making the engine render big objects
+					onto the six faces of the shadow map... */
 					
 					if(fabs(distance) < radius)
 					{
@@ -1808,17 +1807,12 @@ static void scenegraph_FillShadowQueue()
 						{
 							bm_sides |= 2;	/* object in negative half-space */
 						}
-					}
-					
-					//printf("%f %f %d %x\n", distance, radius, n, bm_sides & 0x3);
-					
+					}	
 						 	  	  
 				}
-					
-				//printf("%x\n", bm_sides);	
+				
 				for(n = 0; n < 6; n++)
 				{
-					//printf("    %x %x\n", bm_sides & check_values[n], check_values[n]);
 					if((bm_sides & check_values[n]) == check_values[n])
 					{
 						if(used[n] >= sizes[n])
@@ -1830,45 +1824,12 @@ static void scenegraph_FillShadowQueue()
 							sizes[n] <<= 1;
 						}
 						
-						//printf("ok\n");
-						
-						/*switch(n)
-						{
-							case 0:
-								printf("+x\n");
-							break;
-							
-							case 1:
-								printf("-x\n");
-							break;
-							
-							case 2:
-								printf("+y\n");
-							break;
-							
-							case 3:
-								printf("-y\n");
-							break;
-							
-							case 4:
-								printf("+z\n");
-							break;
-							
-							case 5:
-								printf("-z\n");
-							break;
-							
-						}*/
-						
 						rqs[n][used[n]] = i;
 						used[n]++;
-						//printf("==%d\n", n);
 					}
 					
 				}	
 			}
-			
-			//printf("%d %d %d %d %d %d\n", used[0], used[1], used[2], used[3], used[4], used[5]);
 			
 			translation=mat4_t_id();
 			translation.floats[3][0] = -l_origin.x;
@@ -1884,12 +1845,12 @@ static void scenegraph_FillShadowQueue()
 					continue;
 				}
 				
-				memcpy(&orientation, &cube_shadow_mats[m], sizeof(mat4_t));
+				//memcpy(&orientation, &cube_shadow_mats[m], sizeof(mat4_t));
 				//mat4_t_transpose(&orientation);
 				//transform.floats[3][0] = - l_origin.x;
 				//transform.floats[3][1] = - l_origin.y;
 				//transform.floats[3][2] = - l_origin.z;
-				mat4_t_mult(&transform, &translation, &orientation);	
+				mat4_t_mult(&transform, &translation, &cube_shadow_mats[m]);	
 				mat4_t_mult(&scb.model_view_matrix, &transform, &projection_matrix);
 				
 				/* ignore frustums that have no objects in it. */

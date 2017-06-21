@@ -3899,7 +3899,7 @@ void draw_BlitToScreen()
 	
 	
 	
-	framebuffer_BindFramebuffer(&composite_buffer);
+	//framebuffer_BindFramebuffer(&composite_buffer);
 	
 	shader_SetShaderByIndex(screen_quad_shader_index);
 	glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
@@ -3908,8 +3908,8 @@ void draw_BlitToScreen()
 	glActiveTexture(GL_TEXTURE0);
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
 	glDisable(GL_DEPTH_TEST);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_ONE, GL_ONE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
 	
 	glBindTexture(GL_TEXTURE_2D, composite_buffer.color_out1);
 	//glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out3);
@@ -3923,7 +3923,7 @@ void draw_BlitToScreen()
 }
 
 PEWAPI void draw_SetBloomParam(int param, int value)
-{
+{ 
 	switch(param)
 	{
 		case BLOOM_SMALL_RADIUS:
@@ -4009,7 +4009,7 @@ PEWAPI void draw_EnableOutputToBackbuffer(int enable)
 	}
 }
 
-PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, vec3_t color, char *str, ...)
+PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, int line_length, vec3_t color, char *str, ...)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -4039,10 +4039,10 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, ve
 	char *q = cparm;
 	char *t;
 	
-	if(size > MAX_FONT_PSIZE) size = MAX_FONT_PSIZE;
-	else if(size < MIN_FONT_PSIZE) size = MIN_FONT_PSIZE;
+	//if(size > MAX_FONT_PSIZE) size = MAX_FONT_PSIZE;
+	//else if(size < MIN_FONT_PSIZE) size = MIN_FONT_PSIZE;
 	
-	float zoom = size * FONT_ZOOM_STEP;
+	//float zoom = size * FONT_ZOOM_STEP;
 	
 	while(*p)
 	{
@@ -4123,13 +4123,14 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, ve
 	
 	SDL_Color f = {255 * color.r, 255 * color.g, 255 * color.b, 255};
 	SDL_Color b = {0, 0, 0, 0};
-	SDL_Surface *s = TTF_RenderUTF8_Blended(font->font, formated_str, f);
+	//SDL_Surface *s = TTF_RenderUTF8_Blended(font->font, formated_str, f);
+	SDL_Surface *s = TTF_RenderUTF8_Blended_Wrapped(font->font, formated_str, f, line_length);
 
 	glRasterPos2f(((float)x / (float)renderer.screen_width) * 2.0 - 1.0, ((float)(y + s->h) / (float)renderer.screen_height) * 2.0 - 1.0);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	glUseProgram(0);
 	glEnable(GL_BLEND);
-	glPixelZoom(zoom, -zoom);
+	glPixelZoom(1.0, -1.0);
 	glColor3f(1.0, 0.0, 0.0);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDrawPixels(s->w, s->h, GL_BGRA, GL_UNSIGNED_BYTE, s->pixels);
@@ -4195,6 +4196,8 @@ PEWAPI void draw_DrawWidgets()
 	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);
 	glUseProgram(0);
+	SDL_Color c = {255, 255, 255, 255};
+	SDL_Surface *s;
 	//glEnable(GL_BLEND);
 	
 	
@@ -4242,8 +4245,13 @@ PEWAPI void draw_DrawWidgets()
 			b *= 0.8;
 		}
 		
-		if(cwidget->tex_handle > 0)
+		if(cwidget->tex_handle > -1)
 		{
+			/*if(!cwidget->tex_handle)
+			{
+				glRasterPos2i()
+				glCopyPixels()
+			}*/
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, cwidget->tex_handle);
@@ -4271,6 +4279,8 @@ PEWAPI void draw_DrawWidgets()
 			glVertex3f(cwidget->x + hw, cwidget->y - hh, -0.5);
 			glVertex3f(cwidget->x + hw, cwidget->y + hh, -0.5);
 			glEnd();
+			
+			
 		}
 		
 		if(cwidget->bm_flags & WIDGET_HIGHTLIGHT_BORDERS)

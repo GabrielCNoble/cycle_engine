@@ -151,7 +151,7 @@ PEWAPI void pew_MainLoop()
 	pew_Resume();
 	pew_UpdateDeltaTime();
 	
-	int fps_font = text_GetFontIndex("consola");
+	int fps_font = text_GetFontIndex("fixedsys_22");
 	while(pew.pew_state)
 	{
 		
@@ -182,7 +182,9 @@ PEWAPI void pew_MainLoop()
 		
 		draw_DrawFrame();
 		
-		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 40, vec3(1.0, 1.0, 0.5), "%d", fps_disp);
+		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 40, 100, vec3(1.0, 1.0, 0.5), "%d", fps_disp);
+		
+		draw_DrawString(fps_font, 12, 1, 400, 150, vec3(1.0, 1.0, 0.5), "rock and roll ain't noise pollution");
 		
 		draw_CloseFrame();
 		//lastf = pew_GetDeltaTime();

@@ -195,7 +195,7 @@ enum WIDGET_FLAGS
 												   hover the mouse over it... */
 };
 
-#define WIDGET_NO_TEXTURE 0
+#define WIDGET_NO_TEXTURE -1
 #define WIDGET_BORDER_PIXEL_WIDTH 8
 #define WIDGET_HEADER_PIXEL_HEIGHT 12
 
@@ -252,6 +252,8 @@ typedef struct wbase_t
 	int bm_flags;
 	short type;
 	short widget_count;
+	
+	char *text_buffer;
 }wbase_t;
 
 
@@ -316,6 +318,8 @@ void gui_SetFocused(wbase_t *widget);
 
 void gui_ProcessWidgets();
 
+PEWAPI void gui_PrintOnWidget(wbase_t *widget, char *str);
+
 void gui_test_CloseWidget(wbase_t *widget);
 
 void gui_test_CloseConsole(wbase_t *widget);
@@ -325,6 +329,8 @@ void gui_test_ToggleVolumetricLights(wbase_t *widget);
 void gui_test_ToggleShadows(wbase_t *widget);
 
 void gui_test_ToggleBloom(wbase_t *widget);
+
+
 
 
 //PEWAPI void gui_ResizeGelemArray(int new_size);

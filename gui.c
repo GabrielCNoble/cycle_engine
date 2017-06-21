@@ -115,6 +115,8 @@ PEWAPI wbase_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, flo
 	temp->b = b;
 	temp->a = a;
 	
+	temp->text_buffer = (char *)malloc(renderer.screen_width * renderer.screen_height);
+	
 	temp->tex_handle = tex_handle;
 	
 	temp->next = NULL;
@@ -692,6 +694,17 @@ void gui_ProcessWidgets()
 	{
 		input_SetCursor(CURSOR_ARROW);
 	}*/
+}
+
+PEWAPI void gui_PrintOnWidget(wbase_t *widget, char *str)
+{
+	char *p = widget->text_buffer;
+	char *q = str;
+	
+	while(*q)
+	{
+		*p++ = *q++;
+	}
 }
 
 
