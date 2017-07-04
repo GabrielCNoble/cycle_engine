@@ -1273,18 +1273,18 @@ static void scenegraph_CullLights()
 			l_org3.z = l_org4.x * active_camera->world_to_camera_matrix.floats[0][2] + 
 					   l_org4.y * active_camera->world_to_camera_matrix.floats[1][2] + 
 					   l_org4.z * active_camera->world_to_camera_matrix.floats[2][2] + 
-					   active_camera->world_to_camera_matrix.floats[3][2];		   		   
+					   active_camera->world_to_camera_matrix.floats[3][2];		   
 			
 			/*light_vec = l_org3;*/
 			
-			printf("%f %f\n", l_org3.x, l_org3.y);
+			//printf("%f %f\n", l_org3.x, l_org3.y);
 			
 			
 			if(light_a.position_data[i].bm_flags&LIGHT_POINT)
 			{
 				
 				
-				corners[0].x = l_org3.x - l_rad;
+				/*corners[0].x = l_org3.x - l_rad;
 				corners[0].y = l_org3.y + l_rad;
 				corners[0].z = l_org3.z + l_rad;
 				
@@ -1335,7 +1335,7 @@ static void scenegraph_CullLights()
 				draw_debug_DrawLine(vec3(corners[4].x, corners[4].y, -0.5), vec3(corners[5].x, corners[5].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
 				draw_debug_DrawLine(vec3(corners[5].x, corners[5].y, -0.5), vec3(corners[6].x, corners[6].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
 				draw_debug_DrawLine(vec3(corners[6].x, corners[6].y, -0.5), vec3(corners[7].x, corners[7].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[7].x, corners[7].y, -0.5), vec3(corners[4].x, corners[4].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
+				draw_debug_DrawLine(vec3(corners[7].x, corners[7].y, -0.5), vec3(corners[4].x, corners[4].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);*/
 				
 				
 				/*if(dot3(light_vec, light_vec) < active_light_a.position_data[active_light_a.light_count].radius * active_light_a.position_data[active_light_a.light_count].radius)

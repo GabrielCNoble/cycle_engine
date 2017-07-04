@@ -6,6 +6,8 @@ font_array font_a;
 static int font_path_len = 0;
 static char font_path[256];
 
+int ui_font;
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -31,6 +33,9 @@ PEWAPI void text_Init(char *path)
 	text_ResizeFontArray(8);
 	
 	text_LoadFont("fixedsys.ttf", "fixedsys_22", 22);
+	text_LoadFont("consola.ttf", "ui_16", 16);
+	
+	ui_font = text_GetFontIndex("ui_16");
 	
 }
 

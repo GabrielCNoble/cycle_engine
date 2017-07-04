@@ -1,7 +1,8 @@
-#extension ARB_uniform_buffer_object : enable
+
 
 
 #ifdef _GL3A_
+#extension ARB_uniform_buffer_object : enable
 
 layout(shared) uniform sysMaterialParams
 {

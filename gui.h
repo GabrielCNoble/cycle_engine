@@ -191,8 +191,40 @@ enum WIDGET_FLAGS
 	WIDGET_HIGHTLIGHT_BORDERS = 1<<22,			/* whether the borders of the widget should be highlighted when the mouse 
 												   hovers over it */
 												   
-	WIDGET_CLICK_TO_FOCUS = 1<<23				/* whether the user needs to click to focus the widget or just 
+	WIDGET_CLICK_TO_FOCUS = 1<<23,				/* whether the user needs to click to focus the widget or just 
 												   hover the mouse over it... */
+												   
+	WIDGET_KEEP_RELATIVE_Y_POSITION = 1<<24,		/* wheter the subwidget should keep its relative position within the widget or not.
+												   The relative position depends on the dimensions of the widget. If the subwidget
+												   keeps relative instead of absolute position within the widget, it will 'slide'
+												   when the widget gets resized instead of remaining 'stuck' to its original
+												   position... */
+	WIDGET_KEEP_RELATIVE_X_POSITION = 1<<25,											   
+												   			
+												   
+	WIDGET_LOCK_X_SCALE = 1 << 26,
+	WIDGET_LOCK_Y_SCALE = 1 << 27											   								   											   
+};
+
+
+enum BUTTON_FLAGS
+{
+	BUTTON_CHECK_BOX = 1,
+	BUTTON_CHECK_BOX_CHECKED = 1 << 1,
+	BUTTON_CHECK_BOX_SET_VALUE = 1 << 2,		/* if this flag is set, checking this check box will set whatever variable this checkbox modifies
+												   to one. Otherwise, it will call a callback... */
+	BUTTON_TOGGLE = 1 << 3,
+	BUTTON_TOGGLED = 1 << 4
+};
+
+enum VALUE_TYPES
+{
+	VALUE_INT_64 = 1,
+	VALUE_INT_32,
+	VALUE_INT_16,
+	VALUE_INT_8,
+	VALUE_FLOAT,
+	VALUE_DOUBLE
 };
 
 #define WIDGET_NO_TEXTURE -1
@@ -216,8 +248,32 @@ typedef struct
 	unsigned char a;
 }wcolor_t;
 
+typedef struct swidget_t
+{
+	float x;
+	float y;
+	float w;
+	float h;
+	float cx;
+	float cy;
+	float cw;
+	float ch;
+	
+	float relative_mouse_x;
+	float relative_mouse_y;
+	float r;
+	float g;
+	float b;
+	float a;
+	char *name;
+	int type;
+	int bm_flags;
+	void (*widget_callback)(swidget_t *, void *);
+	struct swidget_t *next;
+}swidget_t;
 
-typedef struct wbase_t
+
+typedef struct widget_t
 {
 	//wposition_t position;
 	float x;
@@ -225,7 +281,8 @@ typedef struct wbase_t
 	float w;
 	float h;
 
-	
+	float cw;
+	float ch;
 	//float relative_x;
 	//float relative_y;
 	//float relative_w;
@@ -242,54 +299,48 @@ typedef struct wbase_t
 	float a;
 	//wcolor_t color;
 	unsigned int tex_handle;			/* if this handle is different from -1, the engine will use as a GL texture handle. */
-	struct wbase_t *next;
-	struct wbase_t *prev;
-	//struct wbase_t *base;				
-	//struct wbase_t *w_widgets;			/* this is the list of widgets this base has (in the case this widget is a base). */
-	//struct wbase_t *w_last;
-	//struct wbase_t *affect;				/* the widget this widget will affect through its functions */
+	struct widget_t *next;
+	struct widget_t *prev;
+	int sub_widgets_count;
+	swidget_t *sub_widgets;
+	swidget_t *last_added;
 	char *name;
 	int bm_flags;
 	short type;
 	short widget_count;
-	
 	char *text_buffer;
-}wbase_t;
+}widget_t;
 
-
-/*typedef struct
-{
-	wbase_t base;
-}wwindow_t;*/
 
 
 typedef struct
 {
-	wbase_t base; 
-	void (*affect_fn)(wbase_t *);		/* the 'thing' this button will influence. */
+	swidget_t swidget;
+	void (*widget_callback)(void *);		/* the 'thing' this button will influence. */
+	int button_flags;
 }wbutton_t;
 
 typedef struct
 {
-	wbase_t base;
+	//wbase_t base;
 	float min;						/* relative minimum normalized position the scroller can go */
 	float cur;						/* current relative normalized position the scroller is*/
 	float max;						/* well... */
-	void (*affect_fn)(wbase_t *, float, float, float);		
+	//void (*fn)(wbase_t *);		
 }wvscroller_t;
 
 typedef struct
 {
-	wbase_t base;
+	//wbase_t base;
 	float min;						/* relative minimum normalized position the scroller can go */
 	float cur;						/* current relative normalized position the scroller is*/
 	float max;						/* well... */
-	void (*affect_fn)(wbase_t *, float, float, float);	
+	//void (*affect_fn)(wbase_t *, float, float, float);	
 }whscroller_t;
 
 typedef struct
 {
-	wbase_t base;
+	//wbase_t base;
 	framebuffer_t framebuffer;
 }wdsurface_t;
 
@@ -302,33 +353,35 @@ PEWAPI void gui_Init();
 
 PEWAPI void gui_Finish();
 
-PEWAPI wbase_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused);
+PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused);
 
-PEWAPI wbase_t *gui_AddSubWidget(wbase_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
+PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_button_flags, float x, float y, float w, float h, float r, float g, float b, float a, void (*widget_callback)(swidget_t *, void *));
 
-PEWAPI void *gui_DeleteWidget(char *name);
+//PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
-PEWAPI wbase_t *gui_GetWidget(char *name);
+PEWAPI void gui_DeleteWidget(char *name);
 
-PEWAPI void gui_ShowWidget(wbase_t *widget);
+PEWAPI widget_t *gui_GetWidget(char *name);
 
-PEWAPI void gui_HideWidget(wbase_t *widget);
+PEWAPI void gui_ShowWidget(widget_t *widget);
 
-void gui_SetFocused(wbase_t *widget);
+PEWAPI void gui_HideWidget(widget_t *widget);
+
+void gui_SetFocused(widget_t *widget);
 
 void gui_ProcessWidgets();
 
-PEWAPI void gui_PrintOnWidget(wbase_t *widget, char *str);
+PEWAPI void gui_PrintOnWidget(widget_t *widget, char *str);
 
-void gui_test_CloseWidget(wbase_t *widget);
+void gui_test_CloseWidget(widget_t *widget);
 
-void gui_test_CloseConsole(wbase_t *widget);
+void gui_test_CloseConsole(widget_t *widget);
 
-void gui_test_ToggleVolumetricLights(wbase_t *widget);
+void gui_test_ToggleVolumetricLights(widget_t *widget);
 
-void gui_test_ToggleShadows(wbase_t *widget);
+void gui_test_ToggleShadows(widget_t *widget);
 
-void gui_test_ToggleBloom(wbase_t *widget);
+void gui_test_ToggleBloom(widget_t *widget);
 
 
 

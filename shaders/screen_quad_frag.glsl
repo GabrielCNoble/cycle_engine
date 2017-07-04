@@ -3,6 +3,7 @@ varying vec2 UV;
 uniform float time;
 uniform sampler2D sysTextureSampler0;
 uniform samplerCube sysTextureSamplerCube0;
+uniform samplerCube sys3DShadowSampler;
 //uniform sampler2D textureSampler1;
 uniform samplerCube sysTextureSampler1;
 //uniform sampler2D textureSampler1;
@@ -12,11 +13,14 @@ uniform float sysRenderTargetHeight;
 uniform float zNear;
 uniform float zFar;
 
+uniform float sysZNear;
+uniform float sysZFar;
+
 float linearDepth(float depthSample)
 {
     float zlin;
     depthSample=2.0*depthSample-1.0;
-    zlin=2.0*zNear*zFar/(zFar+zNear-depthSample*(zFar-zNear));
+    zlin=2.0*sysZNear*sysZFar/(sysZFar+sysZNear-depthSample*(sysZFar-sysZNear));
     return zlin;
 }
 
@@ -55,13 +59,13 @@ void main()
     
     //vec_to_cam=vec3(-((gl_FragCoord.x/renderTargetWidth)-0.5)*2.0, -((gl_FragCoord.y/renderTargetHeight)-0.5)*2.0, 1.0);
 	
-	texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
-	//texel=texture2D(sysTextureSampler0, UV);
+	//texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
+	texel=texture2D(sysTextureSampler0, UV);
 	//texel=textureCube(textureSamplerCube0, vec3(-1.0, UV.y*2.0-1.0, UV.x*2.0-1.0));
 	
 
     //texel=vec4(linearDepth(texture2D(textureSampler0, vec2(UV.x, UV.y)).r))*0.01;
-    //texel=vec4((textureCube(textureSamplerCube0, vec3(UV.x*4.0-2.0, UV.y*4.0-2.0, -1.0)).r));
+    //texel=vec4(linearDepth((textureCube(sys3DShadowSampler, vec3(UV.x*4.0-2.0, 1.0, UV.y*4.0-2.0)).r)))* 0.01;
 	//texel=textureCube(textureSampler1, vec3(1.0, UV.y*4.0-2.0, UV.x*4.0-2.0));
 	//texel = vec4(1.0);
 	

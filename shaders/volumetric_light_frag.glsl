@@ -159,7 +159,7 @@ float shade_point_spot(vec3 light_pos, vec3 light_direction, float light_radius,
 	float q=(light_radius-fallof)/light_radius;
 	//return 0.01;
 	//return light_radius*dot(nlvec, light_direction)/(lvec_len*0.005);
-	return (dot(nlvec, light_direction)*q)/(fallof*fallof*0.05);
+	return (dot(nlvec, light_direction)*q)/(fallof*fallof*0.5);
 }
 
 vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)

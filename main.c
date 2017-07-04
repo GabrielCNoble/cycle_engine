@@ -7,7 +7,6 @@
 #include "log.h"
 #include "gui.h"
 #include "file.h"
-
 #include "draw_debug.h"
 
 
@@ -57,8 +56,12 @@ void gmain(float delta_time)
 	}
 	
 	//draw_debug_DrawPoint(vec3(0.0, 10.0, 0.0), vec3(0.0, 1.0, 0.0), 8.0);
+}
 
-	
+
+void TW_CALL cb(void *data )
+{
+	printf("callback\n");
 }
 
 void ginput(float delta_time)
@@ -301,6 +304,43 @@ void ginput(float delta_time)
 	
 }
 
+void widget_cb(swidget_t *sub_widget, void *data)
+{
+	
+	//printf("clicked on subwidget %s!\n", sub_widget->name);
+}
+
+void enable_shadow_mapping(swidget_t *sub_widget, void *data)
+{
+	wbutton_t *button = (wbutton_t *)sub_widget;
+	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+	{
+		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_USE_SHADOW_MAPS);
+	}
+	else
+	{
+		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_USE_SHADOW_MAPS));
+	}
+}
+
+void enable_volumetric_lights(swidget_t *sub_widget, void *data)
+{
+	wbutton_t *button = (wbutton_t *)sub_widget;
+	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+	{
+		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_DRAW_LIGHT_VOLUMES);
+	}
+	else
+	{
+		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_DRAW_LIGHT_VOLUMES));
+	}
+}
+
+void exit_engine(swidget_t *sub_widget, void *data)
+{
+	pew_Exit();
+}
+
 void ginit()
 {
 	material_t ma;
@@ -314,8 +354,29 @@ void ginit()
 	mesh_t stencil;
 	mesh_t stencil2;
 	mesh_t holes;*/
-	
+	static int p;
 	tex_info_t tif;
+	
+//	TwInit(TW_OPENGL, NULL);
+	//TwWindowSize(renderer.screen_width, renderer.screen_height);
+	//TwBar *bar = TwNewBar("test");
+	
+	
+	//typedef enum {BAZ, BAR, FOO} test_enum;
+	//test_enum tt = BAZ;
+	
+	//TwEnumVal tests[] = {{BAZ, "BAZ"}, {BAR, "BAR"}, {FOO, "FOO"}};
+	
+	//TwType test_type = TwDefineEnum("test_enum", tests, 3);
+	
+	//TwAddVarRW(bar, "test_enum", test_type, &tt, NULL);
+	
+	//TwAddButton(bar, "button", cb, NULL, "key=c");
+	//TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with SDL and OpenGL.\nPress [Space] to toggle fullscreen.' ");
+	
+	//TwAddVarRO(bar, "frame", TW_TYPE_INT32, &renderer.frame_count, NULL);
+               
+    //TwAddVarRW(bar, "count", TW_TYPE_INT32, &p, " min=1 max=100 keyIncr=c keyDecr=f ");           
 	
 	mesh_t *sphereptr;
 	mesh_t *planeptr;
@@ -358,6 +419,8 @@ void ginit()
 	
 //	model_LoadModel("CubeUV2.obj", "cubeUV");
 	model_LoadModel("ico_uv.obj", "ico");
+	model_LoadModel("pole.obj", "pole");
+	model_LoadModel("bus_stop.obj", "bus_stop");
 //	model_LoadModel("wheel.obj", "wheel");
 //	model_LoadModel("pew_plane.obj", "pew_plane");
 	model_LoadModel("BigPlane.obj", "plane");
@@ -449,8 +512,17 @@ void ginit()
 	
 
 	
-	//wbase_t *test = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT, -4.5, -2.0, 4.0, 4.0, 0.3, 0.3, 0.3, 0.5, texture_GetTextureID("pilip"), 0);
-	//gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 0.0, 0.0, 320, 240, 0.5, 0.3, 0.2, 0.2, WIDGET_NO_TEXTURE, 0);
+	widget_t *w = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
+	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_shadow_mapping);
+	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_volumetric_lights);
+	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, exit_engine);
+	
+	
+	//w = gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 50.0, -2.0, 320, 240, 0.8, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
+	//gui_AddButton(w, "button0", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
+	//gui_AddButton(w, "button1", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
+	//gui_AddButton(w, "button2", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
+	//gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT, 0.0, 0.0, 320, 240, 0.5, 0.3, 0.2, 0.7, WIDGET_NO_TEXTURE, 0);
 	
 	//gui_CreateWidget("test2", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -10.0, 0.0, 640.0, 240.0, 0.5, 0.5, 1.0, 1.0, WIDGET_NO_TEXTURE, 0);
 	//gui_AddSubWidget(test, 0, WIDGET_BUTTON, "test_button", -0.8, 0.0, 0.5, 0.3, 0.0, 0.0, 0.5, 0.0, 0.0, 0.9, texture_GetTextureID("pew"), test, (void *)gui_test_CloseWidget);
@@ -589,6 +661,9 @@ void ginit()
 	entity_CreateEntityDef("ico_brushed_metal", ENTITY_COLLIDES, material_GetMaterialIndex("brushed_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_painted_metal", ENTITY_COLLIDES, material_GetMaterialIndex("painted_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_tufted_leather", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	
+	entity_CreateEntityDef("pole", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("pole"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("bus_stop", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("bus_stop"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("cube_greasy", ENTITY_COLLIDES, material_GetMaterialIndex("greasy"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
@@ -626,13 +701,21 @@ void ginit()
 	
 	id = mat3_t_id();
 	def0 = entity_GetEntityDef("ico_brushed_metal");
-	//entity_SpawnEntity("ico_brushed_metal", def, vec3(3.0, 0.0, 0.0), &id);
+	entity_SpawnEntity("ico_brushed_metal", def0, vec3(3.0, 0.0, 0.0), &id);
 	
 	def1 = entity_GetEntityDef("ico_painted_metal");
-	//entity_SpawnEntity("ico_painted_metal", def, vec3(-3.0, 0.0, 0.0), &id);
+	entity_SpawnEntity("ico_painted_metal", def1, vec3(-3.0, 0.0, 0.0), &id);
 	
 	def2 = entity_GetEntityDef("ico_tufted_leather");
-	//entity_SpawnEntity("ico_tufted_leather", def, vec3(-5.0, 0.0, 0.0), &id);
+	entity_SpawnEntity("ico_tufted_leather", def2, vec3(-5.0, 0.0, 0.0), &id);
+	
+	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
+	def2 = entity_GetEntityDef("pole");
+	entity_SpawnEntity("pole", def2, vec3(10.0, -8.0, 0.0), &id);
+	
+	id = mat3_t_id();
+	def2 = entity_GetEntityDef("bus_stop");
+	entity_SpawnEntity("bus_stop", def2, vec3(10.0, 0.0, 0.0), &id);
 	
 	/*for(i = 0; i < 10; i++)
 	{
@@ -675,12 +758,13 @@ void ginit()
 	
 	for(i=0; i<1; i++)
 	{	
-		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
-		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 5.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
+		light_CreateSpotLight("spot", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(6.0, 4.8, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 40.0, 0.5, 0.01, 0.005, 0.01, 4, 256, -1);
+		light_CreatePointLight("lightwow0", 0, vec4(5.0, 1.8, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		//light_CreatePointLight("lightwow4", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
 	
 	

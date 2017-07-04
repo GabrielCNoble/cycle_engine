@@ -3,7 +3,7 @@
 #include "pew.h"
 #include "draw.h"
 
-extern input_cache input;
+input_cache input;
 extern console_t console;
 extern pew_t pew;
 extern renderer_t renderer;
@@ -68,11 +68,17 @@ PEWAPI void input_GetInput()
 {
 	int bm;
 	//SDL_Cursor *cursor;
+	
+	
+	
 	if(!pew.b_console)
 	{
 		SDL_PollEvent(input.kb_event);
 		input.kb_keys=(Uint8 *)SDL_GetKeyboardState(NULL);
 	}
+	
+	//TwEventSDL(input.kb_event, SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
+	
 	bm=SDL_GetMouseState(&input.mouse_x, &input.mouse_y);
 	
 	input.mouse_y = renderer.screen_height - input.mouse_y;
@@ -105,6 +111,7 @@ PEWAPI void input_GetInput()
 		}
 		
 		input.bm_mouse |= MOUSE_LEFT_BUTTON_CLICKED;
+		TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
 	}
 	else
 	{
@@ -113,6 +120,7 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_LEFT_BUTTON_JUST_RELEASED;
 		}
 		input.bm_mouse &= ~MOUSE_LEFT_BUTTON_CLICKED;
+		TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
 	}
 	
 	if(bm & 4)
@@ -122,6 +130,7 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_CLICKED;
 		}
 		input.bm_mouse |= MOUSE_RIGHT_BUTTON_CLICKED;
+		TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_RIGHT);
 	}
 	else
 	{
@@ -130,6 +139,7 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_RELEASED;
 		}
 		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_CLICKED;
+		TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_RIGHT);
 	}
 	
 	input.normalized_mouse_x=(float)input.mouse_x/(float)renderer.screen_width;

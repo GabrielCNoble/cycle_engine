@@ -134,7 +134,7 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 	
 	clusters_per_row = width / CLUSTER_WIDTH;
 	cluster_rows = height / CLUSTER_WIDTH;
-	z_divs = log(zfar / znear) / log(1.0 + (2.0 * (tan(fovy / 2.0) / CLUSTER_WIDTH)));
+	z_divs = log(zfar / znear) / log(1.0 + (2.0 * (tan((fovy * (width / height)) / 2.0) / CLUSTER_WIDTH)));
 	
 	
 	
@@ -143,6 +143,8 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 	
 	cll = clusters->light_lists;
 	caabb = clusters->aabbs;
+	
+	//printf("%d\n", z_divs);
 	
 	for(k = 0; k < z_divs; k++)
 	{

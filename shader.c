@@ -33,13 +33,23 @@ static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "s
 																			  "sysMaterialFlags"};
 static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];	
 static int material_params_uniform_types[MATERIAL_PARAMS_FIELDS];
-
 int material_params_uniform_buffer_size;																		  
 																			  																		  
 													
 													
 
-static char light_params_uniform_block[] = {"sysLightParams"};									   
+static char *light_params_uniform_block = {"sysLightParams"};
+
+static char *light_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = {"sysLightPosition",
+																		  "sysLightRadius",
+																		  "sysLightLinearAttenuation",
+																		  "sysLightQuadraticAttenuation",
+																		  "sysLightType"};
+static int light_params_uniform_offsets[LIGHT_PARAMS_FIELDS];	
+static int light_params_uniform_types[LIGHT_PARAMS_FIELDS];
+int light_params_uniform_buffer_size;	
+
+																	  									   
 
 static char vertex_capture_string[] = "varying vec3 _vcap_;";
 static char normal_capture_string[] = "varying vec3 _ncap_;";
@@ -163,7 +173,7 @@ PEWAPI void shader_Init(char *path)
 	shader_t *init_shader;
 	int i;
 	int init_shader_index;
-	unsigned int indexes[MATERIAL_PARAMS_FIELDS];
+	unsigned int indexes[MATERIAL_PARAMS_FIELDS + LIGHT_PARAMS_FIELDS];
 	
 	strcpy(shader_path, path);
 	shader_path_len = strlen(shader_path);
@@ -197,11 +207,19 @@ PEWAPI void shader_Init(char *path)
 		glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &material_params_uniform_buffer_size);
 		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
 		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
-		
-		/*for(i = 0; i < MATERIAL_PARAMS_FIELDS; i++)
-		{
-			printf("%d\n", material_params_uniform_offsets[i]);
-		}*/
+	}
+	else
+	{
+		/* something wrong with the init shader... */
+		printf("init shader appears to have problems! aborting...\n");
+		exit(-5);
+	}
+	if((i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block)) != GL_INVALID_INDEX)
+	{
+		glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
+		glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &light_params_uniform_buffer_size);
+		glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
+		glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
 	}
 	else
 	{

@@ -1,5 +1,7 @@
 #include "material.h"
+
 #include "brdf.h"
+
 
 
 varying vec2 UV;
@@ -251,7 +253,15 @@ void sample_3D_shadow_map(vec3 frag_pos, vec3 frag_norm, vec3 light_pos, out flo
 		factor -= sub;
 	}*/
 	
-	factor = float(fz < shadow + n);
+	//factor = float(fz < shadow + n);
+	if(fz > shadow + n)
+	{
+		factor = 0.0;
+	}
+	else
+	{
+		factor = 1.0;
+	}
 
 	/*for(i = 1; i <= count; i++)
 	{
