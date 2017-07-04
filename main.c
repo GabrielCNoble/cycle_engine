@@ -59,10 +59,7 @@ void gmain(float delta_time)
 }
 
 
-void TW_CALL cb(void *data )
-{
-	printf("callback\n");
-}
+
 
 void ginput(float delta_time)
 {
@@ -709,15 +706,8 @@ void ginit()
 	def2 = entity_GetEntityDef("ico_tufted_leather");
 	entity_SpawnEntity("ico_tufted_leather", def2, vec3(-5.0, 0.0, 0.0), &id);
 	
-	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
-	def2 = entity_GetEntityDef("pole");
-	entity_SpawnEntity("pole", def2, vec3(10.0, -8.0, 0.0), &id);
 	
-	id = mat3_t_id();
-	def2 = entity_GetEntityDef("bus_stop");
-	entity_SpawnEntity("bus_stop", def2, vec3(10.0, 0.0, 0.0), &id);
-	
-	/*for(i = 0; i < 10; i++)
+	for(i = 0; i < 10; i++)
 	{
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 0.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 0.0, -5.0 + i), &id);
@@ -750,8 +740,16 @@ void ginit()
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 8.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 8.0, -5.0 + i), &id);
-	}*/
+	}
 
+
+	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
+	def2 = entity_GetEntityDef("pole");
+	entity_SpawnEntity("pole", def2, vec3(8.0, -8.0, 6.0), &id);
+	
+	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), -0.5, 1);
+	def2 = entity_GetEntityDef("bus_stop");
+	entity_SpawnEntity("bus_stop", def2, vec3(8.0, -3.2, 0.0), &id);
 	
 	
 	id = mat3_t_id();
@@ -759,8 +757,8 @@ void ginit()
 	for(i=0; i<1; i++)
 	{	
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
-		light_CreateSpotLight("spot", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(6.0, 4.8, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 40.0, 0.5, 0.01, 0.005, 0.01, 4, 256, -1);
-		light_CreatePointLight("lightwow0", 0, vec4(5.0, 1.8, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreateSpotLight("spot", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(4.5, 4.8, 6.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.01, 0.005, 0.01, 4, 1024, -1);
+		light_CreatePointLight("lightwow0", 0, vec4(4.5, 1.8, 6.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);

@@ -111,7 +111,7 @@ PEWAPI void input_GetInput()
 		}
 		
 		input.bm_mouse |= MOUSE_LEFT_BUTTON_CLICKED;
-		TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
+		//TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
 	}
 	else
 	{
@@ -120,7 +120,7 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_LEFT_BUTTON_JUST_RELEASED;
 		}
 		input.bm_mouse &= ~MOUSE_LEFT_BUTTON_CLICKED;
-		TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
+		//TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
 	}
 	
 	if(bm & 4)
@@ -130,7 +130,7 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_CLICKED;
 		}
 		input.bm_mouse |= MOUSE_RIGHT_BUTTON_CLICKED;
-		TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_RIGHT);
+		//TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_RIGHT);
 	}
 	else
 	{
@@ -139,7 +139,7 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_RELEASED;
 		}
 		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_CLICKED;
-		TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_RIGHT);
+		//TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_RIGHT);
 	}
 	
 	input.normalized_mouse_x=(float)input.mouse_x/(float)renderer.screen_width;

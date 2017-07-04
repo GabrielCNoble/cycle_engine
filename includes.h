@@ -23,7 +23,6 @@
 #include "SDL2/SDL_mutex.h"
 #include "SDL2/SDL_scancode.h"
 #include "SDL2/SDL_mouse.h"
-#include "AntTweakBar.h"
 
 //#include "ft2build.h"
 //#include "freetype/freetype.h"
