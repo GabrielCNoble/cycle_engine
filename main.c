@@ -739,8 +739,8 @@ void ginit()
 
 	
 	widget_t *w = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_shadow_mapping);
-	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_volumetric_lights);
+	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_shadow_mapping);
+	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_volumetric_lights);
 	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, exit_engine);
 	
 	
@@ -988,10 +988,10 @@ void ginit()
 	{	
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
 		//light_CreateSpotLight("spot", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(4.5, 4.8, 6.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.01, 0.005, 0.01, 4, 1024, -1);
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, 0.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);

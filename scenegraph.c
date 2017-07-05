@@ -849,36 +849,34 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 			}*/
 			//else
 			//{
-				//if(entity_a.position_data[node_index].bm_flags & ENTITY_HAS_MOVED)
-				//{
 				mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
 				mat4_t_mult(&c_transform, &transform, parent_transform);
-					
-				e->world_orientation.floats[0][0] = c_transform.floats[0][0];
-				e->world_orientation.floats[0][1] = c_transform.floats[0][1];
-				e->world_orientation.floats[0][2] = c_transform.floats[0][2];
-						
-				e->world_orientation.floats[1][0] = c_transform.floats[1][0];
-				e->world_orientation.floats[1][1] = c_transform.floats[1][1];
-				e->world_orientation.floats[1][2] = c_transform.floats[1][2];
-						
-				e->world_orientation.floats[2][0] = c_transform.floats[2][0];
-				e->world_orientation.floats[2][1] = c_transform.floats[2][1];
-				e->world_orientation.floats[2][2] = c_transform.floats[2][2];
-					
-				e->world_position.x = c_transform.floats[3][0];
-				e->world_position.y = c_transform.floats[3][1];
-				e->world_position.z = c_transform.floats[3][2];
-					
-				entity_CalculateAABB(a, e);
-					
-					//memcpy(&entity_a.position_data[node_index].world_transform, &c_transform, sizeof(mat4_t));
-				entity_a.position_data[node_index].bm_flags &= ~ENTITY_HAS_MOVED;
-				//}
-				/*else
+			
+				if(entity_a.position_data[node_index].bm_flags & ENTITY_HAS_MOVED)
 				{
-					mat4_t_compose(&c_transform, &entity_a.position_data[node_index].world_orientation, entity_a.position_data[node_index].world_position);
-				}*/
+					//mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
+					//mat4_t_mult(&c_transform, &transform, parent_transform);
+					
+					e->world_orientation.floats[0][0] = c_transform.floats[0][0];
+					e->world_orientation.floats[0][1] = c_transform.floats[0][1];
+					e->world_orientation.floats[0][2] = c_transform.floats[0][2];
+						
+					e->world_orientation.floats[1][0] = c_transform.floats[1][0];
+					e->world_orientation.floats[1][1] = c_transform.floats[1][1];
+					e->world_orientation.floats[1][2] = c_transform.floats[1][2];
+						
+					e->world_orientation.floats[2][0] = c_transform.floats[2][0];
+					e->world_orientation.floats[2][1] = c_transform.floats[2][1];
+					e->world_orientation.floats[2][2] = c_transform.floats[2][2];
+					
+					e->world_position.x = c_transform.floats[3][0];
+					e->world_position.y = c_transform.floats[3][1];
+					e->world_position.z = c_transform.floats[3][2];
+					
+					entity_CalculateAABB(a, e);
+					entity_a.position_data[node_index].bm_flags &= ~ENTITY_HAS_MOVED;
+				}
+
 			//}
 			
 		break;
@@ -2130,6 +2128,7 @@ static void scenegraph_UpdateColliders()
 	int c = collider_a.count;
 	collider_base_t *collider;
 	entity_extra_t *entity;
+	entity_position_t *position;
 	mat4_t transform;
 	btTransform tr;
 	for(i = 0; i < c; i++)
@@ -2140,9 +2139,16 @@ static void scenegraph_UpdateColliders()
 		be automatically handled by it... */
 		if(collider->assigned_node) continue;
 		
+		/* if this collider isn't active, no need to
+		update anything... */
+		else if(!collider->rigid_body->isActive()) continue;
+		
 		/* only entities can have colliders
 		directly attached to them... */
 		entity = &entity_a.extra_data[collider->index];
+		position = &entity_a.position_data[collider->index];
+		
+		position->bm_flags |= ENTITY_HAS_MOVED;
 		
 		collider->rigid_body->getMotionState()->getWorldTransform(tr);
 		tr.getOpenGLMatrix(&transform.floats[0][0]);

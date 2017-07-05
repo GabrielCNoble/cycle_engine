@@ -147,7 +147,7 @@ float shade_point_point(vec3 light_pos, float light_radius, vec3 position)
 	vec3 lvec=light_pos-position;
 	float lvec_len=dot(lvec, lvec);
 	//return clamp(((light_radius*light_radius)-lvec_len)/lvec_len, 0.0f, 1.0f);
-	return (((light_radius*light_radius)-lvec_len)/(lvec_len))*0.08;
+	return (((light_radius*light_radius)-lvec_len)/(lvec_len*lvec_len)) * 0.1;
 }
 
 float shade_point_spot(vec3 light_pos, vec3 light_direction, float light_radius, vec3 position)

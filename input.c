@@ -157,10 +157,19 @@ PEWAPI void input_GetInput()
 	//if(!pew.b_console)
 	if(engine_state == PEW_PLAYING)
 	{
+		
+		if(last_mouse_x || last_mouse_y)
+		{
+			input.normalized_mouse_x = 0.0;
+			input.normalized_mouse_y = 0.0;
+		}
+		
 		SDL_ShowCursor(0);
 		SDL_WarpMouseInWindow(renderer.window, renderer.screen_width/2, renderer.screen_height/2);
 		input.mouse_dx=input.normalized_mouse_x;
 		input.mouse_dy=input.normalized_mouse_y;
+		last_mouse_x = 0.0;
+		last_mouse_y = 0.0;
 	}
 	else
 	{
