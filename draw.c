@@ -688,11 +688,11 @@ draw_Init
 	draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
 	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS | RENDERFLAG_DRAW_LIGHT_VOLUMES);
 	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
-	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
+	draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
 	//draw_SetDebugFlag(DEBUG_DRAW_ARMATURES);
 	//draw_SetDebugFlag(DEBUG_DRAW_ENTITY_ORIGIN);
 	//draw_SetDebugFlag(DEBUG_DRAW_COLLIDERS);
-	draw_SetDebugFlag(DEBUG_DISABLED);
+	//draw_SetDebugFlag(DEBUG_DISABLED);
 	//draw_SetDebugFlag(DEBUG_DRAW_ENTITY_AABB);
 	//draw_SetDebugFlag(DEBUG_DRAW_DBUFFER);
 	//draw_SetDebugFlag(DEBUG_DRAW_NBUFFER);
@@ -3889,9 +3889,10 @@ void draw_BlitToScreen()
 {
 
 	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, backbuffer.id);
+	//framebuffer_BindFramebuffer(&backbuffer);
 	//glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, composite_buffer.id);
-	//glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, backbuffer.width, backbuffer.height, GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	//glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, backbuffer.width, backbuffer.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	
 
 	//int i = GL_COLOR_ATTACHMENT0;
@@ -3912,7 +3913,7 @@ void draw_BlitToScreen()
 	
 	/* tone mapping is done here... */
 	framebuffer_BindFramebuffer(&backbuffer);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	
 	
 	
@@ -3934,8 +3935,8 @@ void draw_BlitToScreen()
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, composite_buffer.color_out1);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, active_light_a.shadow_data[0].shadow_map.shadow_map);
+	//glActiveTexture(GL_TEXTURE1);
+	//glBindTexture(GL_TEXTURE_CUBE_MAP, active_light_a.shadow_data[0].shadow_map.shadow_map);
 	//glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out3);
 	glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT); 
 	

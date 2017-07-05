@@ -40,6 +40,8 @@ extern framebuffer_t *cur_fb;
 
 extern unsigned  int gpu_heap;
 
+extern int engine_state;
+
 extern int wireframe_shader_index;
 
 extern mat4_t cube_shadow_mats[6];
@@ -445,19 +447,22 @@ PEWAPI void scenegraph_SetParent(node_t *node, node_t *parent, int b_keep_transf
 	mat3_t child_orientation;
 	vec3_t child_position;
 	
+	
+	
+	/* if this node is already parented to this parent, do nothing */
+	if(node->parent == parent)
+	{
+		return;
+	}
 	/* this node already has a parent, that differs from the parent we want to set. So, remove the old parent and 
 	recompact its children list */
-	//if(node->parent != scenegraph.root)
-	if(node->parent)
+	else if(node->parent)
 	{
 		(*((node_t **)&node->parent->children+node->node_index))=NULL;
 		scenegraph_RecompactNodeChildrenList(node->parent);
 	}
-	/* if this node is already parented to this parent, do nothing */
-	else if(node->parent == parent)
-	{
-		return;
-	}
+	
+
 	
 		
 	if(parent->children_count>=parent->max_children)
@@ -705,6 +710,11 @@ void scenegraph_ProcessScenegraph()
 	
 	mat4_t_mult(&model_view_projection_matrix, &camera_a.cameras[renderer.active_camera_index].world_to_camera_matrix, &camera_a.cameras[renderer.active_camera_index].projection_matrix);
 	
+	if(engine_state == 2)
+	{
+		scenegraph_UpdateColliders();
+	}
+	
 	scenegraph_ProcessNode(scenegraph.root, &root_transform);
 	//camera_ResetWorldToCameraMatrix();
 	scenegraph_CullGeometry();
@@ -782,12 +792,12 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 			ex = &entity_a.extra_data[node_index];
 			a = &entity_a.aabb_data[node_index];
 			
-			if(entity_a.position_data[node_index].collider_index >= 0)
+			/*if(entity_a.position_data[node_index].collider_index >= 0)
 			{
 
 				collider = &collider_a.colliders[e->collider_index];
 				
-				if(collider->base.rigid_body->isActive())
+				if(collider->base.rigid_body->isActive() || e->bm_flags & ENTITY_HAS_MOVED)
 				{
 					collider->base.rigid_body->getMotionState()->getWorldTransform(tr);
 					tr.getOpenGLMatrix(&transform.floats[0][0]);
@@ -834,40 +844,42 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 					mat4_t_compose(&transform, &entity_a.position_data[node_index].world_orientation, entity_a.position_data[node_index].world_position);
 					memcpy(&c_transform, &transform, sizeof(mat4_t));
 				}	
-			}
-			else
-			{
+				
+				e->bm_flags &= ~ENTITY_HAS_MOVED;
+			}*/
+			//else
+			//{
 				//if(entity_a.position_data[node_index].bm_flags & ENTITY_HAS_MOVED)
-				{
-					mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
-					mat4_t_mult(&c_transform, &transform, parent_transform);
+				//{
+				mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
+				mat4_t_mult(&c_transform, &transform, parent_transform);
 					
-					e->world_orientation.floats[0][0] = c_transform.floats[0][0];
-					e->world_orientation.floats[0][1] = c_transform.floats[0][1];
-					e->world_orientation.floats[0][2] = c_transform.floats[0][2];
+				e->world_orientation.floats[0][0] = c_transform.floats[0][0];
+				e->world_orientation.floats[0][1] = c_transform.floats[0][1];
+				e->world_orientation.floats[0][2] = c_transform.floats[0][2];
 						
-					e->world_orientation.floats[1][0] = c_transform.floats[1][0];
-					e->world_orientation.floats[1][1] = c_transform.floats[1][1];
-					e->world_orientation.floats[1][2] = c_transform.floats[1][2];
+				e->world_orientation.floats[1][0] = c_transform.floats[1][0];
+				e->world_orientation.floats[1][1] = c_transform.floats[1][1];
+				e->world_orientation.floats[1][2] = c_transform.floats[1][2];
 						
-					e->world_orientation.floats[2][0] = c_transform.floats[2][0];
-					e->world_orientation.floats[2][1] = c_transform.floats[2][1];
-					e->world_orientation.floats[2][2] = c_transform.floats[2][2];
+				e->world_orientation.floats[2][0] = c_transform.floats[2][0];
+				e->world_orientation.floats[2][1] = c_transform.floats[2][1];
+				e->world_orientation.floats[2][2] = c_transform.floats[2][2];
 					
-					e->world_position.x = c_transform.floats[3][0];
-					e->world_position.y = c_transform.floats[3][1];
-					e->world_position.z = c_transform.floats[3][2];
+				e->world_position.x = c_transform.floats[3][0];
+				e->world_position.y = c_transform.floats[3][1];
+				e->world_position.z = c_transform.floats[3][2];
 					
-					entity_CalculateAABB(a, e);
+				entity_CalculateAABB(a, e);
 					
 					//memcpy(&entity_a.position_data[node_index].world_transform, &c_transform, sizeof(mat4_t));
-					entity_a.position_data[node_index].bm_flags &= ~ENTITY_HAS_MOVED;
-				}
+				entity_a.position_data[node_index].bm_flags &= ~ENTITY_HAS_MOVED;
+				//}
 				/*else
 				{
 					mat4_t_compose(&c_transform, &entity_a.position_data[node_index].world_orientation, entity_a.position_data[node_index].world_position);
 				}*/
-			}
+			//}
 			
 		break;
 		
@@ -2111,6 +2123,44 @@ static void scenegraph_UpdateVertexCache()
 }
 
 
+static void scenegraph_UpdateColliders()
+{
+	int i;
+	int j;
+	int c = collider_a.count;
+	collider_base_t *collider;
+	entity_extra_t *entity;
+	mat4_t transform;
+	btTransform tr;
+	for(i = 0; i < c; i++)
+	{
+		collider = &collider_a.colliders[i].base;
+		
+		/* colliders added to the scenegraph will
+		be automatically handled by it... */
+		if(collider->assigned_node) continue;
+		
+		/* only entities can have colliders
+		directly attached to them... */
+		entity = &entity_a.extra_data[collider->index];
+		
+		collider->rigid_body->getMotionState()->getWorldTransform(tr);
+		tr.getOpenGLMatrix(&transform.floats[0][0]);
+
+		for(j = 0; j < 3; j++)
+		{
+			entity->local_orientation.floats[j][0] = transform.floats[j][0];
+			entity->local_orientation.floats[j][1] = transform.floats[j][1];
+			entity->local_orientation.floats[j][2] = transform.floats[j][2];
+		}
+					
+		entity->local_position.x = transform.floats[3][0];
+		entity->local_position.y = transform.floats[3][1];
+		entity->local_position.z = transform.floats[3][2];
+
+	}
+}
+
 static void scenegraph_GroupPerHint()
 {
 	
@@ -2177,9 +2227,20 @@ int scenegraph_GetEntityUnderMouse()
 	c = render_q.count;
 	
 	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glEnable(GL_CULL_FACE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
+	
+	
+	if(renderer.render_mode == RENDER_DRAWMODE_WIREFRAME)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glLineWidth(8.0);
+	}
+	else
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 	
 	//printf("%d\n", c);
 	for(i=0; i < c; i++)
@@ -2200,6 +2261,9 @@ int scenegraph_GetEntityUnderMouse()
 		
 		draw_mode = *(unsigned int *)&model_view_matrix.floats[3][3];
 		model_view_matrix.floats[3][3]=1.0;
+		
+		model_view_matrix.floats[2][2] = model_view_matrix.floats[0][0] * model_view_matrix.floats[1][1] - 
+										 model_view_matrix.floats[0][1] * model_view_matrix.floats[1][0];
 		
 		
 		material_index = draw_mode & 0x0000ffff;
@@ -2232,6 +2296,7 @@ int scenegraph_GetEntityUnderMouse()
 	//printf("%d\n", entity_index);
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glLineWidth(1.0);
 	
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();

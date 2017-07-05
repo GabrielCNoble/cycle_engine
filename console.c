@@ -9,6 +9,8 @@ extern pew_t pew;
 extern console_font font;
 extern renderer_t renderer;
 
+extern int engine_state;
+
 static float color_conversion_lookup_table[256];
 
 
@@ -259,11 +261,11 @@ PEWAPI void console_ProcessConsole()
 		if(!(console.bm_status&CONSOLE_VISIBLE))
 		{
 			console.bm_status|=CONSOLE_ROLLDOWN;
-			last_state=pew.pew_state;
+			last_state = engine_state;
 			pew_Pause();
 			if(!(last_state&PEW_PAUSED))
 			{
-				pew.pew_state|=PEW_PAUSED_BY_CONSOLE;
+				engine_state |= PEW_PAUSED_BY_CONSOLE;
 			}
 			pew.b_console=1;
 
@@ -271,7 +273,7 @@ PEWAPI void console_ProcessConsole()
 		else
 		{
 			console.bm_status|=CONSOLE_ROLLUP;
-			if(pew.pew_state&PEW_PAUSED_BY_CONSOLE)
+			if(engine_state & PEW_PAUSED_BY_CONSOLE)
 			{
 				pew_Resume();
 			}

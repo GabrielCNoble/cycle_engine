@@ -1029,6 +1029,7 @@ PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float a
 {
 	mat4_t transform;
 	general_collider_t *collider;
+	btTransform t;
 	if(!b_set)
 	{
 		entity->extra_data->local_position.floats[0]+=direction.floats[0]*amount;
@@ -1045,14 +1046,14 @@ PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float a
 	if(entity->position_data->collider_index >= 0)
 	{
 		collider = &collider_a.colliders[entity->position_data->collider_index];
-		//memcpy(&transform, &entity->position_data->world_transform, sizeof(mat4_t));
-		//transform.floats[3][0] = entity->extra_data->local_position.floats[0];
-		//transform.floats[3][1] = entity->extra_data->local_position.floats[1];
-		//transform.floats[3][2] = entity->extra_data->local_position.floats[2];
-		//collider->rigid_body->getWorldTransform().setFromOpenGLMatrix((btScalar *)&transform.floats[0][0]);
-		collider->base.rigid_body->getWorldTransform().setOrigin(btVector3(entity_a.extra_data->local_position.x, entity_a.extra_data->local_position.y, entity_a.extra_data->local_position.z));
+		//collider->base.rigid_body->getMotionState()->getWorldTransform(t);
+		//t.setOrigin(btVector3(entity_a.extra_data->local_position.x, entity_a.extra_data->local_position.y, entity_a.extra_data->local_position.z));
+		//collider->base.rigid_body->getMotionState()->setWorldTransform(t);
+		//collider->base.rigid_body->getWorldTransform().setOrigin(btVector3(entity_a.extra_data->local_position.x, entity_a.extra_data->local_position.y, entity_a.extra_data->local_position.z));
+		collider->base.rigid_body->translate(btVector3(direction.floats[0]*amount, direction.floats[1]*amount, direction.floats[2]*amount));
 		collider->base.rigid_body->setLinearVelocity(btVector3(0.0, 0.0, 0.0));
 		collider->base.rigid_body->setAngularVelocity(btVector3(0.0, 0.0, 0.0));
+		collider->base.rigid_body->activate(true);
 	}
 	
 	entity->position_data->bm_flags |= ENTITY_HAS_MOVED;
@@ -1060,6 +1061,8 @@ PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float a
 	
 }
 
+
+/* TODO: optmize the shit out of this function... */
 void entity_CalculateAABB(entity_aabb_t *aabb, entity_position_t *position)
 {
 	float v[24];

@@ -40,6 +40,8 @@ pew_t pew;
 
 char backtrace[2048];
 
+int engine_state;
+
 
 
 #ifdef __cplusplus
@@ -148,11 +150,11 @@ PEWAPI void pew_MainLoop()
 	static float min = 100000000.0;
 	long long unsigned int c0;
 	long long unsigned int c1;
-	pew_Resume();
+	pew_Pause();
 	pew_UpdateDeltaTime();
 	
 	int fps_font = text_GetFontIndex("fixedsys_22");
-	while(pew.pew_state)
+	while(engine_state)
 	{
 		
 		//printf("avarage fps (10 frames): %.02f	 \r", fps_disp);
@@ -162,7 +164,7 @@ PEWAPI void pew_MainLoop()
 		//sound_ProcessSound();
 		input_GetInput();
 		console_ProcessConsole();
-		if(!(pew.pew_state&PEW_PAUSED) && !(pew.b_console))
+		if(!(engine_state & PEW_PAUSED) && !(pew.b_console))
 		{
 			armature_ProcessArmatures(pew.ti.ms_elapsed * pew.time_scale);
 			physics_ProcessCollisions(pew.ti.ms_elapsed * pew.time_scale); 
@@ -254,21 +256,21 @@ PEWAPI void pew_SetResumeGameFunction(void (*resume_function)())
 
 PEWAPI void pew_SetPewState(int pew_state)
 {
-	pew.pew_state=pew_state;
+	engine_state = pew_state;
 }
 
 PEWAPI int pew_GetPewState()
 {
-	return pew.pew_state;
+	return engine_state;
 }
 
 
 
 PEWAPI void pew_Pause()
 {
-	if(pew.pew_state!=PEW_PAUSED)
+	if(engine_state != PEW_PAUSED)
 	{
-		pew.pew_state=PEW_PAUSED;
+		engine_state = PEW_PAUSED;
 		pew.pause_function();
 		//sound_PauseAllSources();
 	}
@@ -279,9 +281,9 @@ PEWAPI void pew_Pause()
 
 PEWAPI void pew_Resume()
 {
-	if(pew.pew_state!=PEW_PLAYING)
+	if(engine_state != PEW_PLAYING)
 	{
-		pew.pew_state=PEW_PLAYING;
+		engine_state = PEW_PLAYING;
 		pew.resume_function();
 		//sound_ResumeAllSources();
 	}
@@ -290,7 +292,7 @@ PEWAPI void pew_Resume()
 
 PEWAPI void pew_Exit()
 {
-	pew.pew_state = PEW_EXIT;
+	engine_state = PEW_EXIT;
 }
 
 PEWAPI float pew_GetTime()

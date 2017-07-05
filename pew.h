@@ -61,7 +61,7 @@ typedef struct pew_t
 	void (*pause_function)();
 	void (*resume_function)();
 	int esc_state;
-	int pew_state;
+	//int pew_state;
 	int b_console;
 	time_info_t ti;
 	float time_scale;

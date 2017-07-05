@@ -78,7 +78,6 @@ PEWAPI void scenegraph_SetChild(node_t *node, node_t *child);
 
 /* process nodes in scenegraph */
 void scenegraph_ProcessScenegraph();
-
 /* process a node recursively. */
 static void scenegraph_ProcessNode(node_t *node, mat4_t *model_view_matrix);
 /* process all nodes interactively */
@@ -97,6 +96,8 @@ static void scenegraph_DispatchGeometry();
 static void scenegraph_GetAffectingLights();
 
 static void scenegraph_UpdateVertexCache();
+
+static void scenegraph_UpdateColliders();
 
 static void scenegraph_GroupPerHint();
 

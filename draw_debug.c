@@ -399,7 +399,7 @@ void draw_debug_Draw()
 				{
 					r.lfloats[j] = draw_cmds[i].data[j + 3];
 				}
-				
+				glEnable(GL_DEPTH_TEST);
 				glMatrixMode(GL_MODELVIEW);
 				glPushMatrix();
 				mat4_t_compose(&p, &r, vec3(draw_cmds[i].data[0], draw_cmds[i].data[1], draw_cmds[i].data[2]));

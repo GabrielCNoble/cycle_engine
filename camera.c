@@ -295,9 +295,19 @@ camera_TranslateCamera
 */
 PEWAPI void camera_TranslateCamera(camera_t *camera, vec3_t direction, float amount, int b_set)
 {
-	camera->local_position.floats[0]=direction.floats[0]*amount;
-	camera->local_position.floats[1]=direction.floats[1]*amount;
-	camera->local_position.floats[2]=direction.floats[2]*amount;
+	if(b_set)
+	{
+		camera->local_position.floats[0]=direction.floats[0]*amount;
+		camera->local_position.floats[1]=direction.floats[1]*amount;
+		camera->local_position.floats[2]=direction.floats[2]*amount;
+	}
+	else
+	{
+		camera->local_position.floats[0] += direction.floats[0]*amount;
+		camera->local_position.floats[1] += direction.floats[1]*amount;
+		camera->local_position.floats[2] += direction.floats[2]*amount;
+	}
+	
 	camera_ComputeWorldToCameraMatrix(camera);
 	return;
 }

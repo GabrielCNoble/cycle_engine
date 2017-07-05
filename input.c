@@ -7,6 +7,7 @@ input_cache input;
 extern console_t console;
 extern pew_t pew;
 extern renderer_t renderer;
+extern int engine_state;
 
 float last_mouse_x = 0.0;
 float last_mouse_y = 0.0;
@@ -154,7 +155,7 @@ PEWAPI void input_GetInput()
 	//input.bm_mouse &= ~MOUSE_OVER_WIDGET;
 	
 	//if(!pew.b_console)
-	if(pew.pew_state == PEW_PLAYING)
+	if(engine_state == PEW_PLAYING)
 	{
 		SDL_ShowCursor(0);
 		SDL_WarpMouseInWindow(renderer.window, renderer.screen_width/2, renderer.screen_height/2);
@@ -261,11 +262,11 @@ PEWAPI void input_GetEsc()
 		
 		if(pew.esc_state==ESC_JUST_PRESSED)
 		{
-			if(pew.pew_state==PEW_PAUSED && !pew.b_console)
+			if(engine_state == PEW_PAUSED && !pew.b_console)
 			{
 				pew_Resume();
 			}
-			else if(pew.pew_state==PEW_PLAYING)
+			else if(engine_state == PEW_PLAYING)
 			{
 				pew_Pause();
 			}
