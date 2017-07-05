@@ -208,6 +208,49 @@ PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_but
 	}
 }
 
+PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var)
+{
+	wvar_t *v;
+	if(widget)
+	{
+		v = (wvar_t *)malloc(sizeof(wvar_t));
+		v->swidget.name = strdup(name);
+		
+		v->swidget.x = x;
+		v->swidget.y = y;
+		v->swidget.w = w;
+		v->swidget.h = h;
+		
+		
+		v->swidget.cx = x;
+		v->swidget.cy = y;
+		v->swidget.cw = w;
+		v->swidget.ch = h;
+		
+		v->swidget.type = WIDGET_VAR;
+		v->swidget.bm_flags = bm_flags;
+		v->swidget.widget_callback = NULL;
+		v->swidget.next = NULL;
+		
+		v->var = var;
+		v->var_flags = var_flags;
+		v->var_type = type;
+
+		if(!widget->sub_widgets)
+		{
+			widget->sub_widgets = (swidget_t *)v;
+			widget->last_added = (swidget_t *)v;
+		}
+		else
+		{
+			widget->last_added->next = (swidget_t *)v;
+			widget->last_added = (swidget_t *)v;
+		}
+		widget->sub_widgets_count++;
+		
+	}
+}
+
 PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, widget_t *affected_widget, void *affect_function)
 {
 	#if 0

@@ -4057,6 +4057,7 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 	
 	int i;
 	int decimal;
+	int desired_decimal;
 	int sign;
 	//void *parms = ((char *)&str) + sizeof(char *);
 	char *p = str;
@@ -4075,7 +4076,7 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 		{
 			p++;
 			q = cparm;
-
+			desired_decimal = 999;
 			switch(*p)
 			{
 				case 'd':
@@ -4089,6 +4090,8 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 				break;
 				
 				case 'f':
+					_do_float:
+						
 					fparm = va_arg(args, double);
 					
 					i = 0;
@@ -4097,13 +4100,14 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 					{
 						*o++ = '-';
 					}
-					if(decimal < 0)
+					if(decimal <= 0)
 					{
 						*o++ = '0';
 						*o++ = '.';
-						while(*q)
+						while(*q && desired_decimal > 0)
 						{
 							*o++ = *q++;
+							desired_decimal--;
 						}
 					}
 					else
@@ -4114,17 +4118,35 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 							i++;
 						}
 						*o++ = '.';
-						while(*q)
+						while(*q && desired_decimal > 0)
 						{
 							*o++ = *q++;
 							i++;
+							desired_decimal--;
 						}
 					}
-					
-				
-					
-					
 					p++;
+				break;
+				
+				case 's':
+					strparm = va_arg(args, char *);
+					while(*strparm)
+					{
+						*o++ = *strparm++;
+					}
+					p++;
+				break;
+				
+				case '.':
+					i = 0;
+					p++;
+					while(*p >= '0' && *p <= '9')
+					{
+						cparm[i++] = *p++;
+					}
+					cparm[i] = '\0';
+					desired_decimal = atoi(cparm);
+					goto _do_float;
 				break;
 			}
 		}
@@ -4176,6 +4198,12 @@ PEWAPI void draw_DrawWidgets()
 	widget_t *cwidget;
 	swidget_t *cswidget;
 	wbutton_t *button;
+	wvar_t *var;
+	
+	int *i32var;
+	short *i16var;
+	vec3_t *v3tvar;
+	vec3_t v;
 	
 	int stencil_val = 1;
 	float x_scale = 2.0 / renderer.screen_width;
@@ -4247,10 +4275,7 @@ PEWAPI void draw_DrawWidgets()
 	{
 		
 		 _draw_top_widget:
-		/*if(!(cwidget->bm_flags & WIDGET_VISIBLE))
-		{
-			goto _skip_widget0;
-		}*/
+
 		
 		if(cwidget->a < 1.0)
 		{
@@ -4261,11 +4286,7 @@ PEWAPI void draw_DrawWidgets()
 		{
 			glDisable(GL_BLEND);
 		}
-		
-		/*scissor_x = cwidget->x * x_scale * 0.5 + 0.5;
-		scissor_y = cwidget->y * y_scale * 0.5 + 0.5;
-		scissor_w = cwidget->w * x_scale * 0.25;
-		scissor_h = cwidget->h * y_scale * 0.25;*/
+
 		
 		glClear(GL_STENCIL_BUFFER_BIT);
 		glStencilFunc(GL_ALWAYS, 0x1, 0xff);
@@ -4294,11 +4315,7 @@ PEWAPI void draw_DrawWidgets()
 		
 		if(cwidget->tex_handle > -1)
 		{
-			/*if(!cwidget->tex_handle)
-			{
-				glRasterPos2i()
-				glCopyPixels()
-			}*/
+
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, cwidget->tex_handle);
@@ -4564,6 +4581,72 @@ PEWAPI void draw_DrawWidgets()
 						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
 						
 					}
+				break;
+				
+				
+				case WIDGET_VAR:
+					var = (wvar_t *)cswidget;
+					hw = var->swidget.w / 2.0;
+					hh = var->swidget.h / 2.0;
+					
+					switch(var->var_type)
+					{
+						case VAR_INT_32:
+							glColor3f(0.5, 0.5, 0.5);
+							glBegin(GL_QUADS);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
+							glEnd();
+							
+							
+							i32var = (int *)var->var;
+							
+							if(var->var_flags & VAR_ADDR)
+							{
+								i32var = (int *)*i32var;
+							}
+							
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s %d", var->swidget.name, *i32var);	
+						break;
+						
+						case VAR_VEC3T:
+							glColor3f(0.5, 0.5, 0.5);
+							glBegin(GL_QUADS);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
+							glEnd();
+							
+							v3tvar = (vec3_t *)var->var;
+							
+							if(v3tvar)
+							{
+								if(var->var_flags & VAR_ADDR)
+								{
+									v3tvar = (vec3_t *)(&v3tvar->x);
+								}
+								
+								v.x = v3tvar->x;
+								v.y = v3tvar->y;
+								v.z = v3tvar->z;
+							}
+							else
+							{
+								v.x = 0.0;
+								v.y = 0.0;
+								v.z = 0.0;
+							}
+							
+							
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s    [%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
+							
+							
+						break;
+					}
+					
 				break;
 			}
 			

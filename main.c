@@ -26,7 +26,8 @@ enum HANDLE_3D_FLAGS
 
 
 int handle_3d_bm;
-vec3_t handle_3d_pos;
+vec3_t handle_3d_pos = {1.0, 0.0, 0.0};
+vec3_t selected_pos = {0.0, 0.0, 0.0};
 
 extern framebuffer_t picking_buffer;
 extern framebuffer_t *cur_fb;
@@ -67,10 +68,12 @@ void gmain(float delta_time)
 					entity_QueryEntityUnderCursor();
 					selected = entity_GetEntityUnderCursor();
 					
-					if(selected.extra_data)
-					{
-						handle_3d_pos = selected.position_data->world_position;
-					}
+					//if(selected.extra_data)
+					//{
+					//	handle_3d_pos = selected.position_data->world_position;
+					//	selected_pos = handle_3d_pos;
+						//printf("[%f %f %f]\n", handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
+					//}
 					
 				}
 
@@ -152,6 +155,7 @@ void gmain(float delta_time)
 	
 		draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 2.0, 0);
 		handle_3d_pos = selected.position_data->world_position;
+		selected_pos = handle_3d_pos;
 		draw_3d_handle();
 	}
 
@@ -743,6 +747,13 @@ void ginit()
 	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_volumetric_lights);
 	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, exit_engine);
 	
+	gui_AddVar(w, "Frames", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, -40.0, 290.0, 15.0, &renderer.frame_count);
+	
+	gui_AddVar(w, "3d handle", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, -60.0, 290.0, 15.0, &handle_3d_pos);
+	
+	gui_AddVar(w, "Selected", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, -80.0, 290.0, 15.0, &selected_pos);
+	
+	
 	
 	//w = gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 50.0, -2.0, 320, 240, 0.8, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
 	//gui_AddButton(w, "button0", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
@@ -909,7 +920,9 @@ void ginit()
 	def0 = entity_GetEntityDef("cube");
 	id = mat3_t_id();
 	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
+	entity_SpawnEntity("cube", def0, vec3(5.0, -5.0, 0.0), &id);
 	entity_SpawnEntity("cube", def0, vec3(0.0, -5.0, 0.0), &id);
+	entity_SpawnEntity("cube", def0, vec3(-5.0, -5.0, 0.0), &id);
 	/*mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.5, 1);
 	entity_SpawnEntity("wall1", def0, vec3(0.0, 0.0, -15.0), &id);
 	mat3_t_rotate(&id, vec3(0.0, 0.0, 1.0), 0.5, 1);

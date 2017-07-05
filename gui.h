@@ -159,6 +159,7 @@ enum WIDGET_TYPES
 	WIDGET_TEXT_FIELD,
 	WIDGET_IMAGE_AREA,
 	WIDGET_BUTTON,
+	WIDGET_VAR,
 	WIDGET_VERTICAL_SCROLLER,
 	WIDGET_HORIZONTAL_SCROLLER
 };
@@ -217,15 +218,28 @@ enum BUTTON_FLAGS
 	BUTTON_TOGGLED = 1 << 4
 };
 
-enum VALUE_TYPES
+enum VAR_FLAGS
 {
-	VALUE_INT_64 = 1,
-	VALUE_INT_32,
-	VALUE_INT_16,
-	VALUE_INT_8,
-	VALUE_FLOAT,
-	VALUE_DOUBLE
+	VAR_ADDR = 1,								/* if this flag is set, it means the value store within the wvar_t is a
+												   reference to that var type, and thus have to be dereferenced before used... */
+	VAR_RW = 1 <<1											   
 };
+
+enum VAR_TYPE
+{
+	VAR_INT_32 = 1,
+	VAR_INT_16,
+	VAR_INT_8,
+	VAR_UINT_32,
+	VAR_UINT_16,
+	VAR_UINT_8,
+	VAR_FLOAT,
+	VAR_VEC2T,
+	VAR_VEC3T,
+	VAR_VEC4T,
+	VAR_QUAT
+};
+
 
 #define WIDGET_NO_TEXTURE -1
 #define WIDGET_BORDER_PIXEL_WIDTH 8
@@ -268,7 +282,7 @@ typedef struct swidget_t
 	char *name;
 	int type;
 	int bm_flags;
-	void (*widget_callback)(swidget_t *, void *);
+	void (*widget_callback)(swidget_t *, void *);	/* this can gtfo... */
 	struct swidget_t *next;
 }swidget_t;
 
@@ -322,6 +336,14 @@ typedef struct
 
 typedef struct
 {
+	swidget_t swidget;
+	void *var;
+	short var_type;
+	short var_flags;
+}wvar_t;
+
+typedef struct
+{
 	//wbase_t base;
 	float min;						/* relative minimum normalized position the scroller can go */
 	float cur;						/* current relative normalized position the scroller is*/
@@ -356,6 +378,8 @@ PEWAPI void gui_Finish();
 PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused);
 
 PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_button_flags, float x, float y, float w, float h, float r, float g, float b, float a, void (*widget_callback)(swidget_t *, void *));
+
+PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
