@@ -16,6 +16,9 @@ extern light_array light_a;
 
 int l_count;
 
+int rotation_handle_divs = 64;
+float *rotation_handle;
+
 
 enum HANDLE_3D_FLAGS
 {
@@ -33,6 +36,7 @@ enum HANDLE_3D_MODE
 
 
 int handle_3d_bm;
+int handle_3d_mode = HANDLE_3D_ROTATION;
 vec3_t handle_3d_pos;
 vec3_t selected_pos;
 char *selected_name = NULL;
@@ -42,6 +46,12 @@ extern framebuffer_t *cur_fb;
 
 float grab_offset_x = 0.0;
 float grab_offset_y = 0.0;
+
+float last_grab_offset_x = 0.0;
+float last_grab_offset_y = 0.0;
+
+float cur_grab_offset_x = 0.0;
+float cur_grab_offset_y = 0.0;
 
 entity_ptr selected = {NULL, NULL, NULL, NULL};
 entity_ptr detected = {NULL, NULL, NULL, NULL};
@@ -70,7 +80,7 @@ void gmain(float delta_time)
 			if(!(input.bm_mouse & MOUSE_OVER_WIDGET))
 			{
 				
-				check_3d_handle();
+				check_3d_handle(handle_3d_mode);
 				if(!handle_3d_bm)
 				{
 					entity_QueryEntityUnderCursor();
@@ -93,7 +103,7 @@ void gmain(float delta_time)
 	if(selected.extra_data)
 	{	
 	
-		if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED)
+		if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED && handle_3d_bm)
 		{
 			
 			
@@ -121,76 +131,94 @@ void gmain(float delta_time)
 			{
 				grab_offset_x = mouse_x - screen_x;
 				grab_offset_y = mouse_y - screen_y;
+				cur_grab_offset_x = grab_offset_x;
+				cur_grab_offset_y = grab_offset_y; 
+				last_grab_offset_x = grab_offset_x;
+				last_grab_offset_y = grab_offset_y; 
+				
+				//printf("%f  %f\n", grab_offset_x * p.z, grab_offset_y * p.z);
 			}
 			
 			delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
 			delta_y = (mouse_y - screen_y - grab_offset_y) * p.z * 2.0;
 			
-			if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
+			switch(handle_3d_mode)
 			{
-				p = vec4(1.0, 0.0, 0.0, 0.0);
-				p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-				f = sqrt(p.x * p.x + p.y * p.y);
-				p.x /= f;
-				p.y /= f;
-				f = p.x * delta_x + p.y * delta_y;
-				entity_TranslateEntity(&selected, vec3(f, 0.0, 0.0), 1.0, 0);
-			}
-			if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
-			{
-				p = vec4(0.0, 1.0, 0.0, 0.0);
-				p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-				f = sqrt(p.x * p.x + p.y * p.y);
-				p.x /= f;
-				p.y /= f;
-				f = p.x * delta_x + p.y * delta_y;
-				entity_TranslateEntity(&selected, vec3(0.0, f, 0.0), 1.0, 0);
-			}
-			if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
-			{
-				p = vec4(0.0, 0.0, 1.0, 0.0);
-				p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-				f = sqrt(p.x * p.x + p.y * p.y);
-				p.x /= f;
-				p.y /= f;
-				f = p.x * delta_x + p.y * delta_y;
-				entity_TranslateEntity(&selected, vec3(0.0, 0.0, f), 1.0, 0);
+				case HANDLE_3D_TRANSLATION:
+					if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
+					{
+						p = vec4(1.0, 0.0, 0.0, 0.0);
+						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
+						f = sqrt(p.x * p.x + p.y * p.y);
+						p.x /= f;
+						p.y /= f;
+						f = p.x * delta_x + p.y * delta_y;
+						entity_TranslateEntity(&selected, vec3(f, 0.0, 0.0), 1.0, 0);
+					}
+					if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
+					{
+						p = vec4(0.0, 1.0, 0.0, 0.0);
+						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
+						f = sqrt(p.x * p.x + p.y * p.y);
+						p.x /= f;
+						p.y /= f;
+						f = p.x * delta_x + p.y * delta_y;
+						entity_TranslateEntity(&selected, vec3(0.0, f, 0.0), 1.0, 0);
+					}
+					if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
+					{
+						p = vec4(0.0, 0.0, 1.0, 0.0);
+						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
+						f = sqrt(p.x * p.x + p.y * p.y);
+						p.x /= f;
+						p.y /= f;
+						f = p.x * delta_x + p.y * delta_y;
+						entity_TranslateEntity(&selected, vec3(0.0, 0.0, f), 1.0, 0);
+					}
+				break;
+				
+				case HANDLE_3D_ROTATION:
+					
+					cur_grab_offset_x = mouse_x - screen_x;
+					cur_grab_offset_y = mouse_y - screen_y;
+							
+					f = sqrt(cur_grab_offset_x * cur_grab_offset_x + cur_grab_offset_y * cur_grab_offset_y);
+							
+					cur_grab_offset_x /= f;
+					cur_grab_offset_y /= f;
+							
+							
+					f = sqrt(last_grab_offset_x * last_grab_offset_x + last_grab_offset_y * last_grab_offset_y);
+							
+					last_grab_offset_x /= f;
+					last_grab_offset_y /= f;
+							
+					f = cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x;
+					switch(handle_3d_bm)
+					{
+						case HANDLE_3D_GRABBED_X_AXIS:
+							v = vec3(1.0, 0.0, 0.0);
+						break;
+						
+						case HANDLE_3D_GRABBED_Y_AXIS:
+							v = vec3(0.0, 1.0, 0.0);
+						break;
+						
+						case HANDLE_3D_GRABBED_Z_AXIS:
+							v = vec3(0.0, 0.0, 1.0);
+						break;
+					}
+					
+					entity_RotateEntity(&selected, v, -f * 0.5, 0);
+					
+					last_grab_offset_x = cur_grab_offset_x;
+					last_grab_offset_y = cur_grab_offset_y;
+					
+				break;
 			}
 			
-			//printf("[%f %f]\n", delta_x, delta_y);
-			/*switch(handle_3d_bm)
-			{
-				case HANDLE_3D_GRABBED_X_AXIS:
-					p = vec4(1.0, 0.0, 0.0, 0.0);
-					p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-					f = sqrt(p.x * p.x + p.y * p.y);
-					p.x /= f;
-					p.y /= f;
-					f = p.x * delta_x + p.y * delta_y;
-
-					entity_TranslateEntity(&selected, vec3(f, 0.0, 0.0), 1.0, 0);
-				break;
-				
-				case HANDLE_3D_GRABBED_Y_AXIS:
-					p = vec4(0.0, 1.0, 0.0, 0.0);
-					p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-					f = sqrt(p.x * p.x + p.y * p.y);
-					p.x /= f;
-					p.y /= f;
-					f = p.x * delta_x + p.y * delta_y;
-					entity_TranslateEntity(&selected, vec3(0.0, f, 0.0), 1.0, 0);
-				break;
-				
-				case HANDLE_3D_GRABBED_Z_AXIS:
-					p = vec4(0.0, 0.0, 1.0, 0.0);
-					p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-					f = sqrt(p.x * p.x + p.y * p.y);
-					p.x /= f;
-					p.y /= f;
-					f = p.x * delta_x + p.y * delta_y;
-					entity_TranslateEntity(&selected, vec3(0.0, 0.0, f), 1.0, 0);
-				break;
-			}*/
+			
+		
 		}
 		else
 		{
@@ -201,7 +229,7 @@ void gmain(float delta_time)
 		handle_3d_pos = selected.position_data->world_position;
 		selected_pos = handle_3d_pos;
 		selected_name = selected.extra_data->name;
-		draw_3d_handle();
+		draw_3d_handle(handle_3d_mode);
 	}
 
 }
@@ -495,21 +523,38 @@ void ginput(float delta_time)
 }
 
 
-void draw_3d_handle()
+void draw_3d_handle(int mode)
 {
-	if(selected.extra_data)
+	
+	switch(mode)
 	{
-		draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 0, 0);
-		draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 0, 0);
-		draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 0, 0);
-		draw_debug_DrawPoint(handle_3d_pos, vec3(1.0, 1.0, 1.0), 16.0, 0);
+		case HANDLE_3D_TRANSLATION:
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 0, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 0, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 0, 0);
+			draw_debug_DrawPoint(handle_3d_pos, vec3(1.0, 1.0, 1.0), 16.0, 0);
+		break;
+		
+		case HANDLE_3D_ROTATION:
+			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle, rotation_handle_divs, vec3(1.0, 0.0, 0.0), 8.0, 0, 0);
+			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle + (rotation_handle_divs * 3), rotation_handle_divs, vec3(0.0, 1.0, 0.0), 8.0, 0, 0);
+			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle + (rotation_handle_divs * 3 * 2), rotation_handle_divs, vec3(0.0, 0.0, 1.0), 8.0, 0, 0);
+		break;
 	}
+	
 }
 
-void check_3d_handle()
+void check_3d_handle(int mode)
 {
 	
 	handle_3d_bm = 0;
+	
+	int i;
+	int k;
+	int divs = 12;
+	float angle = 0.0;
+	float step = (2 * 3.14159265) / (float)divs;
+	float *verts;
 	
 	camera_t *active_camera = camera_GetActiveCamera();
 	framebuffer_t *f = cur_fb;
@@ -531,35 +576,83 @@ void check_3d_handle()
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
-
-	glLineWidth(16.0);
 	
 	glUseProgram(0);
 	
-	glBegin(GL_LINES);
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
-	glVertex3f(handle_3d_pos.x + 1.0, handle_3d_pos.y, handle_3d_pos.z);
+	switch(mode)
+	{
+		case HANDLE_3D_TRANSLATION:
+			glLineWidth(16.0);
+			glPointSize(16.0);	
+			glEnable(GL_POINT_SMOOTH);
+			glDisable(GL_DEPTH_TEST);
+			
+			glBegin(GL_LINES);
+			glColor3f(1.0, 0.0, 0.0);
+			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
+			glVertex3f(handle_3d_pos.x + 1.0, handle_3d_pos.y, handle_3d_pos.z);
+			
+			glColor3f(0.0, 1.0, 0.0);
+			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
+			glVertex3f(handle_3d_pos.x, handle_3d_pos.y + 1.0, handle_3d_pos.z);
+			
+			glColor3f(0.0, 0.0, 1.0);
+			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
+			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z + 1.0);
+			glEnd();
+			
+			glBegin(GL_POINTS);
+			glColor3f(1.0, 1.0, 1.0);
+			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
+			glEnd();
+			
+			glLineWidth(1.0);
+			glPointSize(1.0);
+			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_POINT_SMOOTH);
+		break;
+		
+		case HANDLE_3D_ROTATION:
+			glLineWidth(8.0);
+			glEnable(GL_LINE_SMOOTH);
+			glDisable(GL_DEPTH_TEST);
+			verts = rotation_handle;
+			
+			glBegin(GL_LINE_LOOP);
+			glColor3f(1.0, 0.0, 0.0);
+			for(i = 0; i < rotation_handle_divs; i++)
+			{
+				glVertex3f(verts[i * 3] + handle_3d_pos.x, verts[i * 3 + 1] + handle_3d_pos.y, verts[i * 3 + 2] + handle_3d_pos.z);
+			}
+			glEnd();
+			verts += rotation_handle_divs * 3;
+			
+			glBegin(GL_LINE_LOOP);
+			glColor3f(0.0, 1.0, 0.0);
+			for(i = 0; i < rotation_handle_divs; i++)
+			{
+				glVertex3f(verts[i * 3] + handle_3d_pos.x, verts[i * 3 + 1] + handle_3d_pos.y, verts[i * 3 + 2] + handle_3d_pos.z);
+			}
+			glEnd();
+			verts += rotation_handle_divs * 3;
+			
+			glBegin(GL_LINE_LOOP);
+			glColor3f(0.0, 0.0, 1.0);
+			for(i = 0; i < rotation_handle_divs; i++)
+			{
+				glVertex3f(verts[i * 3] + handle_3d_pos.x, verts[i * 3 + 1] + handle_3d_pos.y, verts[i * 3 + 2] + handle_3d_pos.z);
+			}
+			glEnd();
 	
-	glColor3f(0.0, 1.0, 0.0);
-	glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
-	glVertex3f(handle_3d_pos.x, handle_3d_pos.y + 1.0, handle_3d_pos.z);
+			
+			glLineWidth(1.0);
+			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_LINE_SMOOTH);
+			
+		break;
+	}
 	
-	glColor3f(0.0, 0.0, 1.0);
-	glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
-	glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z + 1.0);
-	glEnd();
 	
-	glPointSize(16.0);
-	glEnable(GL_POINT_SMOOTH);
-	glDisable(GL_DEPTH_TEST);
-	glBegin(GL_POINTS);
-	glColor3f(1.0, 1.0, 1.0);
-	glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
-	glEnd();
-	glDisable(GL_POINT_SMOOTH);
-	glPointSize(1.0);
-	glEnable(GL_DEPTH_TEST);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, picking_buffer.id);
 	
 	glReadPixels(input.mouse_x, input.mouse_y, 1, 1, GL_RGB, GL_FLOAT, pixel);
@@ -577,8 +670,6 @@ void check_3d_handle()
 	{
 		handle_3d_bm |= HANDLE_3D_GRABBED_Z_AXIS;
 	}
-
-	glLineWidth(1.0);
 	
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -587,6 +678,48 @@ void check_3d_handle()
 	
 	framebuffer_BindFramebuffer(f);
 
+}
+
+void init_3d_handle()
+{
+	int i;
+	int k;
+	float angle;
+	float step = (2.0 * 3.14159265) / (float) rotation_handle_divs;
+	
+	rotation_handle = (float *)malloc(sizeof(float) * 3 * 3 * rotation_handle_divs);
+	
+	angle = 0.0;
+	for(i = 0; i < rotation_handle_divs; i++)
+	{
+		rotation_handle[i * 3] = 0.0;
+		rotation_handle[i * 3 + 1] = sin(angle) * 2.0;
+		rotation_handle[i * 3 + 2] = cos(angle) * 2.0;
+		angle += step;
+	}
+	
+	k = i * 3;
+	
+	for(i = 0; i < rotation_handle_divs; i++)
+	{
+		rotation_handle[k + i * 3] = rotation_handle[i * 3 + 1];
+		rotation_handle[k + i * 3 + 1] = 0.0;
+		rotation_handle[k + i * 3 + 2] = rotation_handle[i * 3 + 2];
+		angle += step;
+	}
+	
+	k += i * 3;
+	
+	for(i = 0; i < rotation_handle_divs; i++)
+	{
+		rotation_handle[k + i * 3] = rotation_handle[i * 3 + 2];
+		rotation_handle[k + i * 3 + 1] = rotation_handle[i * 3 + 1];
+		rotation_handle[k + i * 3 + 2] = 0.0;
+		angle += step;
+	}
+	
+	
+	
 }
 
 void widget_cb(swidget_t *sub_widget, void *data)
@@ -641,6 +774,8 @@ void ginit()
 	mesh_t holes;*/
 	static int p;
 	tex_info_t tif;
+	
+	init_3d_handle();
 	
 //	TwInit(TW_OPENGL, NULL);
 	//TwWindowSize(renderer.screen_width, renderer.screen_height);

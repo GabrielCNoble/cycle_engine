@@ -767,7 +767,7 @@ draw_Init
 	free(dither_bytes);
 	
 	
-	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width * 0.5, renderer.width * 0.5, renderer.height * 0.5, -renderer.height * 0.5, 0.001, 1.5, NULL);
+	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width * 0.5, renderer.width * 0.5, renderer.height * 0.5, -renderer.height * 0.5, -1.5, 1.5, NULL);
 	
 	draw_debug_Init();
 	
@@ -4227,6 +4227,11 @@ PEWAPI void draw_DrawWidgets()
 	//float header_w;
 	//float header_h;
 	
+	float x0;
+	float y0;
+	float x1;
+	float y1;
+	
 	float x;
 	float y;
 	
@@ -4339,21 +4344,17 @@ PEWAPI void draw_DrawWidgets()
 		else
 		{
 			glDisable(GL_TEXTURE_2D);
-			glBegin(GL_QUADS);
 			glColor4f(r, g, b, a);
-			glVertex3f(x - hw, y + hh, -0.5);
-			glVertex3f(x - hw, y - hh, -0.5);
-			glVertex3f(x + hw, y - hh, -0.5);
-			glVertex3f(x + hw, y + hh, -0.5);
-			glEnd();
-			
-			
+			glRectf(x - hw, y - hh, x + hw, y + hh);
+		
 		}
 		
 		if(cwidget->bm_flags & WIDGET_HIGHTLIGHT_BORDERS)
 		{
 			sh0 = y + hh;
 			sh1 = y - hh;
+			
+			
 			if(cwidget->bm_flags & WIDGET_HEADER)
 			{
 				sh0 -= WIDGET_HEADER_PIXEL_HEIGHT;
@@ -4371,58 +4372,30 @@ PEWAPI void draw_DrawWidgets()
 				}
 				
 				glStencilFunc(GL_ALWAYS, 0x00, 0xff);
-				glBegin(GL_QUADS);
 				glColor4f(r, g, b, 1.0);
-				glVertex3f(x - hw, y + hh, -0.5);
-				glVertex3f(x - hw, y + hh - WIDGET_HEADER_PIXEL_HEIGHT, -0.5);
-				glVertex3f(x + hw, y + hh - WIDGET_HEADER_PIXEL_HEIGHT, -0.5);
-				glVertex3f(x + hw, y + hh, -0.5);
-				glEnd();
+				glRectf(x - hw, y + hh - WIDGET_HEADER_PIXEL_HEIGHT, x + hw, y + hh);
 			}
 			else if(cwidget->bm_flags & WIDGET_MOUSE_OVER_TOP_BORDER)
 			{
 				sh0 -= WIDGET_BORDER_PIXEL_WIDTH;
-				
-				glBegin(GL_QUADS);
 				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
-				glVertex3f(x - hw, y + hh, -0.5);
-				glVertex3f(x - hw, y + hh - WIDGET_BORDER_PIXEL_WIDTH, -0.5);
-				glVertex3f(x + hw, y + hh - WIDGET_BORDER_PIXEL_WIDTH, -0.5);
-				glVertex3f(x + hw, y + hh, -0.5);
-				glEnd();
+				glRectf(x - hw, y + hh - WIDGET_BORDER_PIXEL_WIDTH, x + hw, y + hh);
 			}
+			glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
 			
 			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_BOTTOM_BORDER)
 			{
 				sh1 += WIDGET_BORDER_PIXEL_WIDTH;
-				glBegin(GL_QUADS);
-				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
-				glVertex3f(x - hw, y - hh + WIDGET_BORDER_PIXEL_WIDTH, -0.5);
-				glVertex3f(x - hw, y - hh, -0.5);
-				glVertex3f(x + hw, y - hh, -0.5);
-				glVertex3f(x + hw, y - hh + WIDGET_BORDER_PIXEL_WIDTH, -0.5);
-				glEnd();
+				glRectf(x - hw, y - hh, x + hw, y - hh + WIDGET_BORDER_PIXEL_WIDTH);
 			}
 			
 			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_LEFT_BORDER)
 			{
-				glBegin(GL_QUADS);
-				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
-				glVertex3f(x - hw, sh0, -0.5);
-				glVertex3f(x - hw, sh1, -0.5);
-				glVertex3f(x - hw + WIDGET_BORDER_PIXEL_WIDTH, sh1, -0.5);
-				glVertex3f(x - hw + WIDGET_BORDER_PIXEL_WIDTH, sh0, -0.5);
-				glEnd();
+				glRectf(x - hw, sh1, x - hw + WIDGET_BORDER_PIXEL_WIDTH, sh0);
 			}
 			else if(cwidget->bm_flags & WIDGET_MOUSE_OVER_RIGHT_BORDER)
 			{
-				glBegin(GL_QUADS);
-				glColor4f(cwidget->r * 0.9, cwidget->g * 0.9, cwidget->b * 0.9, cwidget->a * 1.001);
-				glVertex3f(x + hw - WIDGET_BORDER_PIXEL_WIDTH, sh0, -0.5);
-				glVertex3f(x + hw - WIDGET_BORDER_PIXEL_WIDTH, sh1, -0.5);
-				glVertex3f(x + hw, sh1, -0.5);
-				glVertex3f(x + hw, sh0, -0.5);
-				glEnd();
+				glRectf(x + hw - WIDGET_BORDER_PIXEL_WIDTH, sh1, x + hw, sh0);
 			}
 		}
 		
@@ -4459,13 +4432,7 @@ PEWAPI void draw_DrawWidgets()
 						}
 					
 						glColor3f(0.0, g, 0.0);
-						
-						glBegin(GL_QUADS);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y + hh, -0.5);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();
+						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
 						if(button->swidget.w < button->swidget.h)
 						{
@@ -4476,23 +4443,17 @@ PEWAPI void draw_DrawWidgets()
 							cw = button->swidget.h;
 						}
 						
-						glBegin(GL_QUADS);
-						glVertex3f(button->swidget.x + x + hw - cw, button->swidget.y + y + hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();
-						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 						
+						if(!(button->button_flags & BUTTON_CHECK_BOX_CHECKED))
+						{
+							glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
+						}
+						//glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
+						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 						
 						if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
 						{
-							glBegin(GL_QUADS);
-							glVertex3f(button->swidget.x + x + hw - cw + 2, button->swidget.y + y + hh - 2, -0.5);
-							glVertex3f(button->swidget.x + x + hw - cw + 2, button->swidget.y + y - hh + 2, -0.5);
-							glVertex3f(button->swidget.x + x + hw - 2, button->swidget.y + y - hh + 2, -0.5);
-							glVertex3f(button->swidget.x + x + hw - 2, button->swidget.y + y + hh - 2, -0.5);
-							glEnd();
+							glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						}
 						
 						glStencilFunc(GL_ALWAYS, ++stencil_val, 0xff);
@@ -4501,21 +4462,9 @@ PEWAPI void draw_DrawWidgets()
 						glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 						glDepthMask(GL_FALSE);
 						
-						glBegin(GL_QUADS);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y + hh, -0.5);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();
-						
+						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						glStencilFunc(GL_ALWAYS, stencil_val - 1, 0xff);
-						
-						glBegin(GL_QUADS);
-						glVertex3f(button->swidget.x + x + hw - cw, button->swidget.y + y + hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();
+						glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
 						glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 						glDepthMask(GL_TRUE);
@@ -4524,8 +4473,6 @@ PEWAPI void draw_DrawWidgets()
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
 						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
-						
-						
 					}
 					else
 					{
@@ -4551,13 +4498,13 @@ PEWAPI void draw_DrawWidgets()
 						}
 						
 						glColor3f(r, g, b);
-						
-						glBegin(GL_QUADS);
+						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
+						/*glBegin(GL_QUADS);
 						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y + hh, -0.5);
 						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y - hh, -0.5);
 						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
 						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();
+						glEnd();*/
 						
 						
 						glStencilFunc(GL_ALWAYS, ++stencil_val, 0xff);
@@ -4566,12 +4513,13 @@ PEWAPI void draw_DrawWidgets()
 						glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 						glDepthMask(GL_FALSE);
 						
-						glBegin(GL_QUADS);
+						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
+						/*glBegin(GL_QUADS);
 						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y + hh, -0.5);
 						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y - hh, -0.5);
 						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
 						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();
+						glEnd();*/
 						
 						glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 						glDepthMask(GL_TRUE);
@@ -4596,12 +4544,13 @@ PEWAPI void draw_DrawWidgets()
 					{
 						case VAR_INT_32:
 							glColor3f(0.5, 0.5, 0.5);
-							glBegin(GL_QUADS);
+							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
+							/*glBegin(GL_QUADS);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
 							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
 							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
-							glEnd();
+							glEnd();*/
 							
 							
 							i32var = (int *)var->var;
@@ -4616,12 +4565,13 @@ PEWAPI void draw_DrawWidgets()
 						
 						case VAR_VEC3T:
 							glColor3f(0.5, 0.5, 0.5);
-							glBegin(GL_QUADS);
+							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
+							/*glBegin(GL_QUADS);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
 							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
 							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
-							glEnd();
+							glEnd();*/
 							
 							v3tvar = (vec3_t *)var->var;
 							
@@ -4650,12 +4600,13 @@ PEWAPI void draw_DrawWidgets()
 						
 						case VAR_STR:
 							glColor3f(0.5, 0.5, 0.5);
-							glBegin(GL_QUADS);
+							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
+							/*glBegin(GL_QUADS);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
 							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
 							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
-							glEnd();
+							glEnd();*/
 							
 							strvar = *((char **)var->var);
 							if(!strvar)

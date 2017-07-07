@@ -259,6 +259,7 @@ void draw_debug_Draw()
 	int c = draw_cmd_count;
 	int j;
 	int l;
+	float *verts;
 	mesh_t *m;
 	mat3_t r;
 	mat4_t p;
@@ -317,6 +318,33 @@ void draw_debug_Draw()
 				glColor3f(draw_cmds[i].data[0], draw_cmds[i].data[1], draw_cmds[i].data[2]);
 				glVertex3f(draw_cmds[i].data[3], draw_cmds[i].data[4], draw_cmds[i].data[5]);
 				glVertex3f(draw_cmds[i].data[6], draw_cmds[i].data[7], draw_cmds[i].data[8]);
+				glEnd();
+				glLineWidth(1.0);
+				glEnable(GL_DEPTH_TEST);
+			break;
+			
+			case DRAW_LINE_LOOP:
+				glLineWidth(draw_cmds[i].data[8]);
+				glEnable(GL_LINE_SMOOTH);
+				if(draw_cmds[i].data[9])
+				{
+					glDisable(GL_DEPTH_TEST);
+				}
+				
+				verts = (float *)*(int *)&draw_cmds[i].data[6];
+				l = *(int *)&draw_cmds[i].data[7];
+				
+				glBegin(GL_LINE_LOOP);
+				glColor3f(draw_cmds[i].data[0], draw_cmds[i].data[1], draw_cmds[i].data[2]);
+				
+				v.x = draw_cmds[i].data[3];
+				v.y = draw_cmds[i].data[4];
+				v.z = draw_cmds[i].data[5];
+				
+				for(j = 0; j < l; j++)
+				{
+					glVertex3f(verts[j * 3] + v.x, verts[j * 3 + 1] + v.y, verts[j * 3 + 2] + v.z);
+				}
 				glEnd();
 				glLineWidth(1.0);
 				glEnable(GL_DEPTH_TEST);
@@ -898,10 +926,39 @@ PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line
 		
 		draw_cmds[draw_cmd_count++] = d;
 	}
-	
-	
 }
 
+
+PEWAPI void draw_debug_DrawLineLoop(vec3_t origin, float *verts, int count, vec3_t color, float line_thickness, int b_xray, int homogeneous)
+{
+	debug_draw_t d;
+	
+	if(debug_flags && used_floats + 11 < FLOAT_BUFFER_SIZE)
+	{
+		d.data = &float_buffer[used_floats];
+		d.count = 1;
+		if(!homogeneous)
+			d.type = DRAW_LINE_LOOP;
+		else
+			d.type = DRAW_LINE_LOOP_HOMOGENEOUS;
+		
+		float_buffer[used_floats++] = color.r;
+		float_buffer[used_floats++] = color.g;
+		float_buffer[used_floats++] = color.b;
+		
+		float_buffer[used_floats++] = origin.x;
+		float_buffer[used_floats++] = origin.y;
+		float_buffer[used_floats++] = origin.z;
+		
+		*(int *)&float_buffer[used_floats++] = (int)verts;
+		*(int *)&float_buffer[used_floats++] = count;
+		
+		float_buffer[used_floats++] = line_thickness;
+		float_buffer[used_floats++] = b_xray;
+		
+		draw_cmds[draw_cmd_count++] = d;
+	}
+}
 
 PEWAPI void draw_debug_Draw2DLine(vec2_t from, vec2_t to, vec3_t color)
 {
