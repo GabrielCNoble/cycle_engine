@@ -35,6 +35,8 @@ enum DRAW_TYPE
 	DRAW_POINT_HOMOGENEOUS,
 	DRAW_LINE,
 	DRAW_LINE_HOMOGENEOUS,
+	DRAW_LINE_LOOP,
+	DRAW_LINE_LOOP_HOMOGENEOUS,
 	DRAW_TRIANGLE,
 	DRAW_MESH,								
 	DRAW_OUTLINE, 					/* useful for drawing object outline... */
@@ -63,6 +65,8 @@ void draw_debug_Draw();
 PEWAPI void draw_debug_DrawTriangle(vec3_t a, vec3_t b, vec3_t c, vec3_t a_color, vec3_t b_color, vec3_t c_color);
 
 PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int homogeneous);
+
+PEWAPI void draw_debug_DrawLineLoop(vec3_t origin, float *verts, int count, vec3_t color, float line_thickness, int b_xray, int homogeneous);
 
 //PEWAPI void draw_debug_Draw2DLine(vec2_t from, vec2_t to, vec3_t color);
 

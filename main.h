@@ -7,9 +7,11 @@ void gmain(float delta_time);
 
 void ginput(float delta_time);
 
-void draw_3d_handle();
+void draw_3d_handle(int mode);
 
-void check_3d_handle();
+void check_3d_handle(int mode);
+
+void init_3d_handle();
 
 void ginit();
 
