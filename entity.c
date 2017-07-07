@@ -872,23 +872,22 @@ PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, in
 	btTransform t;
 	btDefaultMotionState *ms;
 	general_collider_t *collider;
+	
+	memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
+	
 	if(entity->position_data->collider_index >= 0)
 	{
 		
-		if(!(entity->position_data->bm_flags & ENTITY_OVERRIDE_BULLET_ROTATION))
+		/*if(!(entity->position_data->bm_flags & ENTITY_OVERRIDE_BULLET_ROTATION))
 		{
 			return;
-		}
+		}*/
 		collider = &collider_a.colliders[entity->position_data->collider_index];
 		btMatrix3x3 m;
 		
 		
-		memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
-		
-		/* bullet seems to use a left hand coordinate system, while
-		the Cycle engine is using the right handed convention. That's why
-		we're transposing the matrix here. Inverse rotation from one 
-		another, and stuff... */
+		//memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
+	
 		mat3_t_transpose(&r);
 		
 		m[0].setValue(r.floats[0][0], r.floats[0][1], r.floats[0][2]);
@@ -901,15 +900,13 @@ PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, in
 		collider->base.rigid_body->getMotionState()->getWorldTransform(t);
 		t.setBasis(m);
 		collider->base.rigid_body->getMotionState()->setWorldTransform(t);
-		collider->base.rigid_body->getAabb(min, max);
+		/*collider->base.rigid_body->getAabb(min, max);
 		entity->aabb_data->c_maxmins[0] = max[0] - entity->aabb_data->origin.x;
 		entity->aabb_data->c_maxmins[1] = max[1] - entity->aabb_data->origin.y;
-		entity->aabb_data->c_maxmins[2] = max[2] - entity->aabb_data->origin.z;
+		entity->aabb_data->c_maxmins[2] = max[2] - entity->aabb_data->origin.z;*/
 	}
-	else
+	/*else
 	{
-		
-		//entity->local_orientation = r;
 		
 		memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
 		
@@ -1016,7 +1013,7 @@ PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, in
 			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
 
 		model_GetMaxMinsFromVertexData(v, &entity->aabb_data->c_maxmins[0], 8);
-	}
+	}*/
 			
 	entity->position_data->bm_flags |= ENTITY_HAS_MOVED;
 

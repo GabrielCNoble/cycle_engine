@@ -688,7 +688,8 @@ draw_Init
 	draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
 	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS | RENDERFLAG_DRAW_LIGHT_VOLUMES);
 	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
-	draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
+	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
+	draw_SetDebugFlag(DEBUG_DRAW_OUTLINES);
 	//draw_SetDebugFlag(DEBUG_DRAW_ARMATURES);
 	//draw_SetDebugFlag(DEBUG_DRAW_ENTITY_ORIGIN);
 	//draw_SetDebugFlag(DEBUG_DRAW_COLLIDERS);
@@ -1635,6 +1636,7 @@ PEWAPI void draw_SetDebugFlag(int flag)
 		case DEBUG_DRAW_ZBUFFER:
 		case DEBUG_DRAW_DBUFFER:
 		case DEBUG_DRAW_ARMATURES:
+		case DEBUG_DRAW_OUTLINES:
 			debug_flags |= flag;
 		break;
 		
@@ -4203,6 +4205,7 @@ PEWAPI void draw_DrawWidgets()
 	int *i32var;
 	short *i16var;
 	vec3_t *v3tvar;
+	char *strvar;
 	vec3_t v;
 	
 	int stencil_val = 1;
@@ -4640,10 +4643,26 @@ PEWAPI void draw_DrawWidgets()
 								v.z = 0.0;
 							}
 							
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    [%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
 							
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s    [%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
 							
+						break;
+						
+						case VAR_STR:
+							glColor3f(0.5, 0.5, 0.5);
+							glBegin(GL_QUADS);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
+							glEnd();
 							
+							strvar = *((char **)var->var);
+							if(!strvar)
+							{
+								strvar = "<null>";
+							}
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
 						break;
 					}
 					
