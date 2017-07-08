@@ -878,147 +878,17 @@ PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, in
 	if(entity->position_data->collider_index >= 0)
 	{
 		
-		/*if(!(entity->position_data->bm_flags & ENTITY_OVERRIDE_BULLET_ROTATION))
-		{
-			return;
-		}*/
 		collider = &collider_a.colliders[entity->position_data->collider_index];
 		btMatrix3x3 m;
 		
-		
-		//memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
-	
-		mat3_t_transpose(&r);
-		
-		m[0].setValue(r.floats[0][0], r.floats[0][1], r.floats[0][2]);
-		m[1].setValue(r.floats[1][0], r.floats[1][1], r.floats[1][2]);
-		m[2].setValue(r.floats[2][0], r.floats[2][1], r.floats[2][2]);
-		
-		
+		m[0].setValue(r.floats[0][0], r.floats[1][0], r.floats[2][0]);
+		m[1].setValue(r.floats[0][1], r.floats[1][1], r.floats[2][1]);
+		m[2].setValue(r.floats[0][2], r.floats[1][2], r.floats[2][2]);	
 		
 		collider->base.rigid_body->activate(true);
-		collider->base.rigid_body->getMotionState()->getWorldTransform(t);
-		t.setBasis(m);
-		collider->base.rigid_body->getMotionState()->setWorldTransform(t);
-		/*collider->base.rigid_body->getAabb(min, max);
-		entity->aabb_data->c_maxmins[0] = max[0] - entity->aabb_data->origin.x;
-		entity->aabb_data->c_maxmins[1] = max[1] - entity->aabb_data->origin.y;
-		entity->aabb_data->c_maxmins[2] = max[2] - entity->aabb_data->origin.z;*/
+		collider->base.rigid_body->getWorldTransform().setBasis(m);
 	}
-	/*else
-	{
-		
-		memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
-		
-		v[0]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] + 
-		 	entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] - 
-		 	entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-				
-		v[1]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] + 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-		
-		v[2]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] + 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
-				 
-			 
-		v[3]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] - 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-					
-		v[4]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] - 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[5]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] - 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
-				 
-								
-		v[6]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] - 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-						
-		v[7]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] - 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[8]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] - 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];	
-				 
-				 
-		v[9]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] + 
-			 entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] - 
-			 entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-						
-		v[10]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] - 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[11]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] - 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
-
-		v[12]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-						
-		v[13]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[14]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
-				  
-						
-		v[15]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] - 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-						
-		v[16]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] - 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[17]=-entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] -
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
-				  
-						
-		v[18]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] - 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-						
-		v[19]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] - 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[20]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] - 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];	
-				  
-				 
-		v[21]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][0] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][0] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][0];
-						
-		v[22]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][1] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][1] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][1];
-			
-		v[23]=entity->aabb_data->o_maxmins[0]*entity->extra_data->local_orientation.floats[0][2] + 
-			  entity->aabb_data->o_maxmins[1]*entity->extra_data->local_orientation.floats[1][2] + 
-			  entity->aabb_data->o_maxmins[2]*entity->extra_data->local_orientation.floats[2][2];
-
-		model_GetMaxMinsFromVertexData(v, &entity->aabb_data->c_maxmins[0], 8);
-	}*/
-			
 	entity->position_data->bm_flags |= ENTITY_HAS_MOVED;
-
-	//printf("[%f %f %f]\n[%f %f %f]\n\n", entity->c_maxmins[0], entity->c_maxmins[1], entity->c_maxmins[2], entity->c_maxmins[3],entity->c_maxmins[4],entity->c_maxmins[5]);
-	
 }
 
 

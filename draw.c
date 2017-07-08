@@ -4154,6 +4154,14 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 		}
 		else
 		{
+			if(*p == '\t')
+			{
+				*o++ = ' ';
+				*o++ = ' ';
+				*o++ = ' ';
+				*o++ = ' ';
+				p++;
+			}
 			*o++ = *p++;
 		}
 	}
@@ -4174,8 +4182,9 @@ PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, in
 	SDL_Color b = {0, 0, 0, 0};
 	//SDL_Surface *s = TTF_RenderUTF8_Blended(font->font, formated_str, f);
 	SDL_Surface *s = TTF_RenderUTF8_Blended_Wrapped(font->font, formated_str, f, line_length);
+	
 
-	glRasterPos2f(((float)x / (float)renderer.screen_width) * 2.0 - 1.0, ((float)(y + s->h) / (float)renderer.screen_height) * 2.0 - 1.0);
+	glRasterPos2f(((float)x / (float)renderer.screen_width) * 2.0 - 1.0, ((float)(y) / (float)renderer.screen_height) * 2.0 - 1.0);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	glUseProgram(0);
 	glEnable(GL_BLEND);
@@ -4205,6 +4214,7 @@ PEWAPI void draw_DrawWidgets()
 	int *i32var;
 	short *i16var;
 	vec3_t *v3tvar;
+	mat3_t *m3tvar;
 	char *strvar;
 	vec3_t v;
 	
@@ -4472,7 +4482,7 @@ PEWAPI void draw_DrawWidgets()
 						glStencilFunc(GL_EQUAL, stencil_val, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
-						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
+						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
 					}
 					else
 					{
@@ -4529,7 +4539,7 @@ PEWAPI void draw_DrawWidgets()
 						
 						//hw = (button->swidget.x + x - hw)
 						
-						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
+						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
 						
 					}
 				break;
@@ -4560,7 +4570,7 @@ PEWAPI void draw_DrawWidgets()
 								i32var = (int *)*i32var;
 							}
 							
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s %d", var->swidget.name, *i32var);	
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s %d", var->swidget.name, *i32var);	
 						break;
 						
 						case VAR_VEC3T:
@@ -4593,9 +4603,56 @@ PEWAPI void draw_DrawWidgets()
 								v.z = 0.0;
 							}
 							
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    [%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:\t[%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
+						break;
+						
+						case VAR_MAT3T:
+							glColor3f(0.5, 0.5, 0.5);
+							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							
+							m3tvar = (mat3_t *)var->var;
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "%s:", var->swidget.name);
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw + 150) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "[%.2f %.2f %.2f]\n[%.2f %.2f %.2f]\n[%.2f %.2f %.2f]", m3tvar->floats[0][0],
+																																																																		m3tvar->floats[0][1],
+																																																																		m3tvar->floats[0][2],
+																																																																								 
+																																																																		m3tvar->floats[1][0],
+																																																																		m3tvar->floats[1][1],
+																																																																		m3tvar->floats[1][2],
+																																																																								 
+																																																																		m3tvar->floats[2][0],
+																																																																		m3tvar->floats[2][1],
+																																																																		m3tvar->floats[2][2]);
+																																																																								 
+																																																																								 
+							/*glBegin(GL_QUADS);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
+							glEnd();*/
 							
+							/*v3tvar = (vec3_t *)var->var;
+							
+							if(v3tvar)
+							{
+								if(var->var_flags & VAR_ADDR)
+								{
+									v3tvar = (vec3_t *)(&v3tvar->x);
+								}
+								
+								v.x = v3tvar->x;
+								v.y = v3tvar->y;
+								v.z = v3tvar->z;
+							}
+							else
+							{
+								v.x = 0.0;
+								v.y = 0.0;
+								v.z = 0.0;
+							}
+							
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    [%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);*/
 						break;
 						
 						case VAR_STR:
@@ -4613,7 +4670,7 @@ PEWAPI void draw_DrawWidgets()
 							{
 								strvar = "<null>";
 							}
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y - hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
 						break;
 					}
 					

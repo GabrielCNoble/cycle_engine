@@ -169,7 +169,7 @@ PEWAPI void mat3_t_rotate(mat3_t *mat, vec3_t axis, float angle,  int b_set)
 		temp.floats[2][1]=row3.floats[1];
 		temp.floats[2][2]=row3.floats[2];
 		
-		mat3_t_mult(&result, &temp, mat);
+		mat3_t_mult(&result, mat, &temp);
 	}
 	else
 	{

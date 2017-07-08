@@ -184,7 +184,7 @@ PEWAPI void pew_MainLoop()
 		
 		draw_DrawFrame();
 		
-		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 40, 100, vec3(1.0, 1.0, 0.5), "%d", fps_disp);
+		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 120, 100, vec3(1.0, 1.0, 0.5), "%d \nmother\nfucker", fps_disp);
 		
 		//TwDraw();
 		//draw_DrawString(fps_font, 12, 1, 400, 150, vec3(1.0, 1.0, 0.5), "rock and roll ain't noise pollution");

@@ -39,6 +39,7 @@ int handle_3d_bm;
 int handle_3d_mode = HANDLE_3D_ROTATION;
 vec3_t handle_3d_pos;
 vec3_t selected_pos;
+mat3_t selected_rot;
 char *selected_name = NULL;
 
 extern framebuffer_t picking_buffer;
@@ -228,6 +229,7 @@ void gmain(float delta_time)
 		draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 2.0, 0);
 		handle_3d_pos = selected.position_data->world_position;
 		selected_pos = handle_3d_pos;
+		selected_rot = selected.extra_data->local_orientation;
 		selected_name = selected.extra_data->name;
 		draw_3d_handle(handle_3d_mode);
 	}
@@ -759,6 +761,18 @@ void exit_engine(swidget_t *sub_widget, void *data)
 	pew_Exit();
 }
 
+void set_handle_mode(swidget_t *sub_widget, void *data)
+{
+	int mode = (int )data;
+	switch(mode)
+	{
+		case HANDLE_3D_ROTATION:
+		case HANDLE_3D_TRANSLATION:
+			handle_3d_mode = mode;
+		break;
+	}
+}
+
 void ginit()
 {
 	material_t ma;
@@ -933,16 +947,21 @@ void ginit()
 
 	
 	widget_t *w = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_shadow_mapping);
-	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, enable_volumetric_lights);
-	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, exit_engine);
+	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
+	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
+	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
 	
 	gui_AddVar(w, "Frames", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, -40.0, 290.0, 15.0, &renderer.frame_count);
 	
 	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, -60.0, 290.0, 15.0, &selected_name);
 	
 	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, -80.0, 290.0, 15.0, &selected_pos);
+	gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -180.0, 290.0, 60.0, &selected_rot);
 	
+	
+	w = gui_CreateWidget("handle mode", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
+	gui_AddButton(w, "Translation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_TRANSLATION, set_handle_mode);
+	gui_AddButton(w, "Rotation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_ROTATION, set_handle_mode);
 	
 	//w = gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 50.0, -2.0, 320, 240, 0.8, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
 	//gui_AddButton(w, "button0", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
