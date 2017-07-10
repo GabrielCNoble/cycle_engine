@@ -38,7 +38,7 @@ enum HANDLE_3D_MODE
 
 
 int handle_3d_bm;
-int handle_3d_mode = HANDLE_3D_ROTATION;
+int handle_3d_mode = HANDLE_3D_TRANSLATION;
 vec3_t handle_3d_pos;
 vec3_t selected_pos;
 mat3_t selected_rot;
@@ -58,6 +58,8 @@ float cur_grab_offset_y = 0.0;
 
 entity_ptr selected = {NULL, NULL, NULL, NULL};
 entity_ptr detected = {NULL, NULL, NULL, NULL};
+
+char *editor_state = "editing";
 void gmain(float delta_time)
 {
 	
@@ -78,6 +80,8 @@ void gmain(float delta_time)
 	float delta_y;
 	if(s != PEW_PLAYING)
 	{
+		editor_state = "editing";
+		
 		if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 		{
 			if(!(input.bm_mouse & MOUSE_OVER_WIDGET))
@@ -215,7 +219,7 @@ void gmain(float delta_time)
 				handle_3d_bm = 0;
 			}
 		
-			draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 2.0, 0);
+			draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 4.0, 0);
 			handle_3d_pos = selected.position_data->world_position;
 			selected_pos = handle_3d_pos;
 			selected_rot = selected.extra_data->local_orientation;
@@ -227,6 +231,7 @@ void gmain(float delta_time)
 	else
 	{
 		ginput(delta_time);		
+		editor_state = "playing";
 	}
 	
 	
@@ -529,9 +534,9 @@ void draw_3d_handle(int mode)
 	switch(mode)
 	{
 		case HANDLE_3D_TRANSLATION:
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 1, 0);
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 1, 0);
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 1, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 1, 0, 1);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 1, 0, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 1, 0, 0);
 			//draw_debug_DrawPoint(handle_3d_pos, vec3(1.0, 1.0, 1.0), 16.0, 0);
 		break;
 		
@@ -978,30 +983,37 @@ void ginit()
 	
 	
 	
-
-	
-	widget_t *w = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 100, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
-	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 80, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
-	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 60, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
-	gui_AddButton(w, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 40, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
 	
 	
-	gui_AddVar(w, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, 20, 290.0, 15.0, &draw_calls);
+	widget_t *w = gui_CreateWidget("test0", WIDGET_TRANSLUCENT, renderer.width / 2.0 - 350 / 2.0, 0.0, 350, renderer.height, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
+	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.height * 0.5 - 10, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
+	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 30, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
+	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 50, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
+	gui_AddButton(w, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, renderer.height * 0.5 - 70, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
 	
-	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, 0, 290.0, 15.0, &selected_name);
 	
-	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, -20, 290.0, 15.0, &selected_pos);
-	gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -62, 290.0, 60.0, &selected_rot);
+	gui_AddVar(w, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 90, 330, 15.0, &draw_calls);
+	//gui_AddVar(w, "Texture binds", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, 0, 290.0, 15.0, &texture_binds);
+	gui_AddVar(w, "Shader swaps", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 110, 330, 15.0, &shader_swaps);
 	
-	printf("create second widget\n");
-	w = gui_CreateWidget("handle mode", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
+	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 130, 330, 15.0, &selected_name);
+	
+	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, renderer.height * 0.5 - 150, 330, 15.0, &selected_pos);
+	
+	gui_AddVar(w, "Engine state", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 170, 330, 15.0, &editor_state);
+	//gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 290.0, 60.0, &selected_rot);
+	
+	//w = gui_CreateWidget("handle mode", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
 	//gui_AddButton(w, "Translation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_TRANSLATION, set_handle_mode);
 	//gui_AddButton(w, "Rotation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_ROTATION, set_handle_mode);
 	
-	wtabbar_t *tabbar = gui_AddTabBar(w, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, -40, 290.0, 20.0, tabbar_fn);
-	gui_AddTab(tabbar, "Translation");
-	gui_AddTab(tabbar, "Rotation");
+	wtabbar_t *tabbar = gui_AddTabBar(w, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, renderer.height * 0.5 - 190, 330, 20.0, tabbar_fn);
+	gui_AddTab(tabbar, "Translation", TAB_NO_SUB_WIDGETS);
+	int tbb = gui_AddTab(tabbar, "Rotation", 0);
+	//gui_AddTab(tabbar, "Test", TAB_NO_SUB_WIDGETS);
+	
+	gui_AddVarToTab(tabbar, tbb, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 330, 60.0, &selected_rot);
+	
 	//gui_AddTab(tabbar, "tab2");
 	//gui_AddTab(tabbar, "tab3");
 	//gui_AddTab(tabbar, "tab4");

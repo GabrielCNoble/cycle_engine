@@ -33,10 +33,12 @@ framebuffer_t framebuffer_CreateFramebuffer(int width, int height, int depth_buf
 			
 			glGenRenderbuffers(1, &fb.z_buffer);
 			glBindRenderbuffer(GL_RENDERBUFFER, fb.z_buffer);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width, fb.height);
-			glBindRenderbuffer(GL_RENDERBUFFER, 0);
-			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
-			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width, fb.height); 
+			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			//glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			//glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			
+			//printf("%x\n", glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER));
 			
 		break;
 		
@@ -280,7 +282,7 @@ void framebuffer_BindFramebuffer(framebuffer_t *framebuffer)
 	else
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glDrawBuffer(GL_LEFT);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		
 		cur_fb = NULL;
 	}

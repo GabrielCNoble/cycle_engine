@@ -251,7 +251,8 @@ enum TAB_FLAGS
 	TAB_RECEIVED_LEFT_BUTTON_UP = 1 << 3,
 	TAB_RECEIVED_RIGHT_BUTTON_DOWN = 1 << 4,
 	TAB_RECEIVED_RIGHT_BUTTON_UP = 1 << 5,
-	TAB_SELECTED = 1 << 6
+	TAB_SELECTED = 1 << 6,
+	TAB_NO_SUB_WIDGETS = 1 << 7
 	
 };
 
@@ -363,6 +364,7 @@ typedef struct
 	char *name;
 	int swidget_count;
 	swidget_t *swidgets;
+	swidget_t *last;
 	int bm_flags;
 }wtab_t;
 
@@ -417,7 +419,9 @@ PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags
 
 PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int));
 
-PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name);
+PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name, int tab_flags);
+
+PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 

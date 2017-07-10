@@ -684,7 +684,8 @@ PEWAPI void shader_SetShaderByIndex(int shader_index)
 	if(shader_index>=0)
 	{
 		//active_camera=camera_GetActiveCamera();
-		glUseProgram(shader_a.shaders[shader_index].shader_ID);
+		//glUseProgram(shader_a.shaders[shader_index].shader_ID);
+		draw_UseProgram(shader_a.shaders[shader_index].shader_ID);
 		//glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_Time], renderer.time);
 		//glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_RenderTargetWidth], (float)renderer.width);
 	//	glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_RenderTargetHeight], (float)renderer.height);

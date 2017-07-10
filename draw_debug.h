@@ -40,6 +40,8 @@ enum DRAW_TYPE
 	DRAW_TRIANGLE,
 	DRAW_MESH,								
 	DRAW_OUTLINE, 					/* useful for drawing object outline... */
+	DRAW_TRANSLATION_HANDLE,
+	DRAW_ROTATION_HANDLE
 };
 
 
@@ -64,7 +66,7 @@ void draw_debug_Draw();
 
 PEWAPI void draw_debug_DrawTriangle(vec3_t a, vec3_t b, vec3_t c, vec3_t a_color, vec3_t b_color, vec3_t c_color);
 
-PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int homogeneous);
+PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int b_homogeneous, int b_clear_stencil);
 
 PEWAPI void draw_debug_DrawLineLoop(vec3_t origin, float *verts, int count, vec3_t color, float line_thickness, int b_xray, int homogeneous);
 

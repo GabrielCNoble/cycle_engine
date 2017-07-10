@@ -307,8 +307,18 @@ void draw_debug_Draw()
 			break;
 			
 			case DRAW_LINE:
-				
 				glLineWidth(draw_cmds[i].data[9]);
+				/*glEnable(GL_STENCIL_TEST);
+				
+				glStencilFunc(GL_EQUAL, 0, 0xff);
+				glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+				
+				if(draw_cmds[i].data[11])
+				{
+					glClearStencil(0);
+					glClear(GL_STENCIL_BUFFER_BIT);
+				}*/
+				
 				if(draw_cmds[i].data[10])
 				{
 					glDisable(GL_DEPTH_TEST);
@@ -347,6 +357,7 @@ void draw_debug_Draw()
 				}
 				glEnd();
 				glLineWidth(1.0);
+				glDisable(GL_LINE_SMOOTH);
 				glEnable(GL_DEPTH_TEST);
 			break;
 			
@@ -933,15 +944,15 @@ PEWAPI void draw_debug_DrawTriangle(vec3_t a, vec3_t b, vec3_t c, vec3_t a_color
 	}
 }
 
-PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int homogeneous)
+PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line_thickness, int b_xray, int b_homogeneous, int b_clear_stencil)
 {
 	debug_draw_t d;
 	
-	if(debug_flags && used_floats + 11 < FLOAT_BUFFER_SIZE)
+	if(debug_flags && used_floats + 12 < FLOAT_BUFFER_SIZE)
 	{
 		d.data = &float_buffer[used_floats];
 		d.count = 1;
-		if(!homogeneous)
+		if(!b_homogeneous)
 			d.type = DRAW_LINE;
 		else
 			d.type = DRAW_LINE_HOMOGENEOUS;
@@ -960,6 +971,7 @@ PEWAPI void draw_debug_DrawLine(vec3_t from, vec3_t to, vec3_t color, float line
 		
 		float_buffer[used_floats++] = line_thickness;
 		float_buffer[used_floats++] = b_xray;
+		float_buffer[used_floats++] = b_clear_stencil;
 		
 		draw_cmds[draw_cmd_count++] = d;
 	}

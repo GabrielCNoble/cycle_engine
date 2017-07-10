@@ -216,6 +216,10 @@ PEWAPI void draw_Disable(int param);
 
 void __forceinline draw_DrawArrays(GLenum mode, GLint first, GLsizei count); 
 
+void __forceinline draw_BindTexture(GLenum target, GLuint texture);
+
+void __forceinline draw_UseProgram(GLuint program);
+
 //PEWAPI void draw_SetBlendMode(int blend_mode);
 
 #include "draw.inl"

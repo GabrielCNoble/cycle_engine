@@ -300,7 +300,7 @@ PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, floa
 	return t;
 }
 
-PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name)
+PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name, int tab_flags)
 {
 	int tab_index = -1;
 	wtab_t *temp;
@@ -318,12 +318,75 @@ PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name)
 		
 		tabbar->tabs[tab_index].name = strdup(name);
 		tabbar->tabs[tab_index].swidgets = NULL;
+		tabbar->tabs[tab_index].last = NULL;
 		tabbar->tabs[tab_index].swidget_count = 0;
+		tabbar->tabs[tab_index].bm_flags = tab_flags;
+		
+		if(!tabbar->active_tab)
+		{
+			tabbar->active_tab = &tabbar->tabs[0];
+			tabbar->tabs[0].bm_flags |= TAB_SELECTED;
+		}
 		
 		tabbar->tab_count++;
 	}
 	
 	return tab_index;
+}
+
+PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var)
+{
+	wvar_t *v;
+	wtab_t *tab;
+	if(tabbar)
+	{
+		if(tab_index >= 0 && tab_index < tabbar->tab_count)
+		{
+			
+			tab = &tabbar->tabs[tab_index];
+			
+			if(tab->bm_flags & TAB_NO_SUB_WIDGETS)
+			{
+				return;
+			}
+			
+			v = (wvar_t *)malloc(sizeof(wvar_t));
+			v->swidget.name = strdup(name);
+			
+			v->swidget.x = x;
+			v->swidget.y = y;
+			v->swidget.w = w;
+			v->swidget.h = h;
+			
+			
+			v->swidget.cx = x;
+			v->swidget.cy = y;
+			v->swidget.cw = w;
+			v->swidget.ch = h;
+			
+			v->swidget.type = WIDGET_VAR;
+			v->swidget.bm_flags = bm_flags;
+			v->swidget.widget_callback = NULL;
+			v->swidget.next = NULL;
+			
+			v->var = var;
+			v->var_flags = var_flags;
+			v->var_type = type;
+	
+			if(!tab->swidgets)
+			{
+				tab->swidgets = (swidget_t *)v;
+				tab->last = (swidget_t *)v;
+			}
+			else
+			{
+				tab->last->next = (swidget_t *)v;
+				tab->last = (swidget_t *)v;
+			}
+			tab->swidget_count++;
+		}
+		
+	}
 }
 
 
@@ -825,18 +888,9 @@ void gui_ProcessWidgets()
 							tabbar = (wtabbar_t *)cswidget;
 							if(tabbar->tab_count)
 							{
-								
-								/*if(tabbar->active_tab)
-								{
-									tabbar->active_tab->bm_flags = 0;
-								}*/
-								
+	
 								tab_label_width = tabbar->swidget.w / (float)tabbar->tab_count;
 								tab_index = (int)((tabbar->swidget.w * (tabbar->swidget.relative_mouse_x * 0.5 + 0.5)) / tab_label_width);
-								
-						
-								
-								
 								
 								if(tabbar->swidget.bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
 								{
@@ -844,12 +898,11 @@ void gui_ProcessWidgets()
 									{
 										if(tabbar->active_tab)
 										{
-											tabbar->active_tab->bm_flags = 0;
+											tabbar->active_tab->bm_flags &= ~TAB_SELECTED;
 										}
 									}
 									
 									tabbar->active_tab = &tabbar->tabs[tab_index];
-									tabbar->active_tab->bm_flags = 0;
 									tabbar->active_tab->bm_flags |= TAB_SELECTED;
 									
 									if(tabbar->tabbar_callback)
@@ -859,16 +912,20 @@ void gui_ProcessWidgets()
 									
 								}
 								
+								if(!(tabbar->active_tab->bm_flags & TAB_NO_SUB_WIDGETS) && tabbar->active_tab->swidgets)
+								{
+									stack_top++;
+									swidget_stack[stack_top] = cswidget;
+									pos_stack[stack_top].x = x;
+									pos_stack[stack_top].y = y;
+									
+									x += tabbar->swidget.x;
+									y += tabbar->swidget.y;
+									cswidget = tabbar->active_tab->swidgets;
+									goto _tab_swidgets;
+								}
+									
 								
-								/*stack_top++;
-								swidget_stack[stack_top] = cswidget;
-								pos_stack[stack_top].x = x;
-								pos_stack[stack_top].y = y;
-								
-								x += tabbar->swidget.x;
-								y += tabbar->swidget.y;
-								cswidget = (swidget_t *)tabbar->active_tab;
-								goto _tab_swidgets;*/
 							}
 							
 						break;
@@ -879,9 +936,6 @@ void gui_ProcessWidgets()
 				{
 					cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
 				}
-				
-				
-				
 				
 				
 			}

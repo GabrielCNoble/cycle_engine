@@ -12,6 +12,8 @@ extern render_queue t_render_q;
 extern render_queue shadow_q;
 
 extern int draw_calls;
+extern int texture_binds;
+extern int shader_swaps;
 
 #ifdef __cplusplus
 extern "C"
@@ -61,6 +63,18 @@ void draw_DrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	glDrawArrays(mode, first, count);
 	draw_calls++;
+}
+
+void draw_BindTexture(GLenum target, GLuint texture)
+{
+	glBindTexture(target, texture);
+	texture_binds++;
+}
+
+void draw_UseProgram(GLuint program)
+{
+	glUseProgram(program);
+	shader_swaps++;
 }
 
 /*PEWAPI void draw_DrawFrame()

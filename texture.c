@@ -5,12 +5,19 @@
 #include "soil/SOIL.h"
 
 
+
 texture_array texture_a;
 extern shader_array shader_a;
 extern renderer_t renderer;
 
 int texture_path_len = 0;
 static char texture_path[256];
+
+static unsigned int tex0_texture = -1;
+static unsigned int tex1_texture = -1;
+static unsigned int tex2_texture = -1;
+static unsigned int tex3_texture = -1;
+static unsigned int tex4_texture = -1;
 
 #define MFT_MAX_FRAME_PATH 128
 
@@ -408,40 +415,53 @@ PEWAPI void texture_SetTextureByIndex(int texture_index, int tex_unit, int textu
 
 	int uniform;
 	int u_value;
+	//unsigned int tex_handle;
+	//int *cur_bound;
 
 	switch(tex_unit)
 	{
 		case GL_TEXTURE0:
 			uniform = UNIFORM_TextureSampler0;
 			u_value = 0;
+			//cur_bound = (int *)&tex0_texture;
 		break;
 		
 		case GL_TEXTURE1:
 			uniform = UNIFORM_TextureSampler1;
 			u_value = 1;
+			//cur_bound = (int *)&tex1_texture;
 		break;
 		
 		case GL_TEXTURE2:
 			uniform = UNIFORM_TextureSampler2;
 			u_value = 2;
+			//cur_bound = (int *)&tex2_texture;
 		break;
 		
 		case GL_TEXTURE3:
 			uniform = UNIFORM_TextureSampler3;
 			u_value = 3;
+			//cur_bound = (int *)&tex3_texture;
 		break;
 		
 		case GL_TEXTURE4:
 			uniform = UNIFORM_TextureSampler4;
 			u_value = 4;
+			//cur_bound = (int *)&tex4_texture;
 		break;
 		
 		default:
 			return;
 	}
 	
+	/*if(*cur_bound == texture_index)
+	{
+		return;
+	}
+	
+	*cur_bound = texture_index;*/
 	glActiveTexture(tex_unit);
-	glBindTexture(GL_TEXTURE_2D, texture_a.textures[texture_index].tex_ID);
+	draw_BindTexture(GL_TEXTURE_2D, texture_a.textures[texture_index].tex_ID);
 	shader_SetCurrentShaderUniform1i(uniform, u_value);
 	
 	return;

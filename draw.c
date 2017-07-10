@@ -223,6 +223,8 @@ static float bloom_intensity;
 
 
 int draw_calls = 0;
+int texture_binds = 0;
+int shader_swaps = 0;
 
 
 /*int clusters_per_row;
@@ -367,6 +369,16 @@ draw_Init
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 	
+	/*sub_str = strstr(ext_str, "GL_EXT_packed_depth_stencil");
+	if(sub_str)
+	{
+		printf("packed depth stencil supported!\n");
+	}
+	else
+	{
+		printf("packed depth stencil not supported!\n");
+	}*/
+	
 	/*sub_str = strstr(ext_str, "GL_EXT_transform_feedback");
 	if(sub_str)
 	{
@@ -415,7 +427,7 @@ draw_Init
 	
 	geometry_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 4, GL_RGBA16F, GL_RGBA16F, GL_R16F, GL_RGB16F);
 	transparency_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 3, GL_RGBA16F, GL_RGBA16F, GL_RGBA16F);
-	left_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
+	left_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 1, GL_RGBA16F);
 	right_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
 	left_volume_buffer = framebuffer_CreateFramebuffer(renderer.width / 2, renderer.height / 2, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
 	right_volume_buffer = framebuffer_CreateFramebuffer(renderer.width / 2, renderer.height / 2, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
@@ -1057,6 +1069,8 @@ void draw_OpenFrame()
 	camera_SetCurrentCameraProjectionMatrix();
 	
 	draw_calls = 0;
+	texture_binds = 0;
+	shader_swaps = 0;
 	
 	return;
 }
@@ -2719,6 +2733,45 @@ void draw_ResolveGBuffer()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	
 	
+//#define TEST_STENCIL_MF_BUFFER	
+	
+#ifdef TEST_STENCIL_MF_BUFFER
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glUseProgram(0);
+	
+	
+	glEnable(GL_STENCIL_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	
+	glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+	glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+	
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_FALSE);	
+	
+	
+	
+	glBegin(GL_QUADS);
+	glVertex3f(-0.1, 0.1, -0.5);
+	glVertex3f(-0.1, -0.1, -0.5);
+	glVertex3f(0.1, -0.1, -0.5);
+	glVertex3f(0.1, 0.1, -0.5);
+	glEnd();	
+	
+	glStencilFunc(GL_EQUAL, 0x1, 0x1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	
+	
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	
+#endif /* TEST_STENCIL_MF_BUFFER  */
+	
+	
 	
 	shader_SetShaderByIndex(deferred_process_shader_index);
 	glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
@@ -2775,46 +2828,16 @@ void draw_ResolveGBuffer()
 	
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
-	glDisable(GL_STENCIL_TEST);
+	//glDisable(GL_STENCIL_TEST);
 	//glDisable(GL_CULL_FACE);
 	
 	
 	//glEnable(GL_LIGHT0);
 	//glEnable(GL_LIGHT1);
 	
-	/*glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+
 	
-	
-	glEnable(GL_STENCIL_TEST);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_BLEND);
-	
-	glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-	glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-	
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glDepthMask(GL_FALSE);	
-	
-	
-	
-	glBegin(GL_QUADS);
-	glVertex3f(-0.1, 0.1, -0.5);
-	glVertex3f(-0.1, -0.1, -0.5);
-	glVertex3f(0.1, -0.1, -0.5);
-	glVertex3f(0.1, 0.1, -0.5);
-	glEnd();	
-	
-	glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	
-	
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_CULL_FACE);*/
-	
+	glEnable(GL_CULL_FACE);
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
@@ -3020,10 +3043,10 @@ void draw_ResolveGBuffer()
 	//glActiveTexture(GL_TEXTURE4);
 	//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+	//glMatrixMode(GL_PROJECTION);
+	//glPopMatrix();
+	//glMatrixMode(GL_MODELVIEW);
+	//glPopMatrix();
 	
 	//glBindBuffer(GL_ARRAY_BUFFER, 0); 
 }
@@ -4281,7 +4304,12 @@ PEWAPI void draw_DrawWidgets()
 	char *strvar;
 	vec3_t v;
 	
-	int stencil_val = 1;
+	int stack_top = -1;
+	swidget_t *swidget_stack[64];
+	vec2_t pos_stack[64];
+	int stencil_stack[64];
+	
+	int base_stencil = 1;
 	float x_scale = 2.0 / renderer.screen_width;
 	float y_scale = 2.0 / renderer.screen_height;
 	
@@ -4486,11 +4514,16 @@ PEWAPI void draw_DrawWidgets()
 			//if(stencil_val == 255) stencil_val--;
 			//draw_DrawString(ui_font, 16, 0, 0, 500, vec3(1.0, 1.0, 1.0), "test");
 			
+			_draw_tab_swidgets:
+			
 			switch(cswidget->type)
 			{
+				
+				
+				
 				case WIDGET_BUTTON:
 					
-					glStencilFunc(GL_EQUAL, 1, 0xff);
+					glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 					
 					button = (wbutton_t *)cswidget;
@@ -4498,7 +4531,7 @@ PEWAPI void draw_DrawWidgets()
 					hh = button->swidget.h / 2.0;
 					if(button->button_flags & BUTTON_CHECK_BOX)
 					{
-						
+						glEnable(GL_LINE_SMOOTH);
 						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 						if(button->swidget.bm_flags & WIDGET_MOUSE_OVER)
 						{
@@ -4509,7 +4542,7 @@ PEWAPI void draw_DrawWidgets()
 							g = 0.5;
 						}
 					
-						glColor3f(0.0, g, 0.0);
+						glColor3f(g, g, g);
 						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
 						if(button->swidget.w < button->swidget.h)
@@ -4528,13 +4561,14 @@ PEWAPI void draw_DrawWidgets()
 						}
 						//glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+						glDisable(GL_LINE_SMOOTH);
 						
 						if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
 						{
 							glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						}
 						
-						glStencilFunc(GL_EQUAL, 1, 0xff);
+						glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 						
 						glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -4542,7 +4576,7 @@ PEWAPI void draw_DrawWidgets()
 						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
 						
-						glStencilFunc(GL_EQUAL, 2, 0xff);
+						glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 						glStencilOp(GL_KEEP, GL_DECR, GL_DECR);
 						glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
@@ -4550,7 +4584,7 @@ PEWAPI void draw_DrawWidgets()
 						
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
-						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
+						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 + 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
 					}
 					else
 					{
@@ -4576,16 +4610,16 @@ PEWAPI void draw_DrawWidgets()
 						}
 						
 						glColor3f(r, g, b);
-						glStencilFunc(GL_EQUAL, 1, 0xff);
+						glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
-						glStencilFunc(GL_EQUAL, 2, 0xff);
+						glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
 						//hw = (button->swidget.x + x - hw)
 						
-						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
+						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 + 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
 						
 					}
 				break;
@@ -4603,8 +4637,8 @@ PEWAPI void draw_DrawWidgets()
 					switch(var->var_type)
 					{
 						case VAR_INT_32:
-							glColor3f(0.5, 0.5, 0.5);
-							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glColor3f(0.4, 0.4, 0.4);
+							glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							/*glBegin(GL_QUADS);
@@ -4622,15 +4656,15 @@ PEWAPI void draw_DrawWidgets()
 								i32var = (int *)*i32var;
 							}
 							
-							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 							
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s %d", var->swidget.name, *i32var);	
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 + 1, 500, vec3(1.0, 1.0, 1.0), "%s %d", var->swidget.name, *i32var);	
 						break;
 						
 						case VAR_VEC3T:
-							glColor3f(0.5, 0.5, 0.5);
-							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glColor3f(0.4, 0.4, 0.4);
+							glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							/*glBegin(GL_QUADS);
@@ -4660,20 +4694,20 @@ PEWAPI void draw_DrawWidgets()
 								v.z = 0.0;
 							}
 							
-							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 							
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:\t[%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 + 1, 500, vec3(1.0, 1.0, 1.0), "%s:\t[%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
 						break;
 						
 						case VAR_MAT3T:
-							glColor3f(0.5, 0.5, 0.5);
-							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glColor3f(0.4, 0.4, 0.4);
+							glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							
 							m3tvar = (mat3_t *)var->var;
-							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "%s:", var->swidget.name);
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw + 150) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "[%.2f %.2f %.2f]\n[%.2f %.2f %.2f]\n[%.2f %.2f %.2f]", m3tvar->floats[0][0],
@@ -4720,8 +4754,8 @@ PEWAPI void draw_DrawWidgets()
 						break;
 						
 						case VAR_STR:
-							glColor3f(0.5, 0.5, 0.5);
-							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glColor3f(0.4, 0.4, 0.4);
+							glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							/*glBegin(GL_QUADS);
@@ -4736,9 +4770,9 @@ PEWAPI void draw_DrawWidgets()
 							{
 								strvar = "<null>";
 							}
-							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 + 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
 						break;
 					}
 					
@@ -4751,7 +4785,7 @@ PEWAPI void draw_DrawWidgets()
 					hh = tabbar->swidget.h / 2.0;
 					
 					glColor3f(0.4, 0.4, 0.4);
-					glStencilFunc(GL_EQUAL, 1, 0xff);
+					glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 					glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 					glRectf(tabbar->swidget.x + x - hw, tabbar->swidget.y + y - hh, tabbar->swidget.x + x + hw, tabbar->swidget.y + y + hh);
 					
@@ -4760,8 +4794,8 @@ PEWAPI void draw_DrawWidgets()
 					
 					
 					x0 = tabbar->swidget.x + x;
-					y0 = tabbar->swidget.y + y - hh + 2;
-					y1 = tabbar->swidget.y + y + hh - 2;
+					y0 = tabbar->swidget.y + y - hh;
+					y1 = tabbar->swidget.y + y + hh;
 					
 					hw = tab_label_width / 2.0;
 					
@@ -4770,7 +4804,7 @@ PEWAPI void draw_DrawWidgets()
 					for(i = 0; i < tabbar->tab_count; i++)
 					{
 						
-						glStencilFunc(GL_EQUAL, 2, 0xff);
+						glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 						
 						if(tabbar->tabs[i].bm_flags & TAB_SELECTED)
@@ -4782,14 +4816,43 @@ PEWAPI void draw_DrawWidgets()
 							glColor3f(0.5, 0.5, 0.5);
 						}
 						
-						glRectf(x0 + x1 - hw + 2 , y0, x0 + x1 + hw - 2, y1);
+						glRectf(x0 + x1 - hw + 2 , y0 + 2, x0 + x1 + hw - 2, y1 - 2);
 						
-						glStencilFunc(GL_EQUAL, 3, 0xff);
+						glStencilFunc(GL_EQUAL, base_stencil + 2, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
-						draw_DrawString(ui_font, 16, (x0 + x1 - hw + 2) + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s", tabbar->tabs[i].name);
+						draw_DrawString(ui_font, 16, (x0 + x1 - hw + 2) + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", tabbar->tabs[i].name);
 						
 						x1 += tab_label_width;
+					}
+					
+					
+					
+					hw = tabbar->swidget.w / 2.0;
+					
+					glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+					glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+					
+					if(!(tabbar->active_tab->bm_flags & TAB_NO_SUB_WIDGETS))
+					{
+						glColor3f(0.4, 0.4, 0.4);
+						glRectf(x0 - hw , y0 - 160, x0 + hw, y0 - 2);
+						
+						if(tabbar->active_tab->swidget_count)
+						{
+							stack_top++;
+							swidget_stack[stack_top] = cswidget;
+							pos_stack[stack_top].x = x;
+							pos_stack[stack_top].y = y;
+							stencil_stack[stack_top] = base_stencil;
+							base_stencil += 1;
+										
+							x += tabbar->swidget.x;
+							y += tabbar->swidget.y;
+							cswidget = tabbar->active_tab->swidgets;
+							goto _draw_tab_swidgets;
+						}
+						
 					}
 					
 					
@@ -4797,6 +4860,20 @@ PEWAPI void draw_DrawWidgets()
 			}
 			
 			cswidget = cswidget->next;
+			
+			if(!cswidget)
+			{
+				if(stack_top != -1)
+				{
+					cswidget = swidget_stack[stack_top];
+					x = pos_stack[stack_top].x;
+					y = pos_stack[stack_top].y;
+					base_stencil = stencil_stack[stack_top];
+					stack_top--;
+					cswidget = cswidget->next;
+				}
+			}
+			
 		}
 		
 		
