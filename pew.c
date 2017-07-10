@@ -1,5 +1,6 @@
 #include "pew.h"
 #include "SDL2/SDL_timer.h"
+#include "engine.h"
 #include <intrin.h>
 
 /* global declarations */
@@ -42,6 +43,8 @@ char backtrace[2048];
 
 int engine_state;
 
+char full_path[512];
+
 
 
 #ifdef __cplusplus
@@ -55,10 +58,30 @@ extern "C"
 pew_Init
 =============
 */
-PEWAPI void pew_Init(int resolution, int mode)
+PEWAPI void pew_Init(int resolution, int mode, char *path)
 {
 	
+	int i;
 	pew.esc_state=ESC_RELEASED;
+	
+	strcpy(full_path, path);
+	
+	i = strlen(full_path);
+	
+	while(i >= 0)
+	{
+		if(full_path[i] == '\\' || full_path[i] == '/')
+		{
+			break;
+		}
+		else
+		{
+			full_path[i] = '\0';
+		}
+		i--;
+	}
+	
+	printf("full path: %s\n", full_path);
 	
 	draw_Init(resolution, mode);
 	gpu_Init();
@@ -184,7 +207,7 @@ PEWAPI void pew_MainLoop()
 		
 		draw_DrawFrame();
 		
-		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 120, 100, vec3(1.0, 1.0, 0.5), "%d \nmother\nfucker", fps_disp);
+		draw_DrawString(fps_font, 16, 1, renderer.screen_height - 120, 100, vec3(1.0, 1.0, 0.5), "%d", fps_disp);
 		
 		//TwDraw();
 		//draw_DrawString(fps_font, 12, 1, 400, 150, vec3(1.0, 1.0, 0.5), "rock and roll ain't noise pollution");
@@ -359,6 +382,11 @@ void pew_HandleSigSeg(int signal)
 	
 	//pew_Finish();
 	exit(-1);
+}
+
+PEWAPI char *pew_GetPath()
+{
+	return full_path;
 }
 
 

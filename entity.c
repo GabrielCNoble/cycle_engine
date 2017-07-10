@@ -13,7 +13,11 @@ extern input_cache input;
 
 //#include "physics.h"
 
+entity_array dynamic_entities;
+
+
 entity_array entity_a;
+entity_array static_entity_a;
 entity_def_list entity_defs;
 edef_list_t edefs; 
 
@@ -62,7 +66,15 @@ void entity_Init()
 	entity_a.aabb_data = NULL;
 	entity_a.entity_count=0;
 	entity_a.stack_top=-1;
-	entity_ResizeEntityArray(&entity_a, 2560);
+	entity_ResizeEntityArray(&entity_a, 128);
+	
+	static_entity_a.position_data = NULL;
+	static_entity_a.draw_data = NULL;
+	static_entity_a.extra_data = NULL;
+	static_entity_a.aabb_data = NULL;
+	static_entity_a.entity_count = 0;
+	static_entity_a.stack_top = -1;
+	entity_ResizeEntityArray(&static_entity_a, 128);
 	
 	v_ent_array_size = 128;
 	
@@ -99,6 +111,12 @@ void entity_Finish()
 	free(entity_a.draw_data);
 	free(entity_a.extra_data);
 	free(entity_a.aabb_data);
+	
+	free(static_entity_a.position_data);
+	free(static_entity_a.draw_data);
+	free(static_entity_a.extra_data);
+	free(static_entity_a.aabb_data);
+	
 	free(v_entities);
 	
 	free(entity_defs.defs);
@@ -445,7 +463,7 @@ PEWAPI int entity_CreateEntityDef(char *name, short flags, short material_index,
 		
 		if(mass <= 0.0)
 		{
-			entity_defs.defs[index].flags |= ENTITY_STATIC_COLLISION;
+			entity_defs.defs[index].flags |= ENTITY_STATIC;
 		}
 		
 		//entity_defs.defs[index].type = type;
@@ -500,48 +518,68 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 	armdef_t *a;
 	armature_t *ar;
 	char col_name[64];
+	entity_array *array;
+	entity_aabb_t *aabb;
+	entity_position_t *pos;
+	entity_extra_t *extra;
+	entity_draw_t *draw;
 	//char *armature_name = (char *)(&b_collide + 1);
 	if(entity_def)
 	{
-		if(entity_a.stack_top>=0)
+		
+		/*if(entity_def->flags & ENTITY_STATIC)
 		{
-			index = entity_a.free_positions_stack[entity_a.stack_top];
-			entity_a.stack_top--;
+			array = &static_entity_a;
+		}
+		else
+		{*/
+			array = &entity_a;
+		//}
+		
+		if(array->stack_top>=0)
+		{
+			index = array->free_positions_stack[array->stack_top];
+			array->stack_top--;
 		}
 		else
 		{
-			if(entity_a.entity_count>=entity_a.array_size)
+			if(array->entity_count>=array->array_size)
 			{
-				entity_ResizeEntityArray(&entity_a, entity_a.array_size<<1);
+				entity_ResizeEntityArray(array, array->array_size<<1);
 			}
 				
-			index = entity_a.entity_count;
-			entity_a.entity_count++;	
+			index = array->entity_count;
+			array->entity_count++;	
 		}
+		
+		aabb = &array->aabb_data[index];
+		pos = &array->position_data[index];
+		draw = &array->draw_data[index];
+		extra = &array->extra_data[index];
 		
 		a = armature_GetArmDefByIndex(entity_def->armdef_index);
 		
-		entity_a.aabb_data[index].o_maxmins[0] = entity_def->o_maxmins[0];
-		entity_a.aabb_data[index].o_maxmins[1] = entity_def->o_maxmins[1];
-		entity_a.aabb_data[index].o_maxmins[2] = entity_def->o_maxmins[2];
+		aabb->o_maxmins[0] = entity_def->o_maxmins[0];
+		aabb->o_maxmins[1] = entity_def->o_maxmins[1];
+		aabb->o_maxmins[2] = entity_def->o_maxmins[2];
 		
-		entity_a.aabb_data[index].c_maxmins[0] = entity_a.aabb_data[index].o_maxmins[0];
-		entity_a.aabb_data[index].c_maxmins[1] = entity_a.aabb_data[index].o_maxmins[1];
-		entity_a.aabb_data[index].c_maxmins[2] = entity_a.aabb_data[index].o_maxmins[2];
+		aabb->c_maxmins[0] = aabb->o_maxmins[0];
+		aabb->c_maxmins[1] = aabb->o_maxmins[1];
+		aabb->c_maxmins[2] = aabb->o_maxmins[2];
 		
 		//MatrixCopy3(&entity_a.extra_data[index].local_orientation, orientation);
-		memcpy(&entity_a.extra_data[index].local_orientation, orientation, sizeof(mat3_t));
+		memcpy(&extra->local_orientation, orientation, sizeof(mat3_t));
 		
 		//entity_RotateEntity()
 		
-		entity_a.extra_data[index].local_position = position;
-		entity_a.extra_data[index].name = strdup(name);
-		entity_a.position_data[index].bm_flags = entity_def->flags;
+		extra->local_position = position;
+		extra->name = strdup(name);
+		pos->bm_flags = entity_def->flags;
 		//entity_a.position_data[index].type = entity_def->type;
 		
-		entity_a.draw_data[index].start = entity_def->start;
-		entity_a.draw_data[index].vert_count = entity_def->vert_count;
-		entity_a.draw_data[index].draw_flags = entity_def->draw_flags;
+		draw->start = entity_def->start;
+		draw->vert_count = entity_def->vert_count;
+		draw->draw_flags = entity_def->draw_flags;
 		
 		//entity_CalculateAABB(&entity_a.aabb_data[index], &entity_a.position_data[index]);
 		
@@ -550,23 +588,23 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 			printf("warning: entity_def_t has a null pointer for entity [%s]!\n", name);
 		}
 		
-		if(entity_def->type == ENTITY_PLAYER)
+		/*if(entity_def->type == ENTITY_PLAYER)
 		{
-			entity_a.draw_data[index].mesh = NULL;
+			draw->mesh = NULL;
 		}
 		else
-		{
-			entity_a.draw_data[index].mesh = entity_def->mesh;
-		}
+		{*/
+		draw->mesh = entity_def->mesh;
+		//}
 		
 		
-		if(a && entity_a.draw_data[index].mesh)
+		if(a && draw->mesh)
 		{
 			strcpy(armature_name, name);
 			strcat(armature_name, "_armature");
-			entity_a.draw_data[index].armature_index = armature_CreateArmature(a, armature_name, position, orientation);
+			draw->armature_index = armature_CreateArmature(a, armature_name, position, orientation);
 			
-			vmesh = entity_a.draw_data[index].mesh;
+			vmesh = draw->mesh;
 			byte_count = sizeof(float) * 3 * vmesh->vert_count;
 			
 			if(vmesh->n_data)
@@ -582,38 +620,38 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 				byte_count += sizeof(float) * 2 * vmesh->vert_count;
 			}
 			
-			entity_a.draw_data[index].handle = gpu_Alloc(byte_count);
-			entity_a.draw_data[index].start = gpu_GetAllocStart(entity_a.draw_data[index].handle);
-			gpu_Write(entity_a.draw_data[index].handle, 0, vmesh->v_data, byte_count, 0);
-			entity_a.position_data[index].bm_flags |= ENTITY_SKINNABLE;
+			draw->handle = gpu_Alloc(byte_count);
+			draw->start = gpu_GetAllocStart(draw->handle);
+			gpu_Write(draw->handle, 0, vmesh->v_data, byte_count, 0);
+			pos->bm_flags |= ENTITY_SKINNABLE;
 			
-			ar = &armature_list.armatures[entity_a.draw_data[index].armature_index];
+			ar = &armature_list.armatures[draw->armature_index];
 			ar->mesh = vmesh;
-			ar->start = entity_a.draw_data[index].start; 
+			ar->start = draw->start; 
 			
 			//entity_SetEntityArmature(index, entity_a.draw_data[index].armature_index, a->wset_index);
 		}
 		else
 		{
-			entity_a.draw_data[index].armature_index = -1;
+			draw->armature_index = -1;
 		}
 		
 		//entity_a.draw_data[index].armature_index = entity_def->armature_index;
-		entity_a.draw_data[index].material_index = entity_def->material_index;
+		draw->material_index = entity_def->material_index;
 		
-		memcpy(&entity_a.position_data[index].world_orientation, &entity_a.extra_data[index].local_orientation, sizeof(mat3_t));
+		memcpy(&pos->world_orientation, &extra->local_orientation, sizeof(mat3_t));
 		//MatrixCopy3(&entity_a.position_data[index].world_orientation, &entity_a.extra_data[index].local_orientation);
-		entity_a.position_data[index].world_position = entity_a.extra_data[index].local_position;
+		pos->world_position = extra->local_position;
 		
-		entity_a.aabb_data[index].origin.x = entity_a.position_data[index].world_position.x;
-		entity_a.aabb_data[index].origin.y = entity_a.position_data[index].world_position.y;
-		entity_a.aabb_data[index].origin.z = entity_a.position_data[index].world_position.z;
+		aabb->origin.x = pos->world_position.x;
+		aabb->origin.y = pos->world_position.y;
+		aabb->origin.z = pos->world_position.z;
 		
-		entity_CalculateAABB(&entity_a.aabb_data[index], &entity_a.position_data[index]);
+		entity_CalculateAABB(aabb, pos);
 		
 		if(entity_def->flags & ENTITY_COLLIDES)
 		{
-			switch(entity_def->flags & ENTITY_STATIC_COLLISION)
+			switch(entity_def->flags & ENTITY_STATIC)
 			{
 				
 				//case ENTITY_DYNAMIC:
@@ -625,7 +663,7 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 					goto _add;
 				break;
 				
-				case ENTITY_STATIC_COLLISION:
+				case ENTITY_STATIC:
 					vtype = COLLIDER_STATIC;
 					vmesh = entity_def->mesh;
 					col_shape = COLLISION_SHAPE_CONVEX_HULL;
@@ -633,7 +671,7 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 					strcpy(col_name, name);
 					strcat(col_name, "_collider");
 					_add:
-					entity_a.position_data[index].collider_index = physics_CreateCollider(col_name, vtype, col_shape, 0, index, 2.0, 1.0, 2.0, 0.8, vmass, 18.0 ,9.6, vmesh, position, orientation, NULL);
+					pos->collider_index = physics_CreateCollider(col_name, vtype, col_shape, 0, index, 2.0, 1.0, 2.0, 0.8, vmass, 18.0 ,9.6, vmesh, position, orientation, NULL);
 				break;
 				
 				/*case ENTITY_OTHER:
@@ -645,21 +683,21 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 		}
 		else
 		{
-			entity_a.position_data[index].collider_index = -1;
+			pos->collider_index = -1;
 		}
 		
 		
 		if(material_a.materials[entity_def->material_index].diff_color.a < 255)
 		{
-			entity_a.position_data[index].bm_flags |= ENTITY_TRANSLUCENT;
+			pos->bm_flags |= ENTITY_TRANSLUCENT;
 		}
 		
 		//entity_a.draw_data[entity_index].material_index = material_index;
 		
 		
 		
-		entity_a.position_data[index].entity_index = index;
-		entity_a.extra_data[index].assigned_node = scenegraph_AddNode(NODE_ENTITY, index, -1, name);
+		pos->entity_index = index;
+		extra->assigned_node = scenegraph_AddNode(NODE_ENTITY, index, -1, name);
 		return index;
 	}
 	return -1;

@@ -2,6 +2,7 @@
 //#include "draw_common.h"
 
 #include "draw_debug.h"
+#include "draw_profile.h"
 
 #include "model.h"
 #include "shader.h"
@@ -221,6 +222,8 @@ static int large_bloom_iterations;
 static float bloom_intensity;
 
 
+int draw_calls = 0;
+
 
 /*int clusters_per_row;
 int cluster_rows;
@@ -330,6 +333,8 @@ draw_Init
 	renderer.selected_resolution=resolution;
 	renderer.frame_count=0;
 	renderer.time=0.0;
+	
+	//printf("cur context: %lld     %lld\n", wglGetCurrentContext(), SDL_GL_GetCurrentContext());
 	
 	if(mode == INIT_FORCE_FULLSCREEN)
 	{
@@ -770,6 +775,7 @@ draw_Init
 	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width * 0.5, renderer.width * 0.5, renderer.height * 0.5, -renderer.height * 0.5, -1.5, 1.5, NULL);
 	
 	draw_debug_Init();
+	draw_profile_Init();
 	
 	/*int b[32] = {123};
 	int q = gpu_Alloc(128);
@@ -796,6 +802,7 @@ void draw_Finish()
 	int i;
 	
 	draw_debug_Finish();
+	draw_profile_Finish();
 	
 	SDL_DestroyWindow(renderer.window);
 	SDL_GL_DeleteContext(renderer.context);
@@ -1048,6 +1055,8 @@ void draw_OpenFrame()
 	glClearBufferfv(GL_COLOR, 2, c0);
 	
 	camera_SetCurrentCameraProjectionMatrix();
+	
+	draw_calls = 0;
 	
 	return;
 }
@@ -1769,8 +1778,8 @@ void draw_DrawWireframe()
 		v_byte_count=vert_count*3*sizeof(float);
 		glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
 		glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
-			
-		glDrawArrays(draw_mode, 0, vert_count);
+		draw_DrawArrays(draw_mode, 0, vert_count);	
+		//glDrawArrays(draw_mode, 0, vert_count);
 		
 	}
 	
@@ -1873,8 +1882,8 @@ void draw_DrawFlat()
 			glEnableVertexAttribArray(shader_a.shaders[flat_shader_index].v_tcoord);
 			glVertexAttribPointer(shader_a.shaders[flat_shader_index].v_tcoord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count + n_byte_count + t_byte_count + start));
 		}
-			
-		glDrawArrays(draw_mode, 0, vert_count);
+		draw_DrawArrays(draw_mode, 0, vert_count);	
+		//glDrawArrays(draw_mode, 0, vert_count);
 	}
 	
 	
@@ -2016,7 +2025,8 @@ void draw_DrawLit()
 		}
 		
 		//draw_mode &= ~(CBATTRIBUTE_NORMAL|CBATTRIBUTE_TANGENT|CBATTRIBUTE_TEX_COORD);
-		glDrawArrays(draw_mode, 0, vert_count);
+		draw_DrawArrays(draw_mode, 0, vert_count);
+		//glDrawArrays(draw_mode, 0, vert_count);
 		
 		
 		/*e = _rdtsc();
@@ -2706,7 +2716,7 @@ void draw_ResolveGBuffer()
 	
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	framebuffer_BindFramebuffer(&left_buffer);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	
 	
 	
@@ -2765,22 +2775,57 @@ void draw_ResolveGBuffer()
 	
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
+	glDisable(GL_STENCIL_TEST);
 	//glDisable(GL_CULL_FACE);
 	
 	
-	glCullFace(GL_BACK);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	
 	//glEnable(GL_LIGHT0);
 	//glEnable(GL_LIGHT1);
+	
+	/*glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	
+	
+	glEnable(GL_STENCIL_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	
+	glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+	glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+	
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_FALSE);	
+	
+	
+	
+	glBegin(GL_QUADS);
+	glVertex3f(-0.1, 0.1, -0.5);
+	glVertex3f(-0.1, -0.1, -0.5);
+	glVertex3f(0.1, -0.1, -0.5);
+	glVertex3f(0.1, 0.1, -0.5);
+	glEnd();	
+	
+	glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	
+	
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);*/
+	
+	
 	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
 	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
 	
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
+	
+	glCullFace(GL_BACK);
+	glEnable(GL_BLEND);
+	
+	glBlendFunc(GL_ONE, GL_ONE);
 	
 //	#define DEBUG_DRAW
 	//if(renderer.render_mode==RENDERMODE_LIT)
@@ -2942,20 +2987,23 @@ void draw_ResolveGBuffer()
 				light_SetLightType(light_type);
 				glLighti(GL_LIGHT2, GL_SPOT_EXPONENT, params->max_shadow_aa_samples);
 				glLighti(GL_LIGHT3, GL_SPOT_EXPONENT, use_shadows);
-				glDrawArrays(draw_mode, draw_begin, draw_count);
+				draw_DrawArrays(draw_mode, draw_begin, draw_count);
+				//glDrawArrays(draw_mode, draw_begin, draw_count);
 			}
 		break;
 		
 		case RENDER_DRAWMODE_WIREFRAME:
 			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_WIREFRAME);
 			glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 0);
-			glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+			draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+			//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 		break;
 		
 		case RENDER_DRAWMODE_FLAT:
 			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_FLAT);
 			glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 0);
-			glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+			draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+			//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 		break;
 	}
 	
@@ -2965,6 +3013,7 @@ void draw_ResolveGBuffer()
 	//glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
+	glDisable(GL_STENCIL_TEST);
 	//glLighti(GL_LIGHT1, GL_SPOT_CUTOFF, 0);
 	//glActiveTexture(GL_TEXTURE3);
 	//glBindTexture(GL_TEXTURE_2D, 0);	
@@ -3276,7 +3325,8 @@ void draw_DrawShadowMaps()
 				{
 					glEnable(GL_CULL_FACE);
 				}
-				glDrawArrays(draw_mode, 0, vert_count);
+				draw_DrawArrays(draw_mode, 0, vert_count);
+				//glDrawArrays(draw_mode, 0, vert_count);
 				
 				//ei = _rdtsc();
 				
@@ -3487,8 +3537,8 @@ void draw_DrawLightVolumes()
 		light_SetAreaType(area_type);
 		light_SetLightType(light_type);
 		
-		
-		glDrawArrays(GL_TRIANGLES, draw_start, draw_count);
+		draw_DrawArrays(GL_TRIANGLES, draw_start, draw_count);
+	//	glDrawArrays(GL_TRIANGLES, draw_start, draw_count);
 
 	}
 
@@ -3610,7 +3660,8 @@ void draw_DrawBloom()
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	glViewport(0, 0, renderer.width / 2, renderer.height / 2);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+	draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+	//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 	
 	glEnable(GL_BLEND);
 	glBlendFunci(0, GL_ONE, GL_ONE);
@@ -3639,13 +3690,15 @@ void draw_DrawBloom()
 		shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, renderer.width / 2);
 		glBindTexture(GL_TEXTURE_2D, h_tex_l);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 		
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, h_tex_l, 0);
 		shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, 0);
 		glBindTexture(GL_TEXTURE_2D, h_tex_r);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 	}
 	
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, b_fb_r);
@@ -3664,13 +3717,15 @@ void draw_DrawBloom()
 		shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, renderer.width / 4);
 		glBindTexture(GL_TEXTURE_2D, q_tex_l);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 		
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, q_tex_l, 0);
 		shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, 0);
 		glBindTexture(GL_TEXTURE_2D, q_tex_r);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 	}
 	
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, b_fb_l);
@@ -3683,13 +3738,15 @@ void draw_DrawBloom()
 		shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, renderer.width / 8);
 		glBindTexture(GL_TEXTURE_2D, e_tex_l);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 		
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, e_tex_l, 0);
 		shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, 0);
 		glBindTexture(GL_TEXTURE_2D, e_tex_r);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
 	}
 	
 	
@@ -3901,21 +3958,22 @@ void draw_BlitToScreen()
 	
 	//framebuffer_BindFramebuffer(&backbuffer);
 	//glDisable(GL_STENCIL_TEST);
-	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	//glDrawBuffer(GL_NONE);
 	
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
-	//glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
+	glReadBuffer(GL_NONE);
 	
 	//glViewport(0, 0, backbuffer.width, backbuffer.height);
-	//glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, backbuffer.width, backbuffer.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, backbuffer.width, backbuffer.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	
 	//glDrawBuffer(GL_LEFT);
 	//glDrawBuffers(1, (GLenum *)&i);
 	
 	/* tone mapping is done here... */
 	framebuffer_BindFramebuffer(&backbuffer);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	//glDrawBuffer(GL_LEFT);
+	glClear(GL_COLOR_BUFFER_BIT);
 	
 	
 	
@@ -4209,7 +4267,12 @@ PEWAPI void draw_DrawWidgets()
 	widget_t *cwidget;
 	swidget_t *cswidget;
 	wbutton_t *button;
+	wtabbar_t *tabbar;
+	wtab_t *tab;
 	wvar_t *var;
+	
+	int i;
+	
 	
 	int *i32var;
 	short *i16var;
@@ -4226,6 +4289,7 @@ PEWAPI void draw_DrawWidgets()
 	float g;
 	float b;
 	float a;
+	float tab_label_width;
 	
 	//float scissor_x;
 	//float scissor_y;
@@ -4413,18 +4477,22 @@ PEWAPI void draw_DrawWidgets()
 		
 		//glDisable(GL_BLEND);
 		cswidget = cwidget->sub_widgets;
-		stencil_val = 1;
+		//stencil_val = 1;
 		while(cswidget)
 		{
 			//glDisable(GL_STENCIL_TEST);
-			glStencilFunc(GL_NOTEQUAL, 0, 0xff);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-			if(stencil_val == 255) stencil_val--;
+			//glStencilFunc(GL_GEQUAL, 1, 0xff);
+			//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			//if(stencil_val == 255) stencil_val--;
 			//draw_DrawString(ui_font, 16, 0, 0, 500, vec3(1.0, 1.0, 1.0), "test");
 			
 			switch(cswidget->type)
 			{
 				case WIDGET_BUTTON:
+					
+					glStencilFunc(GL_EQUAL, 1, 0xff);
+					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					
 					button = (wbutton_t *)cswidget;
 					hw = button->swidget.w / 2.0;
 					hh = button->swidget.h / 2.0;
@@ -4466,20 +4534,20 @@ PEWAPI void draw_DrawWidgets()
 							glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						}
 						
-						glStencilFunc(GL_ALWAYS, ++stencil_val, 0xff);
-						glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+						glStencilFunc(GL_EQUAL, 1, 0xff);
+						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 						
 						glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-						glDepthMask(GL_FALSE);
 						
 						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
-						glStencilFunc(GL_ALWAYS, stencil_val - 1, 0xff);
+						
+						
+						glStencilFunc(GL_EQUAL, 2, 0xff);
+						glStencilOp(GL_KEEP, GL_DECR, GL_DECR);
 						glRectf(button->swidget.x + x + hw - cw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
 						
 						glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-						glDepthMask(GL_TRUE);
 						
-						glStencilFunc(GL_EQUAL, stencil_val, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
 						draw_DrawString(ui_font, 16, (button->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (button->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), button->swidget.name);
@@ -4508,33 +4576,11 @@ PEWAPI void draw_DrawWidgets()
 						}
 						
 						glColor3f(r, g, b);
+						glStencilFunc(GL_EQUAL, 1, 0xff);
+						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
-						/*glBegin(GL_QUADS);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y + hh, -0.5);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();*/
 						
-						
-						glStencilFunc(GL_ALWAYS, ++stencil_val, 0xff);
-						glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-						
-						glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-						glDepthMask(GL_FALSE);
-						
-						glRectf(button->swidget.x + x - hw, button->swidget.y + y - hh, button->swidget.x + x + hw, button->swidget.y + y + hh);
-						/*glBegin(GL_QUADS);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y + hh, -0.5);
-						glVertex3f(button->swidget.x + x - hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y - hh, -0.5);
-						glVertex3f(button->swidget.x + x + hw, button->swidget.y + y + hh, -0.5);
-						glEnd();*/
-						
-						glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-						glDepthMask(GL_TRUE);
-						
-						glStencilFunc(GL_EQUAL, stencil_val, 0xff);
+						glStencilFunc(GL_EQUAL, 2, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
 						//hw = (button->swidget.x + x - hw)
@@ -4546,6 +4592,10 @@ PEWAPI void draw_DrawWidgets()
 				
 				
 				case WIDGET_VAR:
+					
+					//glStencilFunc(GL_EQUAL, 1, 0xff);
+					//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					
 					var = (wvar_t *)cswidget;
 					hw = var->swidget.w / 2.0;
 					hh = var->swidget.h / 2.0;
@@ -4554,6 +4604,8 @@ PEWAPI void draw_DrawWidgets()
 					{
 						case VAR_INT_32:
 							glColor3f(0.5, 0.5, 0.5);
+							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							/*glBegin(GL_QUADS);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
@@ -4570,11 +4622,16 @@ PEWAPI void draw_DrawWidgets()
 								i32var = (int *)*i32var;
 							}
 							
+							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+							
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s %d", var->swidget.name, *i32var);	
 						break;
 						
 						case VAR_VEC3T:
 							glColor3f(0.5, 0.5, 0.5);
+							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							/*glBegin(GL_QUADS);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
@@ -4603,14 +4660,21 @@ PEWAPI void draw_DrawWidgets()
 								v.z = 0.0;
 							}
 							
+							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+							
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:\t[%.2f %.2f %.2f]", var->swidget.name, v.x, v.y, v.z);
 						break;
 						
 						case VAR_MAT3T:
 							glColor3f(0.5, 0.5, 0.5);
+							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							
 							m3tvar = (mat3_t *)var->var;
+							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "%s:", var->swidget.name);
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw + 150) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "[%.2f %.2f %.2f]\n[%.2f %.2f %.2f]\n[%.2f %.2f %.2f]", m3tvar->floats[0][0],
 																																																																		m3tvar->floats[0][1],
@@ -4657,6 +4721,8 @@ PEWAPI void draw_DrawWidgets()
 						
 						case VAR_STR:
 							glColor3f(0.5, 0.5, 0.5);
+							glStencilFunc(GL_EQUAL, 1, 0xff);
+							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
 							/*glBegin(GL_QUADS);
 							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
@@ -4670,9 +4736,62 @@ PEWAPI void draw_DrawWidgets()
 							{
 								strvar = "<null>";
 							}
+							glStencilFunc(GL_EQUAL, 2, 0xff);
+							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
 						break;
 					}
+					
+				break;
+				
+				case WIDGET_TAB_BAR:
+					tabbar = (wtabbar_t *)cswidget;
+					
+					hw = tabbar->swidget.w / 2.0;
+					hh = tabbar->swidget.h / 2.0;
+					
+					glColor3f(0.4, 0.4, 0.4);
+					glStencilFunc(GL_EQUAL, 1, 0xff);
+					glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+					glRectf(tabbar->swidget.x + x - hw, tabbar->swidget.y + y - hh, tabbar->swidget.x + x + hw, tabbar->swidget.y + y + hh);
+					
+					tab_label_width = tabbar->swidget.w / (float)tabbar->tab_count;
+					
+					
+					
+					x0 = tabbar->swidget.x + x;
+					y0 = tabbar->swidget.y + y - hh + 2;
+					y1 = tabbar->swidget.y + y + hh - 2;
+					
+					hw = tab_label_width / 2.0;
+					
+					x1 = -hw * (tabbar->tab_count - 1);
+					
+					for(i = 0; i < tabbar->tab_count; i++)
+					{
+						
+						glStencilFunc(GL_EQUAL, 2, 0xff);
+						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+						
+						if(tabbar->tabs[i].bm_flags & TAB_SELECTED)
+						{
+							glColor3f(0.3, 0.3, 0.3);
+						}
+						else
+						{
+							glColor3f(0.5, 0.5, 0.5);
+						}
+						
+						glRectf(x0 + x1 - hw + 2 , y0, x0 + x1 + hw - 2, y1);
+						
+						glStencilFunc(GL_EQUAL, 3, 0xff);
+						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+						
+						draw_DrawString(ui_font, 16, (x0 + x1 - hw + 2) + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s", tabbar->tabs[i].name);
+						
+						x1 += tab_label_width;
+					}
+					
 					
 				break;
 			}

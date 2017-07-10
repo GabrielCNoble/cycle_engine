@@ -26,6 +26,7 @@ extern render_queue render_q;
 extern render_queue t_render_q;
 extern render_queue e_render_q;
 extern entity_array entity_a;
+extern entity_array static_entity_a;
 extern camera_array camera_a;
 extern collider_array collider_a;
 extern active_particle_system_array active_particle_system_a;
@@ -98,6 +99,8 @@ typedef struct
 	int *indexes;
 }dispatch_indexes_list;		/* for separating scenegraph processing from geometry submission */
 
+int b_static_visible;
+int static_start;
 dispatch_indexes_list dispatch_list;
 
 #ifdef __cplusplus
@@ -1402,15 +1405,18 @@ static void scenegraph_CullGeometry()
 	int *temp;
 	int b_onscreen;
 	
-	plane_t top;
-	plane_t bottom;
-	plane_t right;
-	plane_t left;
-	plane_t near;
-	plane_t far;
+	entity_array *array;
+	entity_position_t *position;
+	entity_aabb_t *aabb;
+	//plane_t top;
+	//plane_t bottom;
+	//plane_t right;
+	//plane_t left;
+	//plane_t near;
+	//plane_t far;
 	plane_t frustum_planes[6];
-	mat4_t transform;
-	mat4_t model_view_matrix;
+	//mat4_t transform;
+	//mat4_t model_view_matrix;
 	command_buffer_t cb;
 	//camera_t *active_camera=camera_GetActiveCamera();
 	//affecting_lights_list light_list;
@@ -1498,18 +1504,25 @@ static void scenegraph_CullGeometry()
 	frustum_planes[5] = ComputePlane(ftl, fbr, ftr);
 	
 	
-	
+	array = &entity_a;
+	//dispatch_list.cursor = 0;
 	//dispatch_list.cursor=0;
-	c=entity_a.entity_count;
+	
+	//static_start = -1;
+	
+	_do_static_entities:	
+	
+	c = array->entity_count;		
 	
 	for(i=0; i<c; i++)
 	{
 		
-		
+		position = &array->position_data[i];
+		aabb = &array->aabb_data[i];
 		/* TODO: find a better way to skip deleted entities (a separate array for active entities maybe?) */
-		if(entity_a.position_data[i].entity_index < 0 || 
+		if(position->entity_index < 0 || 
 		   //entity_a.position_data[i].type == ENTITY_PLAYER || 
-		   (entity_a.position_data[i].bm_flags & ENTITY_INVISIBLE)) continue;
+		   (position->bm_flags & ENTITY_INVISIBLE)) continue;
 		
 		
 		/*l_origin.floats[0]=entity_a.position_data[i].world_transform.floats[3][0];
@@ -1518,16 +1531,16 @@ static void scenegraph_CullGeometry()
 		
 		printf("[%f %f %f]\n", l_origin.x, l_origin.y, l_origin.z);*/
 		
-		l_origin.x = entity_a.aabb_data[i].origin.x;
-		l_origin.y = entity_a.aabb_data[i].origin.y;
-		l_origin.z = entity_a.aabb_data[i].origin.z;
+		l_origin.x = aabb->origin.x;
+		l_origin.y = aabb->origin.y;
+		l_origin.z = aabb->origin.z;
 		
 		
 		for(k = 0; k < 6; k++)
 		{
-			radius = (entity_a.aabb_data[i].c_maxmins[0])*fabs(frustum_planes[k].normal.floats[0]) + 
-			     	 (entity_a.aabb_data[i].c_maxmins[1])*fabs(frustum_planes[k].normal.floats[1]) +
-			     	 (entity_a.aabb_data[i].c_maxmins[2])*fabs(frustum_planes[k].normal.floats[2]); 
+			radius = (aabb->c_maxmins[0])*fabs(frustum_planes[k].normal.floats[0]) + 
+			     	 (aabb->c_maxmins[1])*fabs(frustum_planes[k].normal.floats[1]) +
+			     	 (aabb->c_maxmins[2])*fabs(frustum_planes[k].normal.floats[2]); 
 			
 			distance = dot3(l_origin, frustum_planes[k].normal) - frustum_planes[k].d;
 			
@@ -1556,24 +1569,22 @@ static void scenegraph_CullGeometry()
 			dispatch_list.list_size += 128;
 			goto _add_index;
 		}	
-			
-
-		/*mat4_t_compose(&transform, &entity_a.position_data[i].world_orientation, entity_a.position_data[i].world_position);
-		mat4_t_mult(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
-		draw_FillCommandBuffer(&cb, entity_a.draw_data[i].mesh, entity_a.draw_data[i].material_index, 0, &model_view_matrix, NULL, (unsigned int )light_list.count);
-		
-		if(material_a.materials[entity_a.draw_data[i].material_index].bm_flags & MATERIAL_Translucent)
-		{
-			draw_DispatchCommandBuffer(&t_render_q, &cb);
-		}
-		else
-		{
-			draw_DispatchCommandBuffer(&render_q, &cb);
-		}*/
 		
 	}
+	
+	/*if(static_start < 0)
+	{
+		array = &static_entity_a;
+		static_start = dispatch_list.cursor;
+		goto _do_static_entities;
+	}*/
+	
 }
 
+static void scenegraph_CullStaticGeometry()
+{
+	
+}
 
 static void scenegraph_FillShadowQueue()
 {
@@ -1590,6 +1601,7 @@ static void scenegraph_FillShadowQueue()
 	//int b_onscreen;
 	int scb_index;
 	int entities_dispatched;
+	entity_array *array;
 	
 	plane_t frustum_planes[6];
 	vec3_t vecs[8];
@@ -1759,12 +1771,7 @@ static void scenegraph_FillShadowQueue()
 			for(i=0; i<c; i++)
 			{
 				
-				if(
-						entity_a.position_data[i].entity_index < 0 || 
-				   		//entity_a.position_data[i].type == ENTITY_PLAYER || 
-				   		entity_a.position_data[i].bm_flags & ENTITY_INVISIBLE
-				   		
-				  ) continue;
+				if(entity_a.position_data[i].entity_index < 0 || entity_a.position_data[i].bm_flags & ENTITY_INVISIBLE) continue;
 				   
 				/* TODO: check if the light or the object have moved. If they have, then re-run the 
 				frustum culling test for the object. */	
@@ -1992,6 +1999,7 @@ static void scenegraph_DispatchGeometry()
 	mat4_t transform;
 	mat4_t model_view_matrix;
 	render_queue *r;
+	entity_array *array;
 	material_t *m;
 	
 	render_q.count = 0;
@@ -1999,13 +2007,17 @@ static void scenegraph_DispatchGeometry()
 	e_render_q.count = 0;
 	
 	c = dispatch_list.cursor;
+	array = &entity_a;
+	i = 0;
 	
-	for(i=0; i<c; i++)
+	_submit_static_entities:
+	
+	for(; i<c; i++)
 	{
 		q = dispatch_list.indexes[i];
-		mat4_t_compose(&transform, &entity_a.position_data[q].world_orientation, entity_a.position_data[q].world_position);
+		mat4_t_compose(&transform, &array->position_data[q].world_orientation, array->position_data[q].world_position);
 		mat4_t_mult(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
-		m = &material_a.materials[entity_a.draw_data[q].material_index];
+		m = &material_a.materials[array->draw_data[q].material_index];
 		if(m->bm_flags & MATERIAL_Translucent)
 		{
 			r = &t_render_q;
@@ -2020,14 +2032,21 @@ static void scenegraph_DispatchGeometry()
 		}
 		
 		
-		draw_DispatchCommandBuffer(r, q, entity_a.draw_data[q].material_index,
+		draw_DispatchCommandBuffer(r, q, array->draw_data[q].material_index,
 										 -1, 
-										 entity_a.draw_data[q].draw_flags, 
-										 entity_a.draw_data[q].start, 
-										 entity_a.draw_data[q].vert_count, 
+										 array->draw_data[q].draw_flags, 
+										 array->draw_data[q].start, 
+										 array->draw_data[q].vert_count, 
 									     &model_view_matrix);
-
 	}
+	
+	/*if(c != dispatch_list.cursor)
+	{
+		i = static_start;
+		c = dispatch_list.cursor;
+		array = &static_entity_a;
+		goto _submit_static_entities;
+	}*/
 		
 	dispatch_list.cursor=0;
 }
@@ -2150,8 +2169,9 @@ static void scenegraph_UpdateColliders()
 		
 		position->bm_flags |= ENTITY_HAS_MOVED;
 		
-		collider->rigid_body->getMotionState()->getWorldTransform(tr);
-		tr.getOpenGLMatrix(&transform.floats[0][0]);
+		//collider->rigid_body->getMotionState()->getWorldTransform(tr);
+		collider->rigid_body->getWorldTransform().getOpenGLMatrix(&transform.floats[0][0]);
+		//tr.getOpenGLMatrix(&transform.floats[0][0]);
 
 		for(j = 0; j < 3; j++)
 		{

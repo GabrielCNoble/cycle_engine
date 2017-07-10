@@ -74,7 +74,7 @@ void main()
     //vec4 pixel=vec4(gl_FrontMaterial.diffuse.rgb, 1.0);
     int i;
     int q=0;
-    int sample_count = 16;
+    int sample_count = 64;
     float f;
     
     float h0;

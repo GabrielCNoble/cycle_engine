@@ -9,6 +9,8 @@
 #include "file.h"
 #include "draw_debug.h"
 #include "framebuffer.h"
+#include "camera.h"
+#include "texture.h"
 
 extern entity_array entity_a;
 extern input_cache input;
@@ -94,6 +96,133 @@ void gmain(float delta_time)
 		{
 			ginput(delta_time);
 		}
+		
+		if(selected.extra_data)
+		{	
+		
+			if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED && handle_3d_bm)
+			{
+				
+				
+				p.x = selected.position_data->world_position.x;
+				p.y = selected.position_data->world_position.y;
+				p.z = selected.position_data->world_position.z;
+				p.w = 1.0;
+				
+				mat4_t_mult(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
+				
+				p = MultiplyVector4(&model_view_projection_matrix, p);
+				
+				p.x /= p.w;
+				p.y /= p.w;
+				
+				
+				
+				screen_x = p.x * 0.5 + 0.5;
+				screen_y = p.y * 0.5 + 0.5;
+				
+				mouse_x = input.normalized_mouse_x * 0.5 + 0.5;
+				mouse_y = input.normalized_mouse_y * 0.5 + 0.5;
+				
+				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+				{
+					grab_offset_x = mouse_x - screen_x;
+					grab_offset_y = mouse_y - screen_y;
+					cur_grab_offset_x = grab_offset_x;
+					cur_grab_offset_y = grab_offset_y; 
+					last_grab_offset_x = grab_offset_x;
+					last_grab_offset_y = grab_offset_y; 
+					
+					//printf("%f  %f\n", grab_offset_x * p.z, grab_offset_y * p.z);
+				}
+				
+				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
+				delta_y = (mouse_y - screen_y - grab_offset_y) * p.z * 2.0;
+				
+				switch(handle_3d_mode)
+				{
+					case HANDLE_3D_TRANSLATION:
+						if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
+						{
+							v = vec3(1.0, 0.0, 0.0);
+						}
+						if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
+						{
+							v = vec3(0.0, 1.0, 0.0);
+						}
+						if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
+						{
+							v = vec3(0.0, 0.0, 1.0);
+						}
+						
+						p = vec4(v.x, v.y, v.z, 0.0);
+						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
+						
+						f = sqrt(p.x * p.x + p.y * p.y);
+						p.x /= f;
+						p.y /= f;
+						f = p.x * delta_x + p.y * delta_y;
+						
+						entity_TranslateEntity(&selected, v, f, 0);
+					break;
+					
+					case HANDLE_3D_ROTATION:
+						
+						cur_grab_offset_x = mouse_x - screen_x;
+						cur_grab_offset_y = mouse_y - screen_y;
+								
+						f = sqrt(cur_grab_offset_x * cur_grab_offset_x + cur_grab_offset_y * cur_grab_offset_y);
+								
+						cur_grab_offset_x /= f;
+						cur_grab_offset_y /= f;
+								
+								
+						f = sqrt(last_grab_offset_x * last_grab_offset_x + last_grab_offset_y * last_grab_offset_y);
+								
+						last_grab_offset_x /= f;
+						last_grab_offset_y /= f;
+								
+						f = cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x;
+						switch(handle_3d_bm)
+						{
+							case HANDLE_3D_GRABBED_X_AXIS:
+								v = vec3(1.0, 0.0, 0.0);
+							break;
+							
+							case HANDLE_3D_GRABBED_Y_AXIS:
+								v = vec3(0.0, 1.0, 0.0);
+							break;
+							
+							case HANDLE_3D_GRABBED_Z_AXIS:
+								v = vec3(0.0, 0.0, 1.0);
+							break;
+						}
+						
+						p = vec4(v.x, v.y, v.z, 0.0);
+						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
+						if(p.z < 0.0) f = -f;
+						
+						entity_RotateEntity(&selected, v, -f * 0.5, 0);
+						
+						last_grab_offset_x = cur_grab_offset_x;
+						last_grab_offset_y = cur_grab_offset_y;
+						
+					break;
+				}
+			}
+			else
+			{
+				handle_3d_bm = 0;
+			}
+		
+			draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 2.0, 0);
+			handle_3d_pos = selected.position_data->world_position;
+			selected_pos = handle_3d_pos;
+			selected_rot = selected.extra_data->local_orientation;
+			selected_name = selected.extra_data->name;
+			draw_3d_handle(handle_3d_mode);
+		}
+		
 	}
 	else
 	{
@@ -101,138 +230,7 @@ void gmain(float delta_time)
 	}
 	
 	
-	if(selected.extra_data)
-	{	
 	
-		if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED && handle_3d_bm)
-		{
-			
-			
-			p.x = selected.position_data->world_position.x;
-			p.y = selected.position_data->world_position.y;
-			p.z = selected.position_data->world_position.z;
-			p.w = 1.0;
-			
-			mat4_t_mult(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
-			
-			p = MultiplyVector4(&model_view_projection_matrix, p);
-			
-			p.x /= p.w;
-			p.y /= p.w;
-			
-			
-			
-			screen_x = p.x * 0.5 + 0.5;
-			screen_y = p.y * 0.5 + 0.5;
-			
-			mouse_x = input.normalized_mouse_x * 0.5 + 0.5;
-			mouse_y = input.normalized_mouse_y * 0.5 + 0.5;
-			
-			if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
-			{
-				grab_offset_x = mouse_x - screen_x;
-				grab_offset_y = mouse_y - screen_y;
-				cur_grab_offset_x = grab_offset_x;
-				cur_grab_offset_y = grab_offset_y; 
-				last_grab_offset_x = grab_offset_x;
-				last_grab_offset_y = grab_offset_y; 
-				
-				//printf("%f  %f\n", grab_offset_x * p.z, grab_offset_y * p.z);
-			}
-			
-			delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
-			delta_y = (mouse_y - screen_y - grab_offset_y) * p.z * 2.0;
-			
-			switch(handle_3d_mode)
-			{
-				case HANDLE_3D_TRANSLATION:
-					if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
-					{
-						p = vec4(1.0, 0.0, 0.0, 0.0);
-						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-						f = sqrt(p.x * p.x + p.y * p.y);
-						p.x /= f;
-						p.y /= f;
-						f = p.x * delta_x + p.y * delta_y;
-						entity_TranslateEntity(&selected, vec3(f, 0.0, 0.0), 1.0, 0);
-					}
-					if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
-					{
-						p = vec4(0.0, 1.0, 0.0, 0.0);
-						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-						f = sqrt(p.x * p.x + p.y * p.y);
-						p.x /= f;
-						p.y /= f;
-						f = p.x * delta_x + p.y * delta_y;
-						entity_TranslateEntity(&selected, vec3(0.0, f, 0.0), 1.0, 0);
-					}
-					if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
-					{
-						p = vec4(0.0, 0.0, 1.0, 0.0);
-						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-						f = sqrt(p.x * p.x + p.y * p.y);
-						p.x /= f;
-						p.y /= f;
-						f = p.x * delta_x + p.y * delta_y;
-						entity_TranslateEntity(&selected, vec3(0.0, 0.0, f), 1.0, 0);
-					}
-				break;
-				
-				case HANDLE_3D_ROTATION:
-					
-					cur_grab_offset_x = mouse_x - screen_x;
-					cur_grab_offset_y = mouse_y - screen_y;
-							
-					f = sqrt(cur_grab_offset_x * cur_grab_offset_x + cur_grab_offset_y * cur_grab_offset_y);
-							
-					cur_grab_offset_x /= f;
-					cur_grab_offset_y /= f;
-							
-							
-					f = sqrt(last_grab_offset_x * last_grab_offset_x + last_grab_offset_y * last_grab_offset_y);
-							
-					last_grab_offset_x /= f;
-					last_grab_offset_y /= f;
-							
-					f = cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x;
-					switch(handle_3d_bm)
-					{
-						case HANDLE_3D_GRABBED_X_AXIS:
-							v = vec3(1.0, 0.0, 0.0);
-						break;
-						
-						case HANDLE_3D_GRABBED_Y_AXIS:
-							v = vec3(0.0, 1.0, 0.0);
-						break;
-						
-						case HANDLE_3D_GRABBED_Z_AXIS:
-							v = vec3(0.0, 0.0, 1.0);
-						break;
-					}
-					
-					entity_RotateEntity(&selected, v, -f * 0.5, 0);
-					
-					last_grab_offset_x = cur_grab_offset_x;
-					last_grab_offset_y = cur_grab_offset_y;
-					
-				break;
-			}
-			
-			
-		
-		}
-		else
-		{
-			handle_3d_bm = 0;
-		}
-	
-		draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 2.0, 0);
-		handle_3d_pos = selected.position_data->world_position;
-		selected_pos = handle_3d_pos;
-		selected_rot = selected.extra_data->local_orientation;
-		selected_name = selected.extra_data->name;
-		draw_3d_handle(handle_3d_mode);
-	}
 
 }
 
@@ -531,16 +529,16 @@ void draw_3d_handle(int mode)
 	switch(mode)
 	{
 		case HANDLE_3D_TRANSLATION:
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 0, 0);
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 0, 0);
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 0, 0);
-			draw_debug_DrawPoint(handle_3d_pos, vec3(1.0, 1.0, 1.0), 16.0, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 1, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 1, 0);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 1, 0);
+			//draw_debug_DrawPoint(handle_3d_pos, vec3(1.0, 1.0, 1.0), 16.0, 0);
 		break;
 		
 		case HANDLE_3D_ROTATION:
-			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle, rotation_handle_divs, vec3(1.0, 0.0, 0.0), 8.0, 0, 0);
-			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle + (rotation_handle_divs * 3), rotation_handle_divs, vec3(0.0, 1.0, 0.0), 8.0, 0, 0);
-			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle + (rotation_handle_divs * 3 * 2), rotation_handle_divs, vec3(0.0, 0.0, 1.0), 8.0, 0, 0);
+			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle, rotation_handle_divs, vec3(1.0, 0.0, 0.0), 8.0, 1, 0);
+			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle + (rotation_handle_divs * 3), rotation_handle_divs, vec3(0.0, 1.0, 0.0), 8.0, 1, 0);
+			draw_debug_DrawLineLoop(handle_3d_pos, rotation_handle + (rotation_handle_divs * 3 * 2), rotation_handle_divs, vec3(0.0, 0.0, 1.0), 8.0, 1, 0);
 		break;
 	}
 	
@@ -587,7 +585,6 @@ void check_3d_handle(int mode)
 			glLineWidth(16.0);
 			glPointSize(16.0);	
 			glEnable(GL_POINT_SMOOTH);
-			glDisable(GL_DEPTH_TEST);
 			
 			glBegin(GL_LINES);
 			glColor3f(1.0, 0.0, 0.0);
@@ -603,21 +600,19 @@ void check_3d_handle(int mode)
 			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z + 1.0);
 			glEnd();
 			
-			glBegin(GL_POINTS);
+			/*glBegin(GL_POINTS);
 			glColor3f(1.0, 1.0, 1.0);
 			glVertex3f(handle_3d_pos.x, handle_3d_pos.y, handle_3d_pos.z);
-			glEnd();
+			glEnd();*/
 			
 			glLineWidth(1.0);
 			glPointSize(1.0);
-			glEnable(GL_DEPTH_TEST);
 			glDisable(GL_POINT_SMOOTH);
 		break;
 		
 		case HANDLE_3D_ROTATION:
 			glLineWidth(8.0);
 			glEnable(GL_LINE_SMOOTH);
-			glDisable(GL_DEPTH_TEST);
 			verts = rotation_handle;
 			
 			glBegin(GL_LINE_LOOP);
@@ -648,7 +643,6 @@ void check_3d_handle(int mode)
 	
 			
 			glLineWidth(1.0);
-			glEnable(GL_DEPTH_TEST);
 			glDisable(GL_LINE_SMOOTH);
 			
 		break;
@@ -756,6 +750,19 @@ void enable_volumetric_lights(swidget_t *sub_widget, void *data)
 	}
 }
 
+void enable_bloom(swidget_t *sub_widget, void *data)
+{
+	wbutton_t *button = (wbutton_t *)sub_widget;
+	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+	{
+		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_USE_BLOOM);
+	}
+	else
+	{
+		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_USE_BLOOM));
+	}
+}
+
 void exit_engine(swidget_t *sub_widget, void *data)
 {
 	pew_Exit();
@@ -771,6 +778,21 @@ void set_handle_mode(swidget_t *sub_widget, void *data)
 			handle_3d_mode = mode;
 		break;
 	}
+}
+
+void tabbar_fn(swidget_t *sub_widget, void *data, int tab_index)
+{
+	switch(tab_index)
+	{
+		case 0:
+			handle_3d_mode = HANDLE_3D_TRANSLATION;
+		break;
+		
+		case 1:
+			handle_3d_mode = HANDLE_3D_ROTATION;
+		break;
+	}
+	//printf("tab %d is active\n", tab_index);
 }
 
 void ginit()
@@ -896,6 +918,18 @@ void ginit()
 	texture_LoadTexture("TexturesCom_TuftedLeather_1024_roughness.png", "tufted_leather_gloss", 0);
 	texture_LoadTexture("TexturesCom_TuftedLeather_1024_height.png", "tufted_leather_height", 0);
 	
+	
+	texture_LoadTexture("TexturesCom_SlateFloor_512_albedo2.png", "slate_floor_diffuse", 0);
+	texture_LoadTexture("TexturesCom_SlateFloor_512_normal2.png", "slate_floor_normal", 0);
+	texture_LoadTexture("TexturesCom_SlateFloor_512_roughness2.png", "slate_floor_gloss", 0);
+	texture_LoadTexture("TexturesCom_SlateFloor_512_height2.png", "slate_floor_height", 0);
+	
+	
+	texture_LoadTexture("TexturesCom_Cobblestone_512_albedo.png", "cobble_stone_diffuse", 0);
+	texture_LoadTexture("TexturesCom_Cobblestone_512_normal.png", "cobble_stone_normal", 0);
+	texture_LoadTexture("TexturesCom_Cobblestone_512_roughness.png", "cobble_stone_gloss", 0);
+	texture_LoadTexture("TexturesCom_Cobblestone_512_height.png", "cobble_stone_height", 0);
+	
 	texture_LoadTexture("oakfloor_basecolor.png", "oakfloor_diffuse", 0);
 	texture_LoadTexture("oakfloor_normal.png", "oakfloor_normal", 0);
 	texture_LoadTexture("oakfloor_roughness.png", "oakfloor_gloss", 0);
@@ -947,22 +981,30 @@ void ginit()
 
 	
 	widget_t *w = gui_CreateWidget("test0", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
-	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
-	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
-	
-	gui_AddVar(w, "Frames", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, -40.0, 290.0, 15.0, &renderer.frame_count);
-	
-	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, -60.0, 290.0, 15.0, &selected_name);
-	
-	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, -80.0, 290.0, 15.0, &selected_pos);
-	gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -180.0, 290.0, 60.0, &selected_rot);
+	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 100, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
+	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 80, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
+	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, 60, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
+	gui_AddButton(w, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 40, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
 	
 	
+	gui_AddVar(w, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, 20, 290.0, 15.0, &draw_calls);
+	
+	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, 0, 290.0, 15.0, &selected_name);
+	
+	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, -20, 290.0, 15.0, &selected_pos);
+	gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -62, 290.0, 60.0, &selected_rot);
+	
+	printf("create second widget\n");
 	w = gui_CreateWidget("handle mode", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Translation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_TRANSLATION, set_handle_mode);
-	gui_AddButton(w, "Rotation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_ROTATION, set_handle_mode);
+	//gui_AddButton(w, "Translation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_TRANSLATION, set_handle_mode);
+	//gui_AddButton(w, "Rotation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_ROTATION, set_handle_mode);
 	
+	wtabbar_t *tabbar = gui_AddTabBar(w, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, -40, 290.0, 20.0, tabbar_fn);
+	gui_AddTab(tabbar, "Translation");
+	gui_AddTab(tabbar, "Rotation");
+	//gui_AddTab(tabbar, "tab2");
+	//gui_AddTab(tabbar, "tab3");
+	//gui_AddTab(tabbar, "tab4");
 	//w = gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 50.0, -2.0, 320, 240, 0.8, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
 	//gui_AddButton(w, "button0", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
 	//gui_AddButton(w, "button1", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
@@ -1052,6 +1094,19 @@ void ginit()
 	material_CreateMaterial("tufted_leather", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
 	
 	
+	tif.diff_tex = (short)texture_GetTextureIndex("slate_floor_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("slate_floor_normal");
+	tif.gloss_tex = (short)texture_GetTextureIndex("slate_floor_gloss");
+	tif.heig_tex = (short)texture_GetTextureIndex("slate_floor_height");
+	material_CreateMaterial("slate_floor", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
+	
+	tif.diff_tex = (short)texture_GetTextureIndex("cobble_stone_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("cobble_stone_normal");
+	tif.gloss_tex = (short)texture_GetTextureIndex("cobble_stone_gloss");
+	tif.heig_tex = (short)texture_GetTextureIndex("cobble_stone_height");
+	material_CreateMaterial("cobble_stone", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
+	
+	
 	tif.diff_tex = (short)texture_GetTextureIndex("dungeon_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("dungeon_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("dungeon_gloss");
@@ -1094,9 +1149,9 @@ void ginit()
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("oakfloor"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
-	entity_CreateEntityDef("wall", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("tile"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
-	entity_CreateEntityDef("cieling", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("cobble_stone"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	//entity_CreateEntityDef("wall", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("tile"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	//entity_CreateEntityDef("cieling", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
 	
 	//entity_CreateEntityDef("wheel", 0, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("wheel"), 0.0, 0);
@@ -1109,11 +1164,11 @@ void ginit()
 	
 	entity_CreateEntityDef("pole", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("pole"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("bus_stop", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("bus_stop"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_blue", ENTITY_COLLIDES, material_GetMaterialIndex("translucent3"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("ico_blue", ENTITY_COLLIDES, material_GetMaterialIndex("translucent3"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("spiral", ENTITY_STATIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("spiral"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("rigged", 0, material_GetMaterialIndex("red"), 0, model_GetMeshPtr("rig"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
@@ -1334,7 +1389,7 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	pew_Init(res, mode);
+	pew_Init(res, mode, argv[0]);
 	pew_SetInitGameFunction(ginit);
 	pew_SetMainGameFunction(gmain);
 	pew_SetPauseGameFunction(gpause);

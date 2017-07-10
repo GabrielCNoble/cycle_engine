@@ -4,7 +4,7 @@ Name=Cycle
 Type=1
 Ver=2
 ObjFiles=
-Includes=libs\SDL\include;libs\GLEW\include;libs\OPENAL\include;libs\bullet\include;configuration;gmath;loaders;libs\assimp\include\assimp;libs\AntTweakBar\include
+Includes=libs\SDL\include;libs\GLEW\include;libs\OPENAL\include;libs\bullet\include;configuration;gmath;loaders;libs\assimp\include\assimp;libs\NVPerfKit\include
 Libs=libs\SDL\lib\mingw;libs\GLEW\lib;libs\bullet\lib;libs\OPENAL\Win32;libs\assimp\bin;libs\AntTweakBar\lib
 PrivateResource=
 ResourceIncludes=
@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0000000100000000001000000
-UnitCount=104
+UnitCount=107
 
 [VersionInfo]
 Major=1
@@ -1091,7 +1091,27 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit105]
-FileName=loader_wavefront.h
+FileName=draw_profile.c
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit106]
+FileName=draw_profile.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit107]
+FileName=engine.h
 CompileCpp=1
 Folder=
 Compile=1

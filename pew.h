@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include <signal.h>
+#include "conf.h"
 
 #ifdef _WIN32
 	#ifndef __MSXML_LIBRARY_DEFINED__
@@ -11,30 +12,7 @@
 	#include <windows.h>
 #endif
 
-#include "conf.h"
-#include "includes.h"
-#include "draw.h"
-#include "input.h"
-#include "model.h"
-#include "entity.h"
-#include "scenegraph.h"
-#include "material.h"
-#include "shader.h"
-#include "texture.h"
-#include "camera.h"
-#include "physics.h"
-#include "text.h"
-#include "gui.h"
-#include "console.h"
-#include "sound.h"
-#include "particle.h"
-#include "particle_behaviour.h"
-#include "gpu.h"
-#include "framebuffer.h"
-#include "light.h"
-#include "armature.h"
-#include "log.h"
-#include "vcache.h"
+
 //#include "b3Clock.h"
 //#include "python.h"
 
@@ -74,7 +52,7 @@ extern "C"
 {
 #endif
 
-PEWAPI void pew_Init(int resolution, int b_fullscreen);
+PEWAPI void pew_Init(int resolution, int b_fullscreen, char *path);
 
 PEWAPI void pew_Finish();
 
@@ -115,6 +93,8 @@ void pew_HandleSigSeg(int signal);
 char *pew_StackBacktrace();
 
 PEWAPI inline unsigned long long pew_GetCycleCount();
+
+PEWAPI char *pew_GetPath();
 
 #include "pew.inl"
 

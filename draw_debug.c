@@ -422,6 +422,13 @@ void draw_debug_Draw()
 			break;
 			
 			case DRAW_OUTLINE:
+				glEnable(GL_STENCIL_TEST);
+				glClearStencil(0);
+				glClear(GL_STENCIL_BUFFER_BIT);
+				
+				
+				glStencilFunc(GL_ALWAYS, 0x1, 0xff);
+				glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 				
 				for(j = 0; j < 9; j++)
 				{
@@ -435,11 +442,54 @@ void draw_debug_Draw()
 				glLoadMatrixf(&q.floats[0][0]);				
 				
 				
+				
 				m = *(mesh_t **)&draw_cmds[i].data[12];
 				l = m->vert_count;
 				glLineWidth(draw_cmds[i].data[16]);
-				glEnable(GL_CULL_FACE);
+				/*glEnable(GL_CULL_FACE);
 				glCullFace(GL_FRONT);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				
+				glBegin(GL_TRIANGLES);
+				glColor3f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15]);
+				for(j = 0; j < l;)
+				{
+					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					j++;
+					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					j++;
+					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					j++;
+				}
+				glEnd();*/
+				
+				glCullFace(GL_BACK);
+				glStencilFunc(GL_ALWAYS, 0x1, 0xff);
+				glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				
+				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+				glDepthMask(GL_FALSE);
+				
+				glBegin(GL_TRIANGLES);
+				glColor3f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15]);
+				for(j = 0; j < l;)
+				{
+					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					j++;
+					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					j++;
+					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					j++;
+				}
+				glEnd();
+				
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+				glDepthMask(GL_TRUE);
+				
+				glStencilFunc(GL_NOTEQUAL, 0x1, 0xff);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+				
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				
 				glBegin(GL_TRIANGLES);
@@ -455,23 +505,10 @@ void draw_debug_Draw()
 				}
 				glEnd();
 				
-				glCullFace(GL_BACK);
-				glEnable(GL_POLYGON_OFFSET_LINE);
-				glPolygonOffset(3.5, 4000.0);
-				glBegin(GL_TRIANGLES);
-				glColor3f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15]);
-				for(j = 0; j < l;)
-				{
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-					j++;
-				}
-				glEnd();
+				
 				glDisable(GL_POLYGON_OFFSET_LINE);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glDisable(GL_STENCIL_TEST);
 				
 				
 				//glEnable(GL_POLYGON_OFFSET_FILL);

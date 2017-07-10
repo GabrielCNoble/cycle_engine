@@ -11,6 +11,8 @@ extern render_queue render_q;
 extern render_queue t_render_q;
 extern render_queue shadow_q;
 
+extern int draw_calls;
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -53,6 +55,12 @@ PEWAPI void draw_ResizeRenderQueue(render_queue *r_queue, int new_size)
 	r_queue->queue_size = new_size;
 	
 	return;
+}
+
+void draw_DrawArrays(GLenum mode, GLint first, GLsizei count)
+{
+	glDrawArrays(mode, first, count);
+	draw_calls++;
 }
 
 /*PEWAPI void draw_DrawFrame()

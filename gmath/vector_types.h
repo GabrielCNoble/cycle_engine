@@ -6,7 +6,22 @@
 
 typedef struct
 {
-	float floats[2];
+	struct
+	{
+		float x;
+		float y;
+	};
+	
+	struct
+	{
+		float floats[2];	
+	};
+	
+	struct
+	{
+		float a0;
+		float a1;
+	};
 }vec2_t;
 
 typedef union 

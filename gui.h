@@ -159,6 +159,7 @@ enum WIDGET_TYPES
 	WIDGET_TEXT_FIELD,
 	WIDGET_IMAGE_AREA,
 	WIDGET_BUTTON,
+	WIDGET_TAB_BAR,
 	WIDGET_VAR,
 	WIDGET_VERTICAL_SCROLLER,
 	WIDGET_HORIZONTAL_SCROLLER
@@ -220,7 +221,7 @@ enum BUTTON_FLAGS
 
 enum VAR_FLAGS
 {
-	VAR_ADDR = 1,								/* if this flag is set, it means the value store within the wvar_t is a
+	VAR_ADDR = 1,								/* if this flag is set, it means the value stored within the wvar_t is a
 												   reference to that var type, and thus have to be dereferenced before used... */
 	VAR_RW = 1 <<1											   
 };
@@ -241,6 +242,17 @@ enum VAR_TYPE
 	VAR_STR,
 	VAR_MAT3T,
 	VAR_MAT4T
+};
+
+enum TAB_FLAGS
+{
+	TAB_MOUSE_OVER = 1,
+	TAB_RECEIVED_LEFT_BUTTON_DOWN = 1 << 2,
+	TAB_RECEIVED_LEFT_BUTTON_UP = 1 << 3,
+	TAB_RECEIVED_RIGHT_BUTTON_DOWN = 1 << 4,
+	TAB_RECEIVED_RIGHT_BUTTON_UP = 1 << 5,
+	TAB_SELECTED = 1 << 6
+	
 };
 
 
@@ -278,10 +290,10 @@ typedef struct swidget_t
 	
 	float relative_mouse_x;
 	float relative_mouse_y;
-	float r;
-	float g;
-	float b;
-	float a;
+	float r;					//
+	float g;					//
+	float b;					//
+	float a;					// those could be chars...
 	char *name;
 	int type;
 	int bm_flags;
@@ -348,6 +360,24 @@ typedef struct
 
 typedef struct
 {
+	char *name;
+	int swidget_count;
+	swidget_t *swidgets;
+	int bm_flags;
+}wtab_t;
+
+typedef struct
+{
+	swidget_t swidget;
+	int tab_count;
+	int max_tabs;
+	wtab_t *tabs;
+	wtab_t *active_tab;
+	void (*tabbar_callback)(swidget_t *, void *, int);
+}wtabbar_t;
+
+typedef struct
+{
 	//wbase_t base;
 	float min;						/* relative minimum normalized position the scroller can go */
 	float cur;						/* current relative normalized position the scroller is*/
@@ -385,6 +415,10 @@ PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_but
 
 PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
+PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int));
+
+PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name);
+
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
 PEWAPI void gui_DeleteWidget(char *name);
@@ -396,6 +430,8 @@ PEWAPI void gui_ShowWidget(widget_t *widget);
 PEWAPI void gui_HideWidget(widget_t *widget);
 
 void gui_SetFocused(widget_t *widget);
+
+void gui_SetActiveTab(wtabbar_t *tabbar, wtab_t *tab);
 
 void gui_ProcessWidgets();
 

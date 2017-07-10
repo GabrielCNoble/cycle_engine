@@ -214,6 +214,8 @@ PEWAPI void draw_Enable(int param);
 
 PEWAPI void draw_Disable(int param);
 
+void __forceinline draw_DrawArrays(GLenum mode, GLint first, GLsizei count); 
+
 //PEWAPI void draw_SetBlendMode(int blend_mode);
 
 #include "draw.inl"

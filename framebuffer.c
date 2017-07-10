@@ -14,41 +14,58 @@ framebuffer_t framebuffer_CreateFramebuffer(int width, int height, int depth_buf
 	int format;
 	int internal_format;
 	int i;
+	int attachment;
 	unsigned int new_tex;
-	glGenFramebuffers(1, &fb.id);
-	glGenTextures(1, &fb.z_buffer);
-	unsigned int stencil_texture;
-	//glGenTextures(1, &fb.color_out1);
-	 
-	 
+	
+	
+	glGenFramebuffers(1, &fb.id);	 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.id);
-	glBindTexture(GL_TEXTURE_2D, fb.z_buffer);
+	
 	//printf("framebuffer_CreateFramebuffer: %d\n", fb.z_buffer);
 	
 	switch(depth_buffer_type)
 	{
 		case GL_DEPTH_STENCIL:
-			internal_format = GL_DEPTH_STENCIL;
+			/*internal_format = GL_DEPTH24_STENCIL8;
 			format = GL_DEPTH_STENCIL;
-			type = GL_UNSIGNED_INT_24_8;
+			type = GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+			attachment = GL_DEPTH_STENCIL_ATTACHMENT;*/
+			
+			glGenRenderbuffers(1, &fb.z_buffer);
+			glBindRenderbuffer(GL_RENDERBUFFER, fb.z_buffer);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width, fb.height);
+			glBindRenderbuffer(GL_RENDERBUFFER, 0);
+			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			
 		break;
 		
 		case GL_DEPTH_COMPONENT:
-			internal_format = GL_DEPTH_COMPONENT;
+			/*internal_format = GL_DEPTH_COMPONENT;
 			format = GL_DEPTH_COMPONENT;
 			type = GL_FLOAT;
+			attachment = GL_DEPTH_ATTACHMENT;*/
+			
+			glGenTextures(1, &fb.z_buffer);
+			glBindTexture(GL_TEXTURE_2D, fb.z_buffer);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb.width, fb.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fb.z_buffer, 0);
+			
 		break;
 	}
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, fb.width, fb.height, 0, format, type, NULL);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fb.z_buffer, 0);
+	
+	
 	if(depth_buffer_type == GL_DEPTH_STENCIL)
 	{
-		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fb.z_buffer, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fb.z_buffer, 0);
 	}
+
 	
 	if(i > 3) i = 3;
 	else if(i < 0) i = 0;
@@ -232,7 +249,15 @@ void framebuffer_BindFramebuffer(framebuffer_t *framebuffer)
 		switch(framebuffer->color_output_count)
 		{
 			case 1:
-				glDrawBuffer(GL_COLOR_ATTACHMENT0);
+				/*if(!framebuffer->id)
+				{
+					glDrawBuffer(GL_LEFT);
+				}
+				else
+				{*/
+					glDrawBuffer(GL_COLOR_ATTACHMENT0);
+				//}
+				
 			break;
 			
 			case 2:

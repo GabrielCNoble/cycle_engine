@@ -89,6 +89,8 @@ static void scenegraph_CullLights();
 
 static void scenegraph_CullGeometry();
 
+static void scenegraph_CullStaticGeometry();
+
 static void scenegraph_FillShadowQueue();
 
 static void scenegraph_DispatchGeometry();

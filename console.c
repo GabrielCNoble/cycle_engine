@@ -1,6 +1,7 @@
 #include "console.h"
 #include "input.h"
 #include "pew.h"
+#include "draw.h"
 #include "draw_types.h"
 
 extern console_t console;

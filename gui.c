@@ -116,7 +116,7 @@ PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, fl
 	temp->b = b;
 	temp->a = a;
 	
-	temp->text_buffer = (char *)malloc(renderer.screen_width * renderer.screen_height);
+	//temp->text_buffer = (char *)malloc(renderer.screen_width * renderer.screen_height);
 	
 	temp->tex_handle = tex_handle;
 	
@@ -252,128 +252,80 @@ PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags
 	}
 }
 
-PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, widget_t *affected_widget, void *affect_function)
+PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int ))
 {
-	#if 0
-	//wbase_t *btemp;
-	wbutton_t *btemp;
-	wvscroller_t *vstemp;
-	//wwindow_t *wtemp;
-	if(base)
+	wtabbar_t *t = NULL;
+	if(widget)
 	{
-		switch(type)
+		t = (wtabbar_t *)malloc(sizeof(wtabbar_t));
+		t->swidget.name = strdup(name);
+		
+		t->swidget.x = x;
+		t->swidget.y = y;
+		t->swidget.w = w;
+		t->swidget.h = h;
+		
+		
+		t->swidget.cx = x;
+		t->swidget.cy = y;
+		t->swidget.cw = w;
+		t->swidget.ch = h;
+		
+		t->swidget.type = WIDGET_TAB_BAR;
+		t->swidget.bm_flags = bm_flags;
+		t->swidget.widget_callback = NULL;
+		t->swidget.next = NULL;
+		
+		t->active_tab = NULL;
+		t->max_tabs = 8;
+		t->tabs = (wtab_t *)malloc(sizeof(wtab_t) * t->max_tabs);
+		t->tab_count = 0;
+		t->tabbar_callback = tabbar_callback;
+		
+		
+
+		if(!widget->sub_widgets)
 		{
-			
-			case WIDGET_BUTTON:
-				btemp = (wbutton_t *)malloc(sizeof(wbutton_t));
-			
-				btemp->base.type = WIDGET_BUTTON;
-				btemp->base.name = strdup(name);
-				//btemp->base.w_widgets = NULL;
-				//btemp->base.w_last = NULL;
-				//btemp->base.base = base;
-				//btemp->base.affect = affected_widget;
-				
-				
-				btemp->base.next = NULL;
-				//btemp->base.prev = base->w_last;
-				
-				
-				btemp->base.bm_flags = bm_flags & ~(WIDGET_GRABBABLE);
-				btemp->base.r = r;
-				btemp->base.g = g;
-				btemp->base.b = b;
-				btemp->base.a = a;
-				
-				btemp->base.x = x;
-				btemp->base.y = y;
-				
-				btemp->base.tex_handle = tex_handle;
-				
-				//btemp->base.relative_x = x * base->w * 0.5;
-				//btemp->base.relative_y = y * base->h * 0.5;
-				
-				/* scaling is relative to the widget base. A scale of 
-				1.0 means this scroller goes from the top to the bottom
-				of the widget. */
-				btemp->base.w = w;
-				btemp->base.h = h;
-				
-				//btemp->base.relative_w = w;
-				//btemp->base.relative_h = h;
-				
-				btemp->affect_fn = (void(*)(wbase_t *))affect_function;
-				
-				/*if(!base->w_widgets)
-				{
-					base->w_widgets = (wbase_t *)btemp;
-					base->w_last = base->w_widgets;
-				}
-				else
-				{
-					base->w_last->next = (wbase_t*) btemp;
-					base->w_last = (wbase_t *) btemp;
-				}
-				base->widget_count++;*/
-			
-				return (wbase_t *)btemp;
-			break;
-			
-			case WIDGET_VERTICAL_SCROLLER:
-				vstemp = (wvscroller_t *)malloc(sizeof(wvscroller_t));
-			
-				vstemp->base.type = WIDGET_VERTICAL_SCROLLER;
-				vstemp->base.name = strdup(name);
-				//vstemp->base.w_widgets = NULL;
-				//vstemp->base.w_last = NULL;
-				//vstemp->base.base = base;
-				//vstemp->base.affect = (wbase_t *)affected_widget;
-				
-				
-				vstemp->base.next = NULL;
-				//vstemp->base.prev = base->w_last;
-				
-				
-				vstemp->base.bm_flags = bm_flags & ~(WIDGET_GRABBABLE);
-				vstemp->base.r = r;
-				vstemp->base.g = g;
-				vstemp->base.b = b;
-				vstemp->base.a = a;
-				
-				vstemp->base.x = x;
-				vstemp->base.y = y;
-				//vstemp->base.relative_x = x * base->w * 0.5;
-				//vstemp->base.relative_y = y * base->h * 0.5;
-				
-				vstemp->base.w = SCROLLER_FIXED_DIMENSION;
-				vstemp->base.h = h;							/* this height is relative to the top of the widget,
-															  				 and scales up and down with the window */
-				//vstemp->base.relative_w = SCROLLER_FIXED_DIMENSION;
-				//vstemp->base.relative_h = h * base->h * 0.5;
-															   
-				vstemp->cur = 0.5;
-				vstemp->max = scroller_max;
-				vstemp->min = scroller_min;
-				
-				/*if(!base->w_widgets)
-				{
-					base->w_widgets = (wbase_t *)vstemp;
-					base->w_last = base->w_widgets;
-				}
-				else
-				{
-					base->w_last->next = (wbase_t*) vstemp;
-					base->w_last = (wbase_t *) vstemp;
-				}
-				base->widget_count++;*/
-			
-				return (wbase_t *)vstemp;
-			break;
-			
+			widget->sub_widgets = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
 		}
+		else
+		{
+			widget->last_added->next = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		widget->sub_widgets_count++;
 	}
-	#endif 
+	
+	return t;
 }
+
+PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name)
+{
+	int tab_index = -1;
+	wtab_t *temp;
+	if(tabbar)
+	{		
+		if(tabbar->tab_count >= tabbar->max_tabs)
+		{
+			temp = (wtab_t *)malloc(sizeof(wtab_t) * tabbar->max_tabs + 8);
+			memcpy(temp, tabbar->tabs, sizeof(wtab_t) * tabbar->max_tabs);
+			free(tabbar->tabs);
+			tabbar->tabs = temp;
+			tabbar->max_tabs += 8;
+		}
+		tab_index = tabbar->tab_count;
+		
+		tabbar->tabs[tab_index].name = strdup(name);
+		tabbar->tabs[tab_index].swidgets = NULL;
+		tabbar->tabs[tab_index].swidget_count = 0;
+		
+		tabbar->tab_count++;
+	}
+	
+	return tab_index;
+}
+
 
 PEWAPI void gui_DeleteWidget(char *name)
 {
@@ -434,6 +386,11 @@ void gui_ProcessWidgets()
 	widget_t *cwidget;
 	swidget_t *cswidget;
 	wbutton_t *button;
+	wtabbar_t *tabbar;
+	wtab_t *tab;
+	int stack_top = -1;
+	swidget_t *swidget_stack[64];
+	vec2_t pos_stack[64];
 	int mouse_over_widgets = 0;
 	
 	float x_scale = 2.0 / renderer.width;
@@ -441,7 +398,9 @@ void gui_ProcessWidgets()
 	
 	float rel_x;
 	float rel_y;
+	float tab_label_width;
 	
+	int tab_index;
 	int pw;
 	int ph;
 	
@@ -745,6 +704,8 @@ void gui_ProcessWidgets()
 		while(cswidget)
 		{
 			
+			_tab_swidgets:
+			
 			if(cswidget->bm_flags & WIDGET_KEEP_RELATIVE_X_POSITION)
 			{
 				cswidget->x = cswidget->cx * cw;
@@ -798,9 +759,7 @@ void gui_ProcessWidgets()
 						cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
 					}
 					
-					
-					//if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
-					//{
+
 					switch(cswidget->type)
 					{
 						case WIDGET_BUTTON:
@@ -847,40 +806,74 @@ void gui_ProcessWidgets()
 							}
 							else if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_UP)
 							{
-								if(button->button_flags & BUTTON_CHECK_BOX)
+								
+								if(button->button_flags & BUTTON_TOGGLE)
 								{
-										
+											
 								}
 								else
 								{
-									if(button->button_flags & BUTTON_TOGGLE)
-									{
-											
-									}
-									else
-									{
-										button->button_flags &= ~BUTTON_TOGGLED;
-									}
+									button->button_flags &= ~BUTTON_TOGGLED;
 								}
+								
 							}
 								
 								
 						break;
-					}
-					
-					//if(cswidget->bm_flags & WIDGET_MOUSE_OVER)
-					//{
-					//	if(cswidget->widget_callback)
-					//	{
-					//		cswidget->widget_callback(cswidget, NULL);
-					//	}
-				//	}	
-					
 						
-					//}
-					
-					
-					
+						case WIDGET_TAB_BAR:
+							tabbar = (wtabbar_t *)cswidget;
+							if(tabbar->tab_count)
+							{
+								
+								/*if(tabbar->active_tab)
+								{
+									tabbar->active_tab->bm_flags = 0;
+								}*/
+								
+								tab_label_width = tabbar->swidget.w / (float)tabbar->tab_count;
+								tab_index = (int)((tabbar->swidget.w * (tabbar->swidget.relative_mouse_x * 0.5 + 0.5)) / tab_label_width);
+								
+						
+								
+								
+								
+								if(tabbar->swidget.bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
+								{
+									if(tabbar->active_tab != &tabbar->tabs[tab_index])
+									{
+										if(tabbar->active_tab)
+										{
+											tabbar->active_tab->bm_flags = 0;
+										}
+									}
+									
+									tabbar->active_tab = &tabbar->tabs[tab_index];
+									tabbar->active_tab->bm_flags = 0;
+									tabbar->active_tab->bm_flags |= TAB_SELECTED;
+									
+									if(tabbar->tabbar_callback)
+									{
+										tabbar->tabbar_callback(cswidget, NULL, tab_index);
+									}
+									
+								}
+								
+								
+								/*stack_top++;
+								swidget_stack[stack_top] = cswidget;
+								pos_stack[stack_top].x = x;
+								pos_stack[stack_top].y = y;
+								
+								x += tabbar->swidget.x;
+								y += tabbar->swidget.y;
+								cswidget = (swidget_t *)tabbar->active_tab;
+								goto _tab_swidgets;*/
+							}
+							
+						break;
+					}
+
 				}
 				else
 				{
@@ -897,9 +890,19 @@ void gui_ProcessWidgets()
 				cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
 			}
 			
-			
-			
 			cswidget = cswidget->next;
+			
+			if(!cswidget)
+			{
+				if(stack_top != -1)
+				{
+					cswidget = swidget_stack[stack_top];
+					x = pos_stack[stack_top].x;
+					y = pos_stack[stack_top].y;
+					stack_top--;
+					cswidget = cswidget->next;
+				}
+			}
 		}
 		
 		cwidget = cwidget->next;	
