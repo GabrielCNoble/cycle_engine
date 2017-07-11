@@ -597,7 +597,7 @@ void gui_ProcessWidgets()
 			cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER | WIDGET_MOUSE_OVER_HEADER | WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER);
 		}
 		
-		if(cwidget == top_widget || (!(top_widget->bm_flags & WIDGET_MOUSE_OVER)))
+		if((cwidget == top_widget || (!(top_widget->bm_flags & WIDGET_MOUSE_OVER))) && top_widget->bm_flags & WIDGET_RESIZABLE)
 		{
 			switch(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | 
 									WIDGET_MOUSE_OVER_BOTTOM_BORDER |

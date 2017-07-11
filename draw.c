@@ -2728,22 +2728,25 @@ void draw_ResolveGBuffer()
 	
 	//framebuffer_CopyFramebuffer(&left_buffer, &geometry_buffer, COPY_DEPTH);
 	
+
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	framebuffer_BindFramebuffer(&left_buffer);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);	
 	
 	
 //#define TEST_STENCIL_MF_BUFFER	
 	
 #ifdef TEST_STENCIL_MF_BUFFER
+
+	glEnable(GL_STENCIL_TEST);
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glUseProgram(0);
 	
-	
-	glEnable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	
@@ -2753,13 +2756,11 @@ void draw_ResolveGBuffer()
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glDepthMask(GL_FALSE);	
 	
-	
-	
 	glBegin(GL_QUADS);
 	glVertex3f(-0.1, 0.1, -0.5);
-	glVertex3f(-0.1, -0.1, -0.5);
+	glVertex3f(-0.1, -0.6, -0.5);
 	glVertex3f(0.1, -0.1, -0.5);
-	glVertex3f(0.1, 0.1, -0.5);
+	glVertex3f(0.1, 0.6, -0.5);
 	glEnd();	
 	
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
@@ -2769,8 +2770,7 @@ void draw_ResolveGBuffer()
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glDepthMask(GL_TRUE);
 	
-#endif /* TEST_STENCIL_MF_BUFFER  */
-	
+#endif
 	
 	
 	shader_SetShaderByIndex(deferred_process_shader_index);
@@ -2826,6 +2826,7 @@ void draw_ResolveGBuffer()
 	
 	mat4_t_compose(&camera_to_world_matrix, &active_camera->world_orientation, active_camera->world_position);
 	
+	
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	//glDisable(GL_STENCIL_TEST);
@@ -2837,7 +2838,7 @@ void draw_ResolveGBuffer()
 	
 
 	
-	glEnable(GL_CULL_FACE);
+	
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
@@ -2845,9 +2846,9 @@ void draw_ResolveGBuffer()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
 	
+	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_BLEND);
-	
 	glBlendFunc(GL_ONE, GL_ONE);
 	
 //	#define DEBUG_DRAW

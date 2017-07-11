@@ -33,10 +33,10 @@ framebuffer_t framebuffer_CreateFramebuffer(int width, int height, int depth_buf
 			
 			glGenRenderbuffers(1, &fb.z_buffer);
 			glBindRenderbuffer(GL_RENDERBUFFER, fb.z_buffer);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width, fb.height); 
-			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
-			//glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
-			//glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_STENCIL, fb.width, fb.height); 
+			//glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
+			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.z_buffer);
 			
 			//printf("%x\n", glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER));
 			
@@ -63,10 +63,10 @@ framebuffer_t framebuffer_CreateFramebuffer(int width, int height, int depth_buf
 	}
 	
 	
-	if(depth_buffer_type == GL_DEPTH_STENCIL)
+	/*if(depth_buffer_type == GL_DEPTH_STENCIL)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fb.z_buffer, 0);
-	}
+	}*/
 
 	
 	if(i > 3) i = 3;

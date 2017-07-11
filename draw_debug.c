@@ -457,27 +457,13 @@ void draw_debug_Draw()
 				m = *(mesh_t **)&draw_cmds[i].data[12];
 				l = m->vert_count;
 				glLineWidth(draw_cmds[i].data[16]);
-				/*glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				
-				glBegin(GL_TRIANGLES);
-				glColor3f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15]);
-				for(j = 0; j < l;)
-				{
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-					j++;
-				}
-				glEnd();*/
 				
 				glCullFace(GL_BACK);
 				glStencilFunc(GL_ALWAYS, 0x1, 0xff);
 				glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				//glEnable(GL_POLYGON_OFFSET_FILL);
+				//glPolygonOffset(1.0, -2.0);
 				
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 				glDepthMask(GL_FALSE);

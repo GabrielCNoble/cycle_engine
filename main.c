@@ -885,6 +885,7 @@ void ginit()
 //	model_LoadModel("wheel.obj", "wheel");
 //	model_LoadModel("pew_plane.obj", "pew_plane");
 	model_LoadModel("BigPlane.obj", "plane");
+	model_LoadModel("Cargo_container_01.obj", "cargo");
 	//model_LoadModel("stairs.obj", "stairs");
 	//model_LoadModel("plat2.obj", "plat2");
 
@@ -938,6 +939,10 @@ void ginit()
 	texture_LoadTexture("oakfloor_basecolor.png", "oakfloor_diffuse", 0);
 	texture_LoadTexture("oakfloor_normal.png", "oakfloor_normal", 0);
 	texture_LoadTexture("oakfloor_roughness.png", "oakfloor_gloss", 0);
+	
+	texture_LoadTexture("Cargo01_D.png", "cargo_diffuse", 0);
+	texture_LoadTexture("Cargo01_N.png", "cargo_normal", 0);
+	texture_LoadTexture("Cargo01_H.png", "cargo_height", 0);
 	//texture_LoadTexture("harsh_metalness.png", "oakfloor_mettalic", 0);
 	//texture_LoadTexture("oakfloor_Height.png", "oakfloor_height", 0);
 	
@@ -986,28 +991,28 @@ void ginit()
 	
 	
 	widget_t *w = gui_CreateWidget("test0", WIDGET_TRANSLUCENT, renderer.width / 2.0 - 350 / 2.0, 0.0, 350, renderer.height, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.height * 0.5 - 10, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
-	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 30, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
-	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 50, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
-	gui_AddButton(w, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, renderer.height * 0.5 - 70, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
+	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.height * 0.5 - 20, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
+	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 40, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
+	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 60, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
+	gui_AddButton(w, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, renderer.height * 0.5 - 80, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
 	
 	
-	gui_AddVar(w, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 90, 330, 15.0, &draw_calls);
+	gui_AddVar(w, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 100, 330, 15.0, &draw_calls);
 	//gui_AddVar(w, "Texture binds", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, 0, 290.0, 15.0, &texture_binds);
-	gui_AddVar(w, "Shader swaps", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 110, 330, 15.0, &shader_swaps);
+	gui_AddVar(w, "Shader swaps", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 120, 330, 15.0, &shader_swaps);
 	
-	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 130, 330, 15.0, &selected_name);
+	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 140, 330, 15.0, &selected_name);
 	
-	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, renderer.height * 0.5 - 150, 330, 15.0, &selected_pos);
+	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, renderer.height * 0.5 - 160, 330, 15.0, &selected_pos);
 	
-	gui_AddVar(w, "Engine state", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 170, 330, 15.0, &editor_state);
+	gui_AddVar(w, "Engine state", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 180, 330, 15.0, &editor_state);
 	//gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 290.0, 60.0, &selected_rot);
 	
 	//w = gui_CreateWidget("handle mode", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
 	//gui_AddButton(w, "Translation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_TRANSLATION, set_handle_mode);
 	//gui_AddButton(w, "Rotation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_ROTATION, set_handle_mode);
 	
-	wtabbar_t *tabbar = gui_AddTabBar(w, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, renderer.height * 0.5 - 190, 330, 20.0, tabbar_fn);
+	wtabbar_t *tabbar = gui_AddTabBar(w, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, renderer.height * 0.5 - 200, 330, 20.0, tabbar_fn);
 	gui_AddTab(tabbar, "Translation", TAB_NO_SUB_WIDGETS);
 	int tbb = gui_AddTab(tabbar, "Rotation", 0);
 	//gui_AddTab(tabbar, "Test", TAB_NO_SUB_WIDGETS);
@@ -1136,6 +1141,11 @@ void ginit()
 	tif.norm_tex = (short)texture_GetTextureIndex("tile_n");
 	material_CreateMaterial("tile", 0.7, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
 	
+	tif.diff_tex = (short)texture_GetTextureIndex("cargo_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("cargo_normal");
+	tif.heig_tex = (short)texture_GetTextureIndex("cargo_height");
+	material_CreateMaterial("cargo", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
+	
 	/*tif.diff_tex = (short)texture_GetTextureIndex("brick_d");
 	tif.norm_tex = (short)texture_GetTextureIndex("brick_n");
 	
@@ -1177,6 +1187,8 @@ void ginit()
 	entity_CreateEntityDef("pole", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("pole"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("bus_stop", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("bus_stop"), 2.0, COLLISION_SHAPE_SPHERE);
 	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	
+	entity_CreateEntityDef("cargo", 0, material_GetMaterialIndex("cargo"), -1, model_GetMeshPtr("cargo"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
@@ -1213,6 +1225,9 @@ void ginit()
 	//def = entity_GetEntityDef("stairs");
 	
 	id = mat3_t_id();
+	//def0 = entity_GetEntityDef("cargo");
+	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);
+	
 	def0 = entity_GetEntityDef("ico_brushed_metal");
 	entity_SpawnEntity("ico_brushed_metal", def0, vec3(3.0, 0.0, 0.0), &id);
 	
