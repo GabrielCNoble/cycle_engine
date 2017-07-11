@@ -103,6 +103,7 @@ typedef struct hook_t
 	char *name;
 }entity_t;*/
 
+
 typedef struct
 {
 	mat3_t world_orientation;

@@ -25,6 +25,26 @@ layout(shared) uniform sysMaterialParams
 
 #endif
 
+/*#ifdef _GL3A_
+#extension ARB_uniform_buffer_object : enable
+layout(shared) uniform sysMaterialParams
+{
+	vec4 sysMaterialBaseColor;
+	float sysMaterialGlossiness;
+	float sysMaterialMetallic;
+	float sysMaterialEmissive;
+	int sysMaterialFlags;
+};
+#else
+
+	uniform sysMaterialBaseColor;
+	uniform float sysMaterialGlossiness;
+	uniform float sysMaterialMetallic;
+	uniform float sysMaterialEmissive;
+	uniform int sysMaterialFlags;
+#endif	*/
+
+
 #define  MATERIAL_Shadeless 1
 #define  MATERIAL_Wireframe 1<<1
 #define  MATERIAL_DiffuseTexture 1<<2

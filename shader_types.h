@@ -153,6 +153,31 @@ typedef struct define_t
 	};
 }define_t;
 
+enum COND_TYPE
+{
+	COND_IF,
+	COND_IFDEF,
+	COND_IFNDEF,
+	COND_ELIF,
+	COND_ELIF_DEF,
+	COND_ELIF_NDEF,
+	COND_ELSE,
+	COND_ENDIF
+};
+
+typedef struct cond_t
+{
+	int nested_count;
+	int max_nested;
+	struct cond_t **nested;
+	struct cond_t *parent_cond;
+	struct cond_t *next_cond;
+	struct cond_t *last;
+	char *exp;
+	short type;
+	short align;
+}cond_t;
+
 
 
 

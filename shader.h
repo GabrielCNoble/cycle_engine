@@ -71,6 +71,10 @@ int shader_CheckDefine(define_t *root, char *shader_str, int *cur_index);
 
 int shader_FindEndif(char *shader_str, int str_len, int cur_index);
 
+cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned int cur_index);
+
+void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int cur_index, cond_t *root, define_t *defines);
+
 void shader_EraseDirectivesOnly(char *shader_str, int start_pos, int end_pos);
 
 void shader_EraseInBetweenDirectives(char *shader_str, int start_pos, int end_pos);

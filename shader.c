@@ -883,6 +883,7 @@ int shader_Preprocess(char **shader_str, int *flags)
 	define_t *r = NULL;
 	define_t *b;
 	define_t *p;
+	cond_t *h;
 	
 	for(i = 0; i < c; i++)
 	{
@@ -942,7 +943,7 @@ int shader_Preprocess(char **shader_str, int *flags)
 				{
 					i += 2;
 					j = shader_FindEndif(s, c, m);
-					
+					//h = shader_CreateCondTree(s, c, m);
 					
 					if(
 					   s[i] 	== 'n' && 
@@ -1378,6 +1379,260 @@ int shader_FindEndif(char *shader_str, int str_len, int cur_index)
 	}
 	
 	if(level) return -1;
+	
+}
+
+
+cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned int cur_index)
+{
+	cond_t *root = NULL;
+	cond_t *q;
+	cond_t *cur;
+	cond_t **t;
+	cond_t *p;
+	unsigned int i = cur_index;
+	int c = str_len;
+	char *s = shader_str;
+	int level = 0;
+	int index = 0;
+	short type;
+	int exp_index;
+	char exp[512];
+	
+	for(; i < c && cur; i++)
+	{
+		
+		if(s[i] == '#')
+		{
+			i++;
+			if(s[i] == 'i' && s[i + 1] == 'f')
+			{
+				i += 2;
+				level++;
+				
+				
+				q = (cond_t *)malloc(sizeof(cond_t));
+				q->max_nested = 8;
+				q->nested = (cond_t **)malloc(sizeof(cond_t *) * 8);
+				q->nested_count = 0;
+				q->next_cond = NULL;
+				q->last = q;
+				
+				if((s[i] 	 == 'n' && 
+					s[i + 1] == 'd' && 
+					s[i + 2] == 'e' && 
+					s[i + 3] == 'f')
+				  )
+				{
+					q->type = COND_IFNDEF;
+					i += 4;
+				}
+									   
+				else if(s[i] 	 == 'd' && 
+						s[i + 1] == 'e' && 
+						s[i + 2] == 'f')
+				{
+					q->type = COND_IFDEF;
+					i += 3;
+				}
+				
+				if(!root)
+				{
+					root = q;
+					root->parent_cond = NULL;
+					cur = root;
+				}
+				else
+				{
+					
+					if(cur->nested_count >= cur->max_nested)
+					{
+						t = (cond_t **)malloc(sizeof(cond_t *) * cur->max_nested + 8);
+						memcpy(t, cur->nested, sizeof(cond_t **) * cur->max_nested);
+						free(cur->nested);
+						cur->nested = t;
+						cur->max_nested += 8;
+					}
+					
+					cur->nested[cur->nested_count++] = q;
+					q->parent_cond = cur;
+					cur = q;
+				}
+				
+				while(s[i] == ' ') i++;
+				
+				if(s[i] == '\n' || s[i] == '\0')
+				{
+					/* error: no condition... */
+				}
+				
+				exp_index = 0;
+				
+				while(s[i] != ' ' && s[i] != '\n')
+				{
+					exp[exp_index++] = s[i++];
+				}
+				exp[exp_index] = '\0';
+				
+				q->exp = strdup(exp);
+			}
+			
+			else
+			{
+				if(s[i] 	== 'e' &&
+				   s[i + 1] == 'l' &&
+				   s[i + 2] == 'i' &&
+				   s[i + 3] == 'f')
+				{
+					i += 4;
+					
+					while(s[i] == ' ') i++;
+					type = 0;
+					if(s[i] == '!')
+					{
+						while(s[i] == ' ') i++;
+						type = COND_ELIF_NDEF;
+					}
+					
+					if(s[i] 	== 'd' &&
+					   s[i + 1] == 'e' &&
+					   s[i + 2] == 'f' &&
+					   s[i + 3] == 'i' &&
+					   s[i + 4] == 'n' &&
+					   s[i + 5] == 'e' &&
+					   s[i + 6] == 'd')
+					{
+						i += 7;
+						if(!type)
+						{
+							type = COND_ELIF_DEF;
+						}
+					}
+					else
+					{
+						type = COND_ELIF;	
+					}
+					
+					p = cur;
+				}
+				
+				
+				else if(s[i] 	 == 'e' &&
+						s[i + 1] == 'l' &&
+						s[i + 2] == 's' &&
+						s[i + 3] == 'e')
+				{
+					i += 4;
+					type = COND_ELSE;
+					p = cur;		
+				}
+				
+				else if(s[i] 	 == 'e' && 
+						s[i + 1] == 'n' &&
+						s[i + 2] == 'd' &&
+						s[i + 3] == 'i' &&
+						s[i + 4] == 'f')
+				{
+					i += 5;
+					level--;
+					type = COND_ENDIF;
+					p = cur->parent_cond;
+				}
+				
+				else
+				{
+					continue;
+				}
+				
+				q = (cond_t *)malloc(sizeof(cond_t));
+				q->type = type;
+				q->nested = NULL;
+				q->last = NULL;
+				q->parent_cond = cur;
+				q->next_cond = NULL;
+					
+				cur->last->next_cond = q;
+				cur->last = q;
+				
+				cur = p;
+				
+				if(type != COND_ENDIF)
+				{
+					while(s[i] == ' ') i++;
+				
+					if(s[i] == '\n' || s[i] == '\0')
+					{
+						/* error: no condition... */
+					}
+					
+					exp_index = 0;
+					
+					while(s[i] != ' ' && s[i] != '\n')
+					{
+						exp[exp_index++] = s[i++];
+					}
+					exp[exp_index] = '\0';
+					
+					q->exp = strdup(exp);
+					
+					
+				}
+					
+			}
+			
+		}
+	}
+	
+	return root;
+}
+
+void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int cur_index, cond_t *root, define_t *defines)
+{
+	cond_t *cur = root;
+	cond_t *p;
+	cond_t *t;
+	int i;
+	int c;
+	int cond_passed;
+	cond_t *passed;
+	
+	while(cur)
+	{
+		p = cur;
+		cond_passed = 0;
+		
+		switch(p->type)
+		{
+			case COND_IFDEF:
+			case COND_ELIF_DEF:
+				if(shader_CheckDefine(defines, p->exp, 0))
+				{
+					passed = p;	
+				}
+			break;	
+				
+			case COND_IFNDEF:
+			case COND_ELIF_NDEF:
+				if(!shader_CheckDefine(defines, p->exp, 0))
+				{
+					passed = p;	
+				}
+			break;
+			
+			/* exp evaluation... */
+			case COND_IF:
+			case COND_ELIF:
+			
+			break;
+		}
+		
+		
+		t = p;
+		//while()
+		
+		
+		
+	}
 	
 }
 
