@@ -1414,8 +1414,9 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				
 				
 				q = (cond_t *)malloc(sizeof(cond_t));
-				q->max_nested = 8;
-				q->nested = (cond_t **)malloc(sizeof(cond_t *) * 8);
+				q->max_nested = 0;
+				//q->nested = (cond_t **)malloc(sizeof(cond_t *) * 8);
+				q->nested = NULL;
 				q->nested_count = 0;
 				q->next_cond = NULL;
 				q->last = q;
@@ -1452,7 +1453,10 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 					{
 						t = (cond_t **)malloc(sizeof(cond_t *) * cur->max_nested + 8);
 						memcpy(t, cur->nested, sizeof(cond_t **) * cur->max_nested);
-						free(cur->nested);
+						if(cur->nested)
+						{
+							free(cur->nested);	
+						}
 						cur->nested = t;
 						cur->max_nested += 8;
 					}
@@ -1599,39 +1603,70 @@ void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int c
 	int c;
 	int cond_passed;
 	cond_t *passed;
+	int stack_top = -1;
+	int stack[64];
 	
 	while(cur)
 	{
 		p = cur;
 		cond_passed = 0;
-		
-		switch(p->type)
+		passed = NULL;
+		stack_top = -1;
+		stack[0] = 0;
+		while(p && !passed)
 		{
-			case COND_IFDEF:
-			case COND_ELIF_DEF:
-				if(shader_CheckDefine(defines, p->exp, 0))
-				{
-					passed = p;	
-				}
-			break;	
+			switch(p->type)
+			{
+				case COND_IFDEF:
+				case COND_ELIF_DEF:
+					if(shader_CheckDefine(defines, p->exp, 0))
+					{
+						passed = p;	
+					}
+				break;	
+					
+				case COND_IFNDEF:
+				case COND_ELIF_NDEF:
+					if(!shader_CheckDefine(defines, p->exp, 0))
+					{
+						passed = p;	
+					}
+				break;
 				
-			case COND_IFNDEF:
-			case COND_ELIF_NDEF:
-				if(!shader_CheckDefine(defines, p->exp, 0))
+				/* exp evaluation... */
+				case COND_IF:
+				case COND_ELIF:
+				
+				break;
+			}
+			
+			if(!passed || (passed && (p != passed)))
+			{
+				while(p->nested)
 				{
-					passed = p;	
+					if(stack[stack_top] < p->max_nested)
+					{
+						stack_top++;
+						p = p->nested[stack[stack_top]];
+						stack[stack_top]++;
+						stack_top++;
+						stack[stack_top] = 0;
+					}
+					else
+					{
+						
+					}
+					
+					
 				}
-			break;
+				
+			}
 			
-			/* exp evaluation... */
-			case COND_IF:
-			case COND_ELIF:
-			
-			break;
+			p = p->next_cond;
 		}
 		
 		
-		t = p;
+		
 		//while()
 		
 		
