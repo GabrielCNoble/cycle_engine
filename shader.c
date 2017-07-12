@@ -1391,6 +1391,7 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 	cond_t **t;
 	cond_t *p;
 	unsigned int i = cur_index;
+	unsigned int pos;
 	int c = str_len;
 	char *s = shader_str;
 	int level = 0;
@@ -1404,6 +1405,7 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 		
 		if(s[i] == '#')
 		{
+			pos = i;
 			i++;
 			if(s[i] == 'i' && s[i + 1] == 'f')
 			{
@@ -1417,6 +1419,7 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				q->nested_count = 0;
 				q->next_cond = NULL;
 				q->last = q;
+				q->pos = pos;
 				
 				if((s[i] 	 == 'n' && 
 					s[i + 1] == 'd' && 
@@ -1550,6 +1553,7 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				q->last = NULL;
 				q->parent_cond = cur;
 				q->next_cond = NULL;
+				q->pos = pos;
 					
 				cur->last->next_cond = q;
 				cur->last = q;

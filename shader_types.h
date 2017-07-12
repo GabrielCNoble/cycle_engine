@@ -173,9 +173,10 @@ typedef struct cond_t
 	struct cond_t *parent_cond;
 	struct cond_t *next_cond;
 	struct cond_t *last;
+	unsigned int pos;
 	char *exp;
 	short type;
-	short align;
+	
 }cond_t;
 
 
