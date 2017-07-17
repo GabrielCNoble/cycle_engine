@@ -14,6 +14,7 @@
 #include "vcache.h"
 #include "gpu.h"
 #include "armature.h"
+#include "input.h"
 #include <intrin.h>
 
 
@@ -35,7 +36,7 @@ extern light_array active_light_a;
 extern affecting_lights_list affecting_lights;
 extern screen_tile_list screen_tiles;
 extern armature_list_t armature_list;
-
+extern input_cache input;
 extern framebuffer_t picking_buffer;
 extern framebuffer_t *cur_fb;
 
@@ -44,12 +45,13 @@ extern unsigned  int gpu_heap;
 extern int engine_state;
 
 extern int wireframe_shader_index;
+extern int light_pick_shader;
 
 extern mat4_t cube_shadow_mats[6];
 
 int get_entity_under_cursor = 0;
-int mouse_x;
-int mouse_y;
+//int mouse_x;
+//int mouse_y;
 
 entity_ptr last_under_cursor;
 
@@ -65,6 +67,8 @@ static int check_values[6] = {0x00000065, 0x0000009a, 0x00000909, 0x00000606, 0x
 
 static vec3_t point_frustum_normals[6];
 static plane_t point_frustum_planes[6];
+
+unsigned int light_picking_vbo;
 
 #define FRUSTUM_ANGLE 1.570796325
 
@@ -165,6 +169,10 @@ void scenegraph_Init()
 	point_frustum_planes[4].normal = vec3(c, s, 0.0);		/* p4 */
 	point_frustum_planes[5].normal = vec3(c, -s, 0.0);		/* p5 */
 	
+	glGenBuffers(1, &light_picking_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, light_picking_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 8 * 128, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 }
 
@@ -795,90 +803,33 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 			ex = &entity_a.extra_data[node_index];
 			a = &entity_a.aabb_data[node_index];
 			
-			/*if(entity_a.position_data[node_index].collider_index >= 0)
-			{
-
-				collider = &collider_a.colliders[e->collider_index];
-				
-				if(collider->base.rigid_body->isActive() || e->bm_flags & ENTITY_HAS_MOVED)
-				{
-					collider->base.rigid_body->getMotionState()->getWorldTransform(tr);
-					tr.getOpenGLMatrix(&transform.floats[0][0]);
-					
-					if(collider->base.type == COLLIDER_CHARACTER_CONTROLLER)
-					{	
-						for(i = 0; i < 3; i++)
-						{
-							e->world_orientation.floats[i][0] = ex->local_orientation.floats[i][0];
-							e->world_orientation.floats[i][1] = ex->local_orientation.floats[i][1];
-							e->world_orientation.floats[i][2] = ex->local_orientation.floats[i][2];
-						}
-					}
-					else
-					{
-						for(i = 0; i < 3; i++)
-						{
-							e->world_orientation.floats[i][0] = transform.floats[i][0];
-							e->world_orientation.floats[i][1] = transform.floats[i][1];
-							e->world_orientation.floats[i][2] = transform.floats[i][2];
-						}
-					}
-					
-					e->world_position.x = transform.floats[3][0];
-					e->world_position.y = transform.floats[3][1];
-					e->world_position.z = transform.floats[3][2];
-					
-					mat4_t_compose(&transform, &e->world_orientation, e->world_position);
-					
-					mat4_t_mult(&c_transform, &transform, parent_transform);
-					
-					collider->base.rigid_body->getAabb(min, max);
-					
-					a->origin.x = e->world_position.x;
-					a->origin.y = e->world_position.y;
-					a->origin.z = e->world_position.z;
-					
-					a->c_maxmins[0] = max[0] - a->origin.x;
-					a->c_maxmins[1] = max[1] - a->origin.y;
-					a->c_maxmins[2] = max[2] - a->origin.z;
-				}
-				else
-				{
-					mat4_t_compose(&transform, &entity_a.position_data[node_index].world_orientation, entity_a.position_data[node_index].world_position);
-					memcpy(&c_transform, &transform, sizeof(mat4_t));
-				}	
-				
-				e->bm_flags &= ~ENTITY_HAS_MOVED;
-			}*/
-			//else
-			//{
-				mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
-				mat4_t_mult(&c_transform, &transform, parent_transform);
+			mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
+			mat4_t_mult(&c_transform, &transform, parent_transform);
 			
-				if(entity_a.position_data[node_index].bm_flags & ENTITY_HAS_MOVED)
-				{
+			if(entity_a.position_data[node_index].bm_flags & ENTITY_HAS_MOVED)
+			{
 					//mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
 					//mat4_t_mult(&c_transform, &transform, parent_transform);
 					
-					e->world_orientation.floats[0][0] = c_transform.floats[0][0];
-					e->world_orientation.floats[0][1] = c_transform.floats[0][1];
-					e->world_orientation.floats[0][2] = c_transform.floats[0][2];
+				e->world_orientation.floats[0][0] = c_transform.floats[0][0];
+				e->world_orientation.floats[0][1] = c_transform.floats[0][1];
+				e->world_orientation.floats[0][2] = c_transform.floats[0][2];
 						
-					e->world_orientation.floats[1][0] = c_transform.floats[1][0];
-					e->world_orientation.floats[1][1] = c_transform.floats[1][1];
-					e->world_orientation.floats[1][2] = c_transform.floats[1][2];
+				e->world_orientation.floats[1][0] = c_transform.floats[1][0];
+				e->world_orientation.floats[1][1] = c_transform.floats[1][1];
+				e->world_orientation.floats[1][2] = c_transform.floats[1][2];
 						
-					e->world_orientation.floats[2][0] = c_transform.floats[2][0];
-					e->world_orientation.floats[2][1] = c_transform.floats[2][1];
-					e->world_orientation.floats[2][2] = c_transform.floats[2][2];
+				e->world_orientation.floats[2][0] = c_transform.floats[2][0];
+				e->world_orientation.floats[2][1] = c_transform.floats[2][1];
+				e->world_orientation.floats[2][2] = c_transform.floats[2][2];
 					
-					e->world_position.x = c_transform.floats[3][0];
-					e->world_position.y = c_transform.floats[3][1];
-					e->world_position.z = c_transform.floats[3][2];
+				e->world_position.x = c_transform.floats[3][0];
+				e->world_position.y = c_transform.floats[3][1];
+				e->world_position.z = c_transform.floats[3][2];
 					
-					entity_CalculateAABB(a, e);
-					entity_a.position_data[node_index].bm_flags &= ~ENTITY_HAS_MOVED;
-				}
+				entity_CalculateAABB(a, e);
+				entity_a.position_data[node_index].bm_flags &= ~ENTITY_HAS_MOVED;
+			}
 
 			//}
 			
@@ -899,15 +850,15 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 		
 		case NODE_LIGHT:
 			
-			mat4_t_compose(&transform, &light_a.position_data[node_index].local_orientation, vec4vec3(light_a.position_data[node_index].local_position));
+			mat4_t_compose(&transform, &light_a.position_data[node_index].local_orientation, light_a.position_data[node_index].local_position.vec3);
 			mat4_t_mult(&c_transform, &transform, parent_transform);
 			
-			light_a.position_data[node_index].world_position.floats[0]=c_transform.floats[3][0];
-			light_a.position_data[node_index].world_position.floats[1]=c_transform.floats[3][1];
-			light_a.position_data[node_index].world_position.floats[2]=c_transform.floats[3][2];
+			light_a.position_data[node_index].world_position.floats[0] = c_transform.floats[3][0];
+			light_a.position_data[node_index].world_position.floats[1] = c_transform.floats[3][1];
+			light_a.position_data[node_index].world_position.floats[2] = c_transform.floats[3][2];
 			
 			mat4_t_mat3_t(&rot, &c_transform);
-			light_a.position_data[node_index].world_orientation=rot;
+			light_a.position_data[node_index].world_orientation = rot;
 			
 			if(light_a.position_data[node_index].bm_flags&LIGHT_POINT)
 			{
@@ -1292,10 +1243,14 @@ static void scenegraph_CullLights()
 			
 			//printf("%f %f\n", l_org3.x, l_org3.y);
 			
+			/*light_vec.x = l_org3.x - active_camera->world_position.x;
+			light_vec.y = l_org3.y - active_camera->world_position.y;
+			light_vec.z = l_org3.z - active_camera->world_position.z;*/
 			
 			if(light_a.position_data[i].bm_flags&LIGHT_POINT)
 			{
 				
+				//if(light_vec)
 				
 				/*corners[0].x = l_org3.x - l_rad;
 				corners[0].y = l_org3.y + l_rad;
@@ -1690,65 +1645,65 @@ static void scenegraph_FillShadowQueue()
 		if(active_light_a.position_data[j].bm_flags&LIGHT_SPOT)
 		{
 			/* this should be cached, and recalculated just when a light has moved/rotated */
-			rvec.floats[0]=active_light_a.position_data[j].world_orientation.floats[0][0];
-			rvec.floats[1]=active_light_a.position_data[j].world_orientation.floats[0][1];
-			rvec.floats[2]=active_light_a.position_data[j].world_orientation.floats[0][2];
+			rvec.floats[0] = active_light_a.position_data[j].world_orientation.floats[0][0];
+			rvec.floats[1] = active_light_a.position_data[j].world_orientation.floats[0][1];
+			rvec.floats[2] = active_light_a.position_data[j].world_orientation.floats[0][2];
 			
-			uvec.floats[0]=active_light_a.position_data[j].world_orientation.floats[1][0];
-			uvec.floats[1]=active_light_a.position_data[j].world_orientation.floats[1][1];
-			uvec.floats[2]=active_light_a.position_data[j].world_orientation.floats[1][2];
+			uvec.floats[0] = active_light_a.position_data[j].world_orientation.floats[1][0];
+			uvec.floats[1] = active_light_a.position_data[j].world_orientation.floats[1][1];
+			uvec.floats[2] = active_light_a.position_data[j].world_orientation.floats[1][2];
 			
-			fvec.floats[0]=active_light_a.position_data[j].world_orientation.floats[2][0];
-			fvec.floats[1]=active_light_a.position_data[j].world_orientation.floats[2][1];
-			fvec.floats[2]=active_light_a.position_data[j].world_orientation.floats[2][2];
+			fvec.floats[0] = active_light_a.position_data[j].world_orientation.floats[2][0];
+			fvec.floats[1] = active_light_a.position_data[j].world_orientation.floats[2][1];
+			fvec.floats[2] = active_light_a.position_data[j].world_orientation.floats[2][2];
 			
+			//draw_debug_DrawFrustum(l_origin, &active_light_a.position_data[j].world_orientation, &active_light_a.extra_data[j].generated_frustum);
 			
+			nright = active_light_a.extra_data[j].generated_frustum.right;
+			ntop = active_light_a.extra_data[j].generated_frustum.top;
 			
-			nright=active_light_a.extra_data[j].generated_frustum.right;
-			ntop=active_light_a.extra_data[j].generated_frustum.top;
-			
-			nznear=-active_light_a.extra_data[j].generated_frustum.znear;
-			nzfar=-active_light_a.extra_data[j].generated_frustum.zfar;
+			nznear = -active_light_a.extra_data[j].generated_frustum.znear;
+			nzfar = -active_light_a.extra_data[j].generated_frustum.zfar;
 				
-			ftop=(nzfar*ntop)/nznear;
-			fright=(nzfar*nright)/nznear;
+			ftop = (nzfar*ntop)/nznear;
+			fright = (nzfar*nright)/nznear;
 					
-			nc.floats[0]=l_origin.floats[0] + fvec.floats[0]*nznear;
-			nc.floats[1]=l_origin.floats[1] + fvec.floats[1]*nznear;
-			nc.floats[2]=l_origin.floats[2] + fvec.floats[2]*nznear;
+			nc.floats[0] = l_origin.floats[0] + fvec.floats[0]*nznear;
+			nc.floats[1] = l_origin.floats[1] + fvec.floats[1]*nznear;
+			nc.floats[2] = l_origin.floats[2] + fvec.floats[2]*nznear;
 					
-			fc.floats[0]=l_origin.floats[0] + fvec.floats[0]*nzfar;
-			fc.floats[1]=l_origin.floats[1] + fvec.floats[1]*nzfar;
-			fc.floats[2]=l_origin.floats[2] + fvec.floats[2]*nzfar;
+			fc.floats[0] = l_origin.floats[0] + fvec.floats[0]*nzfar;
+			fc.floats[1] = l_origin.floats[1] + fvec.floats[1]*nzfar;
+			fc.floats[2] = l_origin.floats[2] + fvec.floats[2]*nzfar;
 					
-			ftl.floats[0]=fc.floats[0] - rvec.floats[0]*fright + uvec.floats[0]*ftop;
-			ftl.floats[1]=fc.floats[1] - rvec.floats[1]*fright + uvec.floats[1]*ftop;
-			ftl.floats[2]=fc.floats[2] - rvec.floats[2]*fright + uvec.floats[2]*ftop;
+			ftl.floats[0] = fc.floats[0] - rvec.floats[0]*fright + uvec.floats[0]*ftop;
+			ftl.floats[1] = fc.floats[1] - rvec.floats[1]*fright + uvec.floats[1]*ftop;
+			ftl.floats[2] = fc.floats[2] - rvec.floats[2]*fright + uvec.floats[2]*ftop;
 				
-			ftr.floats[0]=fc.floats[0] + rvec.floats[0]*fright + uvec.floats[0]*ftop;
-			ftr.floats[1]=fc.floats[1] + rvec.floats[1]*fright + uvec.floats[1]*ftop;
-			ftr.floats[2]=fc.floats[2] + rvec.floats[2]*fright + uvec.floats[2]*ftop;
+			ftr.floats[0] = fc.floats[0] + rvec.floats[0]*fright + uvec.floats[0]*ftop;
+			ftr.floats[1] = fc.floats[1] + rvec.floats[1]*fright + uvec.floats[1]*ftop;
+			ftr.floats[2] = fc.floats[2] + rvec.floats[2]*fright + uvec.floats[2]*ftop;
 				
-			fbl.floats[0]=fc.floats[0] - rvec.floats[0]*fright - uvec.floats[0]*ftop;
-			fbl.floats[1]=fc.floats[1] - rvec.floats[1]*fright - uvec.floats[1]*ftop;
-			fbl.floats[2]=fc.floats[2] - rvec.floats[2]*fright - uvec.floats[2]*ftop;
+			fbl.floats[0] = fc.floats[0] - rvec.floats[0]*fright - uvec.floats[0]*ftop;
+			fbl.floats[1] = fc.floats[1] - rvec.floats[1]*fright - uvec.floats[1]*ftop;
+			fbl.floats[2] = fc.floats[2] - rvec.floats[2]*fright - uvec.floats[2]*ftop;
 				
-			fbr.floats[0]=fc.floats[0] + rvec.floats[0]*fright - uvec.floats[0]*ftop;
-			fbr.floats[1]=fc.floats[1] + rvec.floats[1]*fright - uvec.floats[1]*ftop;
-			fbr.floats[2]=fc.floats[2] + rvec.floats[2]*fright - uvec.floats[2]*ftop;
+			fbr.floats[0] = fc.floats[0] + rvec.floats[0]*fright - uvec.floats[0]*ftop;
+			fbr.floats[1] = fc.floats[1] + rvec.floats[1]*fright - uvec.floats[1]*ftop;
+			fbr.floats[2] = fc.floats[2] + rvec.floats[2]*fright - uvec.floats[2]*ftop;
 				
 				
-			ntl.floats[0]=nc.floats[0] - rvec.floats[0]*nright + uvec.floats[0]*ntop;
-			ntl.floats[1]=nc.floats[1] - rvec.floats[1]*nright + uvec.floats[1]*ntop;
-			ntl.floats[2]=nc.floats[2] - rvec.floats[2]*nright + uvec.floats[2]*ntop;
+			ntl.floats[0] = nc.floats[0] - rvec.floats[0]*nright + uvec.floats[0]*ntop;
+			ntl.floats[1] = nc.floats[1] - rvec.floats[1]*nright + uvec.floats[1]*ntop;
+			ntl.floats[2] = nc.floats[2] - rvec.floats[2]*nright + uvec.floats[2]*ntop;
 				
-			nbl.floats[0]=nc.floats[0] - rvec.floats[0]*nright - uvec.floats[0]*ntop;
-			nbl.floats[1]=nc.floats[1] - rvec.floats[1]*nright - uvec.floats[1]*ntop;
-			nbl.floats[2]=nc.floats[2] - rvec.floats[2]*nright - uvec.floats[2]*ntop;
+			nbl.floats[0] = nc.floats[0] - rvec.floats[0]*nright - uvec.floats[0]*ntop;
+			nbl.floats[1] = nc.floats[1] - rvec.floats[1]*nright - uvec.floats[1]*ntop;
+			nbl.floats[2] = nc.floats[2] - rvec.floats[2]*nright - uvec.floats[2]*ntop;
 				
-			ntr.floats[0]=nc.floats[0] + rvec.floats[0]*nright + uvec.floats[0]*ntop;
-			ntr.floats[1]=nc.floats[1] + rvec.floats[1]*nright + uvec.floats[1]*ntop;
-			ntr.floats[2]=nc.floats[2] + rvec.floats[2]*nright + uvec.floats[2]*ntop;
+			ntr.floats[0] = nc.floats[0] + rvec.floats[0]*nright + uvec.floats[0]*ntop;
+			ntr.floats[1] = nc.floats[1] + rvec.floats[1]*nright + uvec.floats[1]*ntop;
+			ntr.floats[2] = nc.floats[2] + rvec.floats[2]*nright + uvec.floats[2]*ntop;
 			
 			frustum_planes[0] = ComputePlane(l_origin, ftl, ftr);	/* top */
 			frustum_planes[1] = ComputePlane(l_origin, fbr, fbl);	/* bottom */
@@ -1787,37 +1742,46 @@ static void scenegraph_FillShadowQueue()
 				
 				for(p_index = 0; p_index <6; p_index++)
 				{
-					/* hmm... for some reason we're using planes that have normals
-					pointing outwards the frustum... carry on... */
-					/*radius = entity_a.position_data[i].c_maxmins[0] * fabs(frustum_planes[p_index].normal.floats[0]) + 
-							 entity_a.position_data[i].c_maxmins[1] * fabs(frustum_planes[p_index].normal.floats[1]) + 
-							 entity_a.position_data[i].c_maxmins[2] * fabs(frustum_planes[p_index].normal.floats[2]);*/
 					
+						
 					radius = entity_a.aabb_data[i].c_maxmins[0] * fabs(frustum_planes[p_index].normal.floats[0]) + 
 							 entity_a.aabb_data[i].c_maxmins[1] * fabs(frustum_planes[p_index].normal.floats[1]) + 
-							 entity_a.aabb_data[i].c_maxmins[2] * fabs(frustum_planes[p_index].normal.floats[2]);
-					
-					/* just a 'quick' reminder to myself regarding this...
-					
-					dot3(e_origin, frustum_planes[p_index].normal) projects the vector that represent
-					the displacement of the entity from the origin onto the plane normal vector 
-					(the plane normal is unitary, hence, no division by its length), which gives
-					the entity's distance from the origin. frustum_planes[p_index].d is the distance
-					of the plane from the origin, and subtracting it "translates"
-					the whole thing towards the origin, making the plane the "center of the world". This
-					effectively gives the distance of the objects to the plane. */		 
-					distance = dot3(e_origin, frustum_planes[p_index].normal) - frustum_planes[p_index].d;
-					if(distance <= -radius) break;
+							 entity_a.aabb_data[i].c_maxmins[2] * fabs(frustum_planes[p_index].normal.floats[2]);		 
+					distance = (dot3(e_origin, frustum_planes[p_index].normal) - frustum_planes[p_index].d);
+					/*printf("%d %s %f %f   [%f %f %f]\n", p_index, entity_a.extra_data[i].name, distance, radius, frustum_planes[p_index].normal.floats[0],
+																												 frustum_planes[p_index].normal.floats[1],
+																												 frustum_planes[p_index].normal.floats[2]);*/
+					if(fabs(distance) > radius)
+					{
+						if(distance < 0.0)
+						{
+							break;
+						}
+					}
+					/*if(distance < 0.0)
+					{
+						if(fabs(distance) > radius)
+						{
+							break;
+						}
+					}*/
 				}
 				
-				if(p_index < 6) continue;
+				p_index++;
+				
+				if(p_index <= 6)
+				{
+					continue;	
+				}
+				//printf("entity [%s] inside frustum\n", entity_a.extra_data[i].name);
 				
 				mat4_t_compose(&transform, &entity_a.position_data[i].world_orientation, entity_a.position_data[i].world_position);
 				draw_FillShadowCommandBuffer(&scb, &transform, entity_a.draw_data[i].vert_count, (short)entity_a.draw_data[i].material_index, entity_a.draw_data[i].start, entity_a.draw_data[i].mesh->draw_mode);
 				draw_DispatchShadowCommandBuffer(&scb);
 				
-				p_index = 1;
 			}
+			
+			//printf("\n\n");
 			
 			/* if this light didn't "see" anything, remove the beginning of its render queue */
 			if(!p_index)
@@ -2213,7 +2177,7 @@ PEWAPI void scenegraph_PrintChildsNames(node_t *node)
 
 int scenegraph_GetEntityUnderMouse()
 {
-	int i;
+	/*int i;
 	int c = render_q.count;
 	
 	mat4_t model_view_matrix;
@@ -2333,7 +2297,191 @@ int scenegraph_GetEntityUnderMouse()
 	
 	return entity_index;
 	
-	//get_entity_under_cursor = 0;
+	//get_entity_under_cursor = 0;*/
+}
+
+
+pick_record_t scenegraph_Pick()
+{
+	int i;
+	int c = render_q.count;
+	
+	float mouse_x = input.mouse_x;
+	float mouse_y = input.mouse_y;
+	
+	mat4_t model_view_matrix;
+	
+	camera_t *active_camera = camera_GetActiveCamera();
+	framebuffer_t *f = cur_fb;
+	framebuffer_BindFramebuffer(&picking_buffer);
+	glDepthMask(GL_TRUE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+
+	
+	glMatrixMode(GL_PROJECTION);
+	//glPushMatrix();
+	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
+	
+	//int offset=0;
+	
+	unsigned int draw_mode;
+	unsigned int vert_count;
+	unsigned int material_index;
+	unsigned int gpu_buffer;
+	unsigned int start;
+	unsigned int attrib_flags;
+	unsigned int entity_index;
+
+	float wcolor[4];
+	float pixel[4];
+	float *d;
+	pick_record_t r;
+	
+	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
+	shader_SetShaderByIndex(wireframe_shader_index);	
+
+	glMatrixMode(GL_MODELVIEW);
+	//glPushMatrix();
+	c = render_q.count;
+	
+	
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	
+	
+	if(renderer.render_mode == RENDER_DRAWMODE_WIREFRAME)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glLineWidth(8.0);
+	}
+	else
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	
+	//printf("%d\n", c);
+	*(int *)&wcolor[1] = PICK_ENTITY;
+	for(i=0; i < c; i++)
+	{
+
+		//MatrixCopy4(&model_view_matrix, &render_q.command_buffers[i].model_view_matrix);
+		memcpy(&model_view_matrix.floats[0][0], &render_q.command_buffers[i].model_view_matrix.floats[0][0], sizeof(mat4_t));
+		start = *(unsigned int *)&model_view_matrix.floats[0][3];
+		model_view_matrix.floats[0][3]=0.0;
+		
+		vert_count = *(unsigned int *)&model_view_matrix.floats[1][3];
+		model_view_matrix.floats[1][3]=0.0;
+		
+		
+		entity_index = *(unsigned int *)&model_view_matrix.floats[2][3];
+		model_view_matrix.floats[2][3]=0.0;
+		
+		
+		draw_mode = *(unsigned int *)&model_view_matrix.floats[3][3];
+		model_view_matrix.floats[3][3]=1.0;
+		
+		model_view_matrix.floats[2][2] = model_view_matrix.floats[0][0] * model_view_matrix.floats[1][1] - 
+										 model_view_matrix.floats[0][1] * model_view_matrix.floats[1][0];
+		
+		
+		material_index = draw_mode & 0x0000ffff;
+		draw_mode = (draw_mode >> 16);
+		attrib_flags = draw_mode & 0x00000f00;
+		draw_mode &= 0x0000000f;
+		
+		*(int *)&wcolor[0] = (entity_index + 1);
+		//wcolor[0] = (entity_index + 1);
+		//wcolor[1] = 1.0;
+		wcolor[2] = 0.0;
+		wcolor[3] = 0.0;
+		
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+		glLoadMatrixf(&model_view_matrix.floats[0][0]);
+		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
+		glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+		glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
+		glDrawArrays(draw_mode, 0, vert_count);
+	
+	}
+	
+	c = light_a.light_count;
+	
+	
+	//glUseProgram(0);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, light_picking_vbo);
+	
+	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
+	glPointSize(16.0);
+	glEnable(GL_POINT_SMOOTH);
+	
+	shader_SetShaderByIndex(light_pick_shader);
+	
+	glEnableVertexAttribArray(shader_a.shaders[light_pick_shader].v_position);
+	glVertexAttribPointer(shader_a.shaders[light_pick_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	
+	d = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	*(int *)&wcolor[1] = PICK_LIGHT;
+	for(i = 0; i < c; i++)
+	{
+		d[i * 3] = light_a.position_data[i].world_position.x;
+		d[i * 3 + 1] = light_a.position_data[i].world_position.y;
+		d[i * 3 + 2] = light_a.position_data[i].world_position.z;
+	}
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	
+	for(i = 0; i < c; i++)
+	{
+		*(int *)&wcolor[0] = (i + 1);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+		draw_DrawArrays(GL_POINTS, i, 1);
+	}
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glPointSize(1.0);
+	glDisable(GL_POINT_SMOOTH);
+	
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, picking_buffer.id);
+	
+	//printf("%d %d\n", mouse_x, mouse_y);
+	
+	glReadPixels(mouse_x, mouse_y, 1, 1, GL_RGB, GL_FLOAT, pixel);
+	
+	//printf("%d %d %d\n", *(int *)&pixel[0], *(int *)&pixel[1], *(int *)&pixel[2]);
+	r.index = *(int *)&pixel[0] - 1;
+	r.type = *(int *)&pixel[1];
+	
+	/*switch(*(int *)&pixel[1])
+	{
+		case 1:
+			r.type = PICK_ENTITY;
+		break;
+		
+		case 2:
+			r.type = PICK_LIGHT;
+		break;
+	}*/
+	
+	//entity_index = pixel[0];
+	//entity_index--;
+
+	
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glLineWidth(1.0);
+	
+	/*glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();*/
+	
+	framebuffer_BindFramebuffer(f);
+	
+	return r;
 }
 
 #ifdef __cplusplus

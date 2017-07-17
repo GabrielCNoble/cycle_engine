@@ -18,7 +18,8 @@ static char shader_path[256];
 static char attrib_names[][32]={"vPosition", 
 								"vNormal", 
 								"vTangent",
-							   "vTexCoord"};
+							   "vTexCoord",
+							   "vColor"};
 							   	
 static char capture_varyings[3][10] = {"_vcap_", 
 									   "_ncap_", 
@@ -141,10 +142,13 @@ extern int draw_buffer_shader_index;
 extern int draw_z_buffer_shader_index;
 extern int intensity0_shader_index;
 extern int intensity1_shader_index;
+extern int stencil_lights_shader;
 
 static int capture_count;
 static varying_t *vroot = NULL;
 static varying_t *vlast;
+
+int light_pick_shader;
 
 
 static varying_t *froot = NULL;
@@ -254,7 +258,9 @@ PEWAPI void shader_Init(char *path)
 	intensity0_shader_index = shader_LoadShader("intensity_vert.glsl", "intensity0_frag.glsl", "intensity0");
 	intensity1_shader_index = shader_LoadShader("intensity_vert.glsl", "intensity1_frag.glsl", "intensity1");
 	
+	light_pick_shader = shader_LoadShader("light_pick_vert.glsl", "light_pick_frag.glsl", "light_pick");
 	
+	stencil_lights_shader = shader_LoadShader("stencil_lights_vert.glsl", "stencil_lights_frag.glsl", "stencil_lights");
 	
 	
 	//shader_LoadShader("skinner_simple_vert.txt", "skinner_simple_frag.txt", "skinner");
@@ -524,6 +530,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	shader->v_tangent = -1;
 	//shader_a.shaders[shader_a.shader_count].v_btangent = -1;
 	shader->v_tcoord = -1;
+	shader->v_color = -1;
 	
 	
 	/* NOTE: attribute location binding MUST be done before shader linking. */
@@ -537,6 +544,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 		*(&shader->v_position+attribs[i])=i;
 	}
 	
+	//printf("%d %d %d %d %d\n", shader->v_position, shader->v_normal, shader->v_tangent, shader->v_tcoord, shader->v_color);
 	/*if(capture_count)
 	{
 		glTransformFeedbackVaryings(shader_prog, capture_count, (const GLchar **)capture, GL_SEPARATE_ATTRIBS);
@@ -857,6 +865,11 @@ void shader_ParseShaderAttributes(char *shader_str, int *attribs_found, int *att
 			else if(!strcmp(attrib_name, "vTexCoord"))
 			{
 				attribs_found[(*attrib_count)++]=ATTRIBUTE_vTexCoord;
+			}
+			
+			else if(!strcmp(attrib_name, "vColor"))
+			{
+				attribs_found[(*attrib_count)++]=ATTRIBUTE_vColor;
 			}
 			
 			current_state=3;

@@ -715,23 +715,23 @@ PEWAPI int entity_GetEntityArraySize()
 
 PEWAPI entity_ptr entity_GetEntityByIndex(int entity_index)
 {
-	entity_ptr rtrn;
+	entity_ptr rtrn = {NULL, NULL, NULL, NULL};
 	if(entity_index>=0)
 	{
-		if(entity_a.position_data[entity_index].entity_index>=0)
+		if(entity_a.position_data[entity_index].entity_index >= 0)
 		{
-		    rtrn.position_data=&entity_a.position_data[entity_index];
-		    rtrn.draw_data=&entity_a.draw_data[entity_index];
+		    rtrn.position_data = &entity_a.position_data[entity_index];
+		    rtrn.draw_data = &entity_a.draw_data[entity_index];
 		    rtrn.extra_data = &entity_a.extra_data[entity_index];
 		    rtrn.aabb_data = &entity_a.aabb_data[entity_index];
 		    return rtrn;
 		}
 
 	}
-	rtrn.position_data = NULL;
+	/*rtrn.position_data = NULL;
 	rtrn.draw_data = NULL;
 	rtrn.extra_data = NULL;
-	rtrn.aabb_data = NULL;
+	rtrn.aabb_data = NULL;*/
 	return rtrn;
 	
 }
@@ -1195,10 +1195,10 @@ PEWAPI void entity_QueryEntityUnderCursor()
 	/* just a single query allowed */
 	int i;
 	get_entity_under_cursor = 1;
-	mouse_x = input.mouse_x;
-	mouse_y = input.mouse_y;
+	//mouse_x = input.mouse_x;
+	//mouse_y = input.mouse_y;
 	
-	i = scenegraph_GetEntityUnderMouse();
+	//i = scenegraph_GetEntityUnderMouse();
 	
 	if(i >= 0)
 	{

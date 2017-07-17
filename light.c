@@ -828,6 +828,30 @@ void light_GetAffectingLights(render_queue *rqueue)
 	return;
 }
 
+PEWAPI void light_TranslateLight(light_ptr light, vec3_t direction, float amount, int b_set)
+{
+	mat4_t transform;
+	if(!b_set)
+	{
+		light.position_data->local_position.floats[0] += direction.floats[0] * amount;
+		light.position_data->local_position.floats[1] += direction.floats[1] * amount;
+		light.position_data->local_position.floats[2] += direction.floats[2] * amount;
+	}
+	else
+	{
+		light.position_data->local_position.floats[0] = direction.floats[0] * amount;
+		light.position_data->local_position.floats[1] = direction.floats[1] * amount;
+		light.position_data->local_position.floats[2] = direction.floats[2] * amount;
+	}	
+}
+
+PEWAPI void light_RotateLight(light_ptr light, vec3_t axis, float angle, int b_set)
+{
+	mat3_t r;
+	r = light.position_data->local_orientation;
+	mat3_t_rotate(&r, axis, angle, b_set);
+	memcpy(&light.position_data->local_orientation, &r, sizeof(mat3_t));
+}
 
 void light_GetAffectedTiles()
 {
@@ -907,6 +931,21 @@ PEWAPI light_ptr light_GetLight(char *name)
 			break;
 		}
 	}
+	return lptr;
+}
+
+PEWAPI light_ptr light_GetActiveLight(int index)
+{
+	light_ptr lptr = {NULL, NULL, NULL, NULL};
+	
+	if(index >= 0 && index < active_light_a.light_count)
+	{
+		lptr.position_data = &active_light_a.position_data[index];
+		lptr.params = &active_light_a.params[index];
+		lptr.extra_data = &active_light_a.extra_data[index];
+		lptr.shadow_data = &active_light_a.shadow_data[index];
+	}
+	
 	return lptr;
 }
 

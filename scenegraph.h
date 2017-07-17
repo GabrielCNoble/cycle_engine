@@ -108,6 +108,8 @@ PEWAPI void scenegraph_PrintChildsNames(node_t *node);
 
 int scenegraph_GetEntityUnderMouse();
 
+pick_record_t scenegraph_Pick();
+
 #ifdef __cplusplus
 }
 #endif

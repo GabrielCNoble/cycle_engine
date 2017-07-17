@@ -57,6 +57,8 @@ PEWAPI inline void shader_SetCurrentShaderVertexAttribArray(int vertex_array);
 
 void shader_ResizeShaderArray(int new_size);
 
+
+/* TODO: properly implement this. This implementation is laughable... */
 void shader_ParseShaderAttributes(char *shader_str, int *attribs_found, int *attrib_count);
 
 int shader_Preprocess(char **shader_str, int *flags);

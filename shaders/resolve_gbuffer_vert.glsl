@@ -31,24 +31,24 @@ vec4 p;
 void main()
 {
 	
-	l_rot[0] = gl_LightSource[2].spotDirection;
+	l_rot[0] = gl_LightSource[0].spotDirection;
 	l_rot[1] = gl_LightSource[1].spotDirection;
-	l_rot[2] = gl_LightSource[0].spotDirection;
+	l_rot[2] = gl_LightSource[2].spotDirection;
 	
-	l_rot = transpose(l_rot);
+	//l_rot = transpose(l_rot);
 	
 	p = vPosition;
 	
 	if(int(gl_LightSource[1].spotExponent) == LIGHT_POINT)
 	{
-		p = vec4((p.xyz * gl_LightSource[0].diffuse.a * 1.08) + gl_LightSource[0].position.xyz, 1.0);
+		p = vec4(gl_NormalMatrix * (p.xyz * gl_LightSource[0].diffuse.a * 1.08) + gl_LightSource[0].position.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}
 	else if(int(gl_LightSource[1].spotExponent) == LIGHT_SPOT)
 	{
 		p.xy *= tan(((3.14159265*gl_LightSource[0].spotCutoff)/180.0)) * gl_LightSource[0].diffuse.a * 1.05;
 		p.z *= gl_LightSource[0].diffuse.a;
-		p = vec4(p.xyz * l_rot + gl_LightSource[0].position.xyz, 1.0);
+		p = vec4(l_rot * p.xyz  + gl_LightSource[0].position.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}
 

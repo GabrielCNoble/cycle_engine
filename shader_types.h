@@ -8,6 +8,7 @@ enum ATTRIBUTES
 	ATTRIBUTE_vTangent,
 	//ATTRIBUTE_vBTangent,
 	ATTRIBUTE_vTexCoord,
+	ATTRIBUTE_vColor
 };
 
 enum UNIFORMS
@@ -123,14 +124,18 @@ enum SHADER_FLAGS
 
 typedef struct
 {
-	int v_position;
-	int v_normal;
-	int v_tangent;
-	int v_tcoord;
+	unsigned char v_position;
+	unsigned char v_normal;
+	unsigned char v_tangent;
+	unsigned char v_tcoord;
+	unsigned char v_color;
+	unsigned char align0;
+	short flags;
+	//int v_color;
 	unsigned int shader_ID;
 	unsigned char *default_uniforms;
 	char *name;
-	short flags;
+	
 }shader_t;
 
 typedef struct

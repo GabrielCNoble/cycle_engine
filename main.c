@@ -42,6 +42,11 @@ int handle_3d_mode = HANDLE_3D_TRANSLATION;
 vec3_t handle_3d_pos;
 vec3_t selected_pos;
 mat3_t selected_rot;
+
+
+
+vec3_t *selected_position = NULL;
+mat3_t *selected_orientation = NULL;
 char *selected_name = NULL;
 
 extern framebuffer_t picking_buffer;
@@ -59,7 +64,18 @@ float cur_grab_offset_y = 0.0;
 entity_ptr selected = {NULL, NULL, NULL, NULL};
 entity_ptr detected = {NULL, NULL, NULL, NULL};
 
+light_ptr l = {NULL, NULL, NULL, NULL};
+entity_ptr e = {NULL, NULL, NULL, NULL};
+
 char *editor_state = "editing";
+
+pick_record_t r = {0, 0};
+
+
+int max_records;
+int record_count;
+pick_record_t *selected_objects;
+
 void gmain(float delta_time)
 {
 	
@@ -69,7 +85,7 @@ void gmain(float delta_time)
 	vec3_t v;
 	mat3_t orientation = mat3_t_id();
 	mat4_t model_view_projection_matrix;
-	light_ptr l;
+	
 	vec4_t p;
 	camera_t *active_camera = camera_GetActiveCamera();
 	float screen_x;
@@ -78,6 +94,7 @@ void gmain(float delta_time)
 	float mouse_y;
 	float delta_x;
 	float delta_y;
+	
 	if(s != PEW_PLAYING)
 	{
 		editor_state = "editing";
@@ -90,8 +107,23 @@ void gmain(float delta_time)
 				check_3d_handle(handle_3d_mode);
 				if(!handle_3d_bm)
 				{
-					entity_QueryEntityUnderCursor();
-					selected = entity_GetEntityUnderCursor();		
+					r = scenegraph_Pick();	
+					switch(r.type)
+					{
+						case PICK_ENTITY:
+							e = entity_GetEntityByIndex(r.index);
+							selected_position = &e.position_data->world_position;
+							selected_orientation = &e.position_data->world_orientation;
+							selected_name = e.extra_data->name;
+						break;
+						
+						case PICK_LIGHT:
+							l = light_GetLightByIndex(r.index);
+							selected_position = &l.position_data->world_position.vec3;
+							selected_orientation = &l.position_data->world_orientation;
+							selected_name = l.extra_data->name;
+						break;
+					}
 				}
 
 			}
@@ -101,16 +133,14 @@ void gmain(float delta_time)
 			ginput(delta_time);
 		}
 		
-		if(selected.extra_data)
+		if(selected_position)
 		{	
 		
 			if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED && handle_3d_bm)
 			{
-				
-				
-				p.x = selected.position_data->world_position.x;
-				p.y = selected.position_data->world_position.y;
-				p.z = selected.position_data->world_position.z;
+				p.x = selected_position->x;
+				p.y = selected_position->y;
+				p.z = selected_position->z;
 				p.w = 1.0;
 				
 				mat4_t_mult(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
@@ -119,8 +149,6 @@ void gmain(float delta_time)
 				
 				p.x /= p.w;
 				p.y /= p.w;
-				
-				
 				
 				screen_x = p.x * 0.5 + 0.5;
 				screen_y = p.y * 0.5 + 0.5;
@@ -137,7 +165,6 @@ void gmain(float delta_time)
 					last_grab_offset_x = grab_offset_x;
 					last_grab_offset_y = grab_offset_y; 
 					
-					//printf("%f  %f\n", grab_offset_x * p.z, grab_offset_y * p.z);
 				}
 				
 				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
@@ -167,7 +194,15 @@ void gmain(float delta_time)
 						p.y /= f;
 						f = p.x * delta_x + p.y * delta_y;
 						
-						entity_TranslateEntity(&selected, v, f, 0);
+						if(r.type == PICK_ENTITY)
+						{
+							entity_TranslateEntity(&e, v, f, 0);
+						}
+						else
+						{
+							light_TranslateLight(l, v, f, 0);
+						}
+						
 					break;
 					
 					case HANDLE_3D_ROTATION:
@@ -180,13 +215,7 @@ void gmain(float delta_time)
 						cur_grab_offset_x /= f;
 						cur_grab_offset_y /= f;
 								
-								
-						f = sqrt(last_grab_offset_x * last_grab_offset_x + last_grab_offset_y * last_grab_offset_y);
-								
-						last_grab_offset_x /= f;
-						last_grab_offset_y /= f;
-								
-						f = cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x;
+						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x);
 						switch(handle_3d_bm)
 						{
 							case HANDLE_3D_GRABBED_X_AXIS:
@@ -206,7 +235,16 @@ void gmain(float delta_time)
 						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
 						if(p.z < 0.0) f = -f;
 						
-						entity_RotateEntity(&selected, v, -f * 0.5, 0);
+						if(r.type == PICK_ENTITY)
+						{
+							entity_RotateEntity(&e, v, -f * 0.5, 0);
+						}
+						else
+						{
+							light_RotateLight(l, v, -f * 0.5, 0);
+						}
+						
+						
 						
 						last_grab_offset_x = cur_grab_offset_x;
 						last_grab_offset_y = cur_grab_offset_y;
@@ -218,12 +256,17 @@ void gmain(float delta_time)
 			{
 				handle_3d_bm = 0;
 			}
-		
-			draw_debug_DrawOutline(selected.position_data->world_position, &selected.position_data->world_orientation, selected.draw_data->mesh, vec3(1.0, 0.3, 1.0), 4.0, 0);
-			handle_3d_pos = selected.position_data->world_position;
+			
+			if(r.type == PICK_ENTITY)
+			{
+				draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.3, 1.0), 4.0, 0);
+			}
+			
+			//handle_3d_pos = selected.position_data->world_position;
+			handle_3d_pos = *selected_position;
 			selected_pos = handle_3d_pos;
-			selected_rot = selected.extra_data->local_orientation;
-			selected_name = selected.extra_data->name;
+			selected_rot = *selected_orientation;
+			selected_name = selected_name;
 			draw_3d_handle(handle_3d_mode);
 		}
 		
@@ -616,7 +659,7 @@ void check_3d_handle(int mode)
 		break;
 		
 		case HANDLE_3D_ROTATION:
-			glLineWidth(8.0);
+			glLineWidth(16.0);
 			glEnable(GL_LINE_SMOOTH);
 			verts = rotation_handle;
 			
@@ -719,8 +762,15 @@ void init_3d_handle()
 		angle += step;
 	}
 	
+}
+
+void init_editor()
+{
+	max_records = 8;
+	record_count = 0;
+	selected_objects = (pick_record_t *)malloc(sizeof(pick_record_t) * max_records);
 	
-	
+	init_3d_handle();
 }
 
 void widget_cb(swidget_t *sub_widget, void *data)
@@ -816,7 +866,9 @@ void ginit()
 	static int p;
 	tex_info_t tif;
 	
-	init_3d_handle();
+	init_editor();
+	
+	//init_3d_handle();
 	
 //	TwInit(TW_OPENGL, NULL);
 	//TwWindowSize(renderer.screen_width, renderer.screen_height);
@@ -1202,12 +1254,15 @@ void ginit()
 	//entity_def_t *def = entity_GetEntityDef("piramid");
 	//entity_SpawnEntity("piramid", def, vec3(0.0, 0.0, 0.0), &id);
 	def0 = entity_GetEntityDef("plane");
-	entity_SpawnEntity("plane", def0, vec3(0.0, -6.0, 0.0), &id);
+	entity_SpawnEntity("plane", def0, vec3(0.0, -3.0, 0.0), &id);
+	
+	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 1.0, 1);
+	entity_SpawnEntity("plane", def0, vec3(0.0, 3.0, 0.0), &id);
 	
 	def0 = entity_GetEntityDef("cube");
 	id = mat3_t_id();
 	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
-	entity_SpawnEntity("cube", def0, vec3(0.0, -5.0, 0.0), &id);
+	//entity_SpawnEntity("cube", def0, vec3(0.0, -5.0, 0.0), &id);
 	/*mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.5, 1);
 	entity_SpawnEntity("wall1", def0, vec3(0.0, 0.0, -15.0), &id);
 	mat3_t_rotate(&id, vec3(0.0, 0.0, 1.0), 0.5, 1);
@@ -1228,17 +1283,19 @@ void ginit()
 	//def0 = entity_GetEntityDef("cargo");
 	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);
 	
+	def2 = entity_GetEntityDef("ico_tufted_leather");
+	entity_SpawnEntity("ico_tufted_leather", def2, vec3(0.0, 0.0, 6.0), &id);
+	
 	def0 = entity_GetEntityDef("ico_brushed_metal");
-	entity_SpawnEntity("ico_brushed_metal", def0, vec3(3.0, 0.0, 0.0), &id);
+	entity_SpawnEntity("ico_brushed_metal", def0, vec3(6.0, 0.0, 0.0), &id);
 	
 	def1 = entity_GetEntityDef("ico_painted_metal");
-	entity_SpawnEntity("ico_painted_metal", def1, vec3(-3.0, 0.0, 0.0), &id);
-	
-	def2 = entity_GetEntityDef("ico_tufted_leather");
-	entity_SpawnEntity("ico_tufted_leather", def2, vec3(-5.0, 0.0, 0.0), &id);
+	entity_SpawnEntity("ico_painted_metal", def1, vec3(-6.0, 0.0, 0.0), &id);
 	
 	
-	/*for(i = 0; i < 10; i++)
+	
+	
+	for(i = 0; i < 10; i++)
 	{
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 0.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 0.0, -5.0 + i), &id);
@@ -1271,12 +1328,12 @@ void ginit()
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 8.0, -5.0 + i), &id);
 		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 8.0, -5.0 + i), &id);
-	}*/
+	}
 
 
 	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
 	def2 = entity_GetEntityDef("pole");
-	entity_SpawnEntity("pole", def2, vec3(8.0, -8.0, 6.0), &id);
+	//entity_SpawnEntity("pole", def2, vec3(8.0, -8.0, 6.0), &id);
 	
 	/*mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), -0.5, 1);
 	def2 = entity_GetEntityDef("bus_stop");
@@ -1287,21 +1344,24 @@ void ginit()
 	
 	for(i=0; i<1; i++)
 	{	
-		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
-		light_CreateSpotLight("spot", LIGHT_GENERATE_SHADOWS|LIGHT_DRAW_VOLUME, vec4(0.0, 12.8, -3.8, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 1024, -1);
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+		
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		//light_CreateSpotLight("spot2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow4", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
 	
-	lptr = light_GetLight("spot");
-	eptr = entity_GetEntity("pole");
-	scenegraph_SetParent(lptr.extra_data->assigned_node, eptr.extra_data->assigned_node, 0);
+	//lptr = light_GetLight("spot");
+	//eptr = entity_GetEntity("pole");
+	//scenegraph_SetParent(lptr.extra_data->assigned_node, eptr.extra_data->assigned_node, 0);
 	
 	//id = mat3_t_id();
 	//cptr=camera_GetActiveCamera();

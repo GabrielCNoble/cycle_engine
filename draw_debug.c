@@ -259,14 +259,50 @@ void draw_debug_Draw()
 	int c = draw_cmd_count;
 	int j;
 	int l;
+	
+	float nzfar;
+	/* negated znear */
+	float nznear;
+	
+	float ftop;
+	float ntop;
+	float fright;
+	float nright;
+	float radius;
+	float distance;
+	float len;
+	
 	float *verts;
 	mesh_t *m;
+	mat3_t *o;
+	vec3_t *w;
 	mat3_t r;
 	mat4_t p;
 	mat4_t q;
 	vec3_t d;
 	float ns;
-	//float p[16];
+	
+	vec3_t fvec;
+	vec3_t uvec;
+	vec3_t rvec;
+	
+	vec3_t l_origin;
+	vec3_t e_origin;
+	vec3_t le_vec;
+	
+	frustum_t *frustum;
+	
+	vec3_t ftl;
+	vec3_t fbl;
+	vec3_t ftr;
+	vec3_t fbr;
+	vec3_t ntl;
+	vec3_t nbl;
+	vec3_t ntr;
+	vec3_t nbr;
+	vec3_t diag;
+	vec3_t fc;
+	vec3_t nc;
 	
 	framebuffer_BindFramebuffer(&backbuffer);
 	
@@ -430,6 +466,126 @@ void draw_debug_Draw()
 				glMatrixMode(GL_MODELVIEW);
 				glPopMatrix();
 			
+			break;
+			
+			case DRAW_FRUSTUM:
+				
+				w = (vec3_t *)&draw_cmds[i].data[0];
+				o = (mat3_t *)&draw_cmds[i].data[3];
+				frustum = (frustum_t *)&draw_cmds[i].data[12];
+				
+				
+				rvec.floats[0] = o->floats[0][0];
+				rvec.floats[1] = o->floats[0][1];
+				rvec.floats[2] = o->floats[0][2];
+				
+				uvec.floats[0] = o->floats[1][0];
+				uvec.floats[1] = o->floats[1][1];
+				uvec.floats[2] = o->floats[1][2];
+				
+				fvec.floats[0] = o->floats[2][0];
+				fvec.floats[1] = o->floats[2][1];
+				fvec.floats[2] = o->floats[2][2];
+				
+				
+				
+				nright = frustum->right;
+				ntop = frustum->top;
+				
+				nznear = -frustum->znear;
+				nzfar = -frustum->zfar;
+					
+				ftop = (nzfar*ntop)/nznear;
+				fright = (nzfar*nright)/nznear;
+						
+				nc.floats[0] = w->floats[0] + fvec.floats[0]*nznear;
+				nc.floats[1] = w->floats[1] + fvec.floats[1]*nznear;
+				nc.floats[2] = w->floats[2] + fvec.floats[2]*nznear;
+						
+				fc.floats[0] = w->floats[0] + fvec.floats[0]*nzfar;
+				fc.floats[1] = w->floats[1] + fvec.floats[1]*nzfar;
+				fc.floats[2] = w->floats[2] + fvec.floats[2]*nzfar;
+						
+				ftl.floats[0] = fc.floats[0] - rvec.floats[0]*fright + uvec.floats[0]*ftop;
+				ftl.floats[1] = fc.floats[1] - rvec.floats[1]*fright + uvec.floats[1]*ftop;
+				ftl.floats[2] = fc.floats[2] - rvec.floats[2]*fright + uvec.floats[2]*ftop;
+					
+				ftr.floats[0] = fc.floats[0] + rvec.floats[0]*fright + uvec.floats[0]*ftop;
+				ftr.floats[1] = fc.floats[1] + rvec.floats[1]*fright + uvec.floats[1]*ftop;
+				ftr.floats[2] = fc.floats[2] + rvec.floats[2]*fright + uvec.floats[2]*ftop;
+					
+				fbl.floats[0] = fc.floats[0] - rvec.floats[0]*fright - uvec.floats[0]*ftop;
+				fbl.floats[1] = fc.floats[1] - rvec.floats[1]*fright - uvec.floats[1]*ftop;
+				fbl.floats[2] = fc.floats[2] - rvec.floats[2]*fright - uvec.floats[2]*ftop;
+					
+				fbr.floats[0] = fc.floats[0] + rvec.floats[0]*fright - uvec.floats[0]*ftop;
+				fbr.floats[1] = fc.floats[1] + rvec.floats[1]*fright - uvec.floats[1]*ftop;
+				fbr.floats[2] = fc.floats[2] + rvec.floats[2]*fright - uvec.floats[2]*ftop;
+					
+					
+				ntl.floats[0] = nc.floats[0] - rvec.floats[0]*nright + uvec.floats[0]*ntop;
+				ntl.floats[1] = nc.floats[1] - rvec.floats[1]*nright + uvec.floats[1]*ntop;
+				ntl.floats[2] = nc.floats[2] - rvec.floats[2]*nright + uvec.floats[2]*ntop;
+					
+				nbl.floats[0] = nc.floats[0] - rvec.floats[0]*nright - uvec.floats[0]*ntop;
+				nbl.floats[1] = nc.floats[1] - rvec.floats[1]*nright - uvec.floats[1]*ntop;
+				nbl.floats[2] = nc.floats[2] - rvec.floats[2]*nright - uvec.floats[2]*ntop;
+					
+				ntr.floats[0] = nc.floats[0] + rvec.floats[0]*nright + uvec.floats[0]*ntop;
+				ntr.floats[1] = nc.floats[1] + rvec.floats[1]*nright + uvec.floats[1]*ntop;
+				ntr.floats[2] = nc.floats[2] + rvec.floats[2]*nright + uvec.floats[2]*ntop;
+				
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				
+				glLineWidth(6.0);
+				glBegin(GL_TRIANGLES);
+				glColor3f(0.7, 0.7, 0.9);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(ftl.x, ftl.y, ftl.z);
+				glVertex3f(ftr.x, ftr.y, ftr.z);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(ftl.x, ftl.y, ftl.z);
+				glVertex3f(fbl.x, fbl.y, fbl.z);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(ftr.x, ftr.y, ftr.z);
+				glVertex3f(fbr.x, fbr.y, fbr.z);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(fbl.x, fbl.y, fbl.z);
+				glVertex3f(fbr.x, fbr.y, fbr.z);
+				glEnd();
+				glLineWidth(1.0);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				
+				glBegin(GL_TRIANGLES);
+				glColor4f(0.7, 0.7, 0.9, 0.2);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(ftl.x, ftl.y, ftl.z);
+				glVertex3f(ftr.x, ftr.y, ftr.z);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(ftl.x, ftl.y, ftl.z);
+				glVertex3f(fbl.x, fbl.y, fbl.z);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(ftr.x, ftr.y, ftr.z);
+				glVertex3f(fbr.x, fbr.y, fbr.z);
+				
+				glVertex3f(w->x, w->y, w->z);
+				glVertex3f(fbl.x, fbl.y, fbl.z);
+				glVertex3f(fbr.x, fbr.y, fbr.z);
+				glEnd();
+				
+				glDisable(GL_BLEND);
+				
+				
 			break;
 			
 			case DRAW_OUTLINE:
@@ -1045,6 +1201,35 @@ PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size
 PEWAPI void draw_debug_DrawPointHomogeneous(vec3_t position, vec3_t color, float point_size)
 {
 	
+}
+
+PEWAPI void draw_debug_DrawFrustum(vec3_t origin, mat3_t *orientation, frustum_t *frustum)
+{
+	debug_draw_t d;
+	
+	if(debug_flags && used_floats + 7 < FLOAT_BUFFER_SIZE)
+	{
+		d.data = &float_buffer[used_floats];
+		d.count = 1;
+		d.type = DRAW_FRUSTUM;
+
+		
+		float_buffer[used_floats++] = origin.x;
+		float_buffer[used_floats++] = origin.y;
+		float_buffer[used_floats++] = origin.z;
+		
+		memcpy(float_buffer + used_floats, orientation, sizeof(mat3_t));
+		used_floats += 9;
+		
+		memcpy(float_buffer + used_floats, frustum, sizeof(frustum_t));
+		used_floats += 6;
+		
+		
+		
+		
+		
+		draw_cmds[draw_cmd_count++] = d;
+	}
 }
 
 

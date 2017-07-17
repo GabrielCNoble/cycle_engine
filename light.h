@@ -79,6 +79,10 @@ void light_SetLight(int ID);
 
 void light_GetAffectingLights(render_queue *rqueue);
 
+PEWAPI void light_TranslateLight(light_ptr light, vec3_t direction, float amount, int b_set);
+
+PEWAPI void light_RotateLight(light_ptr light, vec3_t axis, float angle, int b_set);
+
 
 //void light_GetAffectedTiles();
 
@@ -89,6 +93,8 @@ void light_GetAffectingLights(render_queue *rqueue);
 //PEWAPI light_t *light_GetLight(char *name);
 
 PEWAPI light_ptr light_GetLight(char *name);
+
+PEWAPI light_ptr light_GetActiveLight(int index);
 
 
 //PEWAPI light_t *light_GetLightByIndex(int light_index);
@@ -106,6 +112,7 @@ PEWAPI inline vec3_t light_GetLightForwardVector(light_data0 *pdata);
 PEWAPI inline vec3_t light_GetLightUpVector(light_data0 *pdata);
 
 PEWAPI inline vec3_t light_GetLightRightVector(light_data0 *pdata);
+
 
 #include "light.inl"
 

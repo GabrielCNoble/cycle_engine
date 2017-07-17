@@ -39,6 +39,7 @@ enum DRAW_TYPE
 	DRAW_LINE_LOOP_HOMOGENEOUS,
 	DRAW_TRIANGLE,
 	DRAW_MESH,								
+	DRAW_FRUSTUM,
 	DRAW_OUTLINE, 					/* useful for drawing object outline... */
 	DRAW_TRANSLATION_HANDLE,
 	DRAW_ROTATION_HANDLE
@@ -76,7 +77,7 @@ PEWAPI void draw_debug_DrawPoint(vec3_t position, vec3_t color, float point_size
 
 PEWAPI void draw_debug_DrawPointHomogeneous(vec3_t position, vec3_t color, float point_size);
 
-
+PEWAPI void draw_debug_DrawFrustum(vec3_t origin, mat3_t *orientation, frustum_t *frustum);
 
 PEWAPI void draw_debug_DrawOutline(vec3_t position, mat3_t *orientation, mesh_t *mesh, vec3_t color, float line_thickness, int b_xray);
 

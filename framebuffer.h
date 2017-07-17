@@ -4,6 +4,11 @@
 #include "conf.h"
 #include "includes.h"
 
+enum COLOR_OUTPUT_FLAGS
+{
+	COLOR_OUTPUT_DEPTH_STENCIL = 1,
+};
+
 typedef struct
 {
 	unsigned int color_out1;
@@ -25,14 +30,17 @@ enum OUTPUT_TYPES
 	COLOR2_FLOAT=4
 };
 
-enum COPY_FLAGS
+enum COLOR_COMPONENT_FLAGS
 {
-	COPY_COLOR0 = 1,
-	COPY_COLOR1 = 1<<1,
-	COPY_COLOR2 = 1<<2,
-	COPY_DEPTH = 1<<3,
-	COPY_FILTER_LINEAR = 1<<4				/* if this flag is not present, copy will use GL_NEAREST */
+	COLOR_COMPONENT_COLOR0 = 1,
+	COLOR_COMPONENT_COLOR1 = 1<<1,
+	COLOR_COMPONENT_COLOR2 = 1<<2,
+	COLOR_COMPONENT_COLOR3 = 1<<3,
+	COLOR_COMPONENT_DEPTH = 1<<4,
+	COLOR_COMPONENT_FILTER_LINEAR = 1<<5				/* if this flag is not present, copy will use GL_NEAREST */
 };
+
+
 
 
 //typedef struct
@@ -48,6 +56,8 @@ enum COPY_FLAGS
 
 
 framebuffer_t framebuffer_CreateFramebuffer(int width, int height, int depth_buffer_type, int color_output_count, ...);
+
+void framebuffer_ResetFramebufferComponents(framebuffer_t *fb, int bm_components);
 
 void framebuffer_DeleteFramebuffer(framebuffer_t *fb);
 

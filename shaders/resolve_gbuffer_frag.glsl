@@ -315,7 +315,7 @@ float attenuate_point(vec3 light_vec, float light_radius, float linear_fallof, f
 	//vec3 light_vec = frag_pos - light_pos;
 	float l = length(light_vec);
 	//light_vec /= l;
-	
+	//float a = 1.0 / l * l;
 	float a = 1.0 / (l * linear_fallof + l * l * quadratic_fallof);
 	//return a;
 	return a * clamp((light_radius - l) / light_radius, 0.0, 1.0);
@@ -372,13 +372,13 @@ void main()
 	
 	
 	
-	if(sysRenderDrawMode == RENDER_DRAWMODE_WIREFRAME || sysRenderDrawMode == RENDER_DRAWMODE_FLAT)
-	{
+	//if(sysRenderDrawMode == RENDER_DRAWMODE_WIREFRAME || sysRenderDrawMode == RENDER_DRAWMODE_FLAT)
+	//{
 		//f_color = texture2D(sysTextureSampler0, uv);
-		f_color = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
-	}
-	else if(sysRenderDrawMode == RENDER_DRAWMODE_LIT)
-	{
+	//	f_color = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
+	//}
+	//else if(sysRenderDrawMode == RENDER_DRAWMODE_LIT)
+	//{
 		view_vec = -p_texel.xyz;
 
 		light_pos = gl_LightSource[0].position.xyz;
@@ -390,7 +390,7 @@ void main()
 		}
 		else if(sysLightType == LIGHT_SPOT)
 		{
-			intensity = attenuate_spot(light_vec, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, gl_LightSource[0].diffuse.a, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);
@@ -402,10 +402,10 @@ void main()
 		
 			
 
-		if(intensity <= 0.0)
+		/*if(intensity <= 0.0)
 		{
 			discard;
-		}
+		}*/
 		
 		
 		/*else
@@ -469,7 +469,7 @@ void main()
 		
 		//f_color = vec4(1.0) * max(dot(normalize(light_vec + view_vec), n_texel.xyz), 0.0);
 
-	}
+	//}
 	
 	gl_FragColor = f_color;
 }

@@ -13,6 +13,8 @@ void check_3d_handle(int mode);
 
 void init_3d_handle();
 
+void init_editor();
+
 void ginit();
 
 void gpause();

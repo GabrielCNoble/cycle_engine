@@ -160,6 +160,7 @@ enum WIDGET_TYPES
 	WIDGET_IMAGE_AREA,
 	WIDGET_BUTTON,
 	WIDGET_TAB_BAR,
+	WIDGET_DROP_DOWN,
 	WIDGET_VAR,
 	WIDGET_VERTICAL_SCROLLER,
 	WIDGET_HORIZONTAL_SCROLLER
@@ -257,6 +258,16 @@ enum TAB_FLAGS
 };
 
 
+enum OPTION_FLAGS
+{
+	OPTION_MOUSE_OVER = 1,
+	OPTION_SELECTED = 1 << 1,
+};
+
+enum DROP_DOWN_FLAGS
+{
+	DROP_DOWN_DROPPED = 1,
+};
 #define WIDGET_NO_TEXTURE -1
 #define WIDGET_BORDER_PIXEL_WIDTH 8
 #define WIDGET_HEADER_PIXEL_HEIGHT 12
@@ -380,6 +391,23 @@ typedef struct
 
 typedef struct
 {
+	char *name;
+	int bm_flags;
+}woption_t;
+
+typedef struct
+{
+	swidget_t swidget;
+	int bm_flags;
+	int option_count;
+	int max_options;
+	int cur_option;
+	woption_t *options;
+	void (*dropdown_callback)(swidget_t *, void *, int);
+}wdropdown_t;
+
+typedef struct
+{
 	//wbase_t base;
 	float min;						/* relative minimum normalized position the scroller can go */
 	float cur;						/* current relative normalized position the scroller is*/
@@ -416,6 +444,8 @@ PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, fl
 PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_button_flags, float x, float y, float w, float h, float r, float g, float b, float a, void *data, void (*widget_callback)(swidget_t *, void *));
 
 PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
+
+PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*dropdown_callback)(swidget_t *, void *, int));
 
 PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int));
 

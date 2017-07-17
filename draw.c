@@ -116,6 +116,8 @@ int bloom_blur_shader_index;
 int intensity0_shader_index;
 int intensity1_shader_index;
 
+int stencil_lights_shader;
+
 
 extern int max_lights_per_pass;
 
@@ -425,7 +427,7 @@ draw_Init
 	glGenFramebuffers(1, &shadow_buffer.id);
 	
 	
-	geometry_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 4, GL_RGBA16F, GL_RGBA16F, GL_R16F, GL_RGB16F);
+	geometry_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 4, GL_RGBA16F, GL_RGBA16F, GL_R16F, GL_RGB16F);
 	transparency_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 3, GL_RGBA16F, GL_RGBA16F, GL_RGBA16F);
 	left_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 1, GL_RGBA16F);
 	right_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
@@ -435,7 +437,7 @@ draw_Init
 	quarter_volume_buffer = framebuffer_CreateFramebuffer(renderer.width / 4, renderer.height / 4, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
 	composite_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
 	//debug_draw_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA);
-	picking_buffer = framebuffer_CreateFramebuffer(renderer.screen_width, renderer.screen_height, GL_DEPTH_COMPONENT, 1, GL_RGB16F);
+	picking_buffer = framebuffer_CreateFramebuffer(renderer.screen_width, renderer.screen_height, GL_DEPTH_COMPONENT, 1, GL_RGBA32F);
 	
 	
 	glGenFramebuffers(1, &b_fb_l);
@@ -705,7 +707,7 @@ draw_Init
 	draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
 	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS | RENDERFLAG_DRAW_LIGHT_VOLUMES);
 	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
-	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
+	draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
 	draw_SetDebugFlag(DEBUG_DRAW_OUTLINES);
 	//draw_SetDebugFlag(DEBUG_DRAW_ARMATURES);
 	//draw_SetDebugFlag(DEBUG_DRAW_ENTITY_ORIGIN);
@@ -1417,7 +1419,7 @@ int draw_DispatchShadowCommandBuffer(command_buffer_t *cb)
 	if(likely(shadow_q.count<shadow_q.queue_size))
 	{
 		_add_scb:
-		
+		//printf("submit cb\n");
 		scb = &shadow_q.command_buffers[shadow_q.count];
 		//MatrixCopy4(&scb->model_view_matrix, &cb->model_view_matrix);	
 		memcpy(&scb->model_view_matrix.floats[0][0], &cb->model_view_matrix.floats[0][0], sizeof(mat4_t));
@@ -2726,12 +2728,24 @@ void draw_ResolveGBuffer()
     //affecting_lights_list light_list;
     camera_t *active_camera=camera_GetActiveCamera();
 	
-	//framebuffer_CopyFramebuffer(&left_buffer, &geometry_buffer, COPY_DEPTH);
+	framebuffer_CopyFramebuffer(&left_buffer, &geometry_buffer, COLOR_COMPONENT_DEPTH);
+	
+	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, left_buffer.id);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
 	
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
-	framebuffer_BindFramebuffer(&left_buffer);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);	
+	glClearStencil(0);
+	framebuffer_BindFramebuffer(&left_buffer);	
+	
+	//framebuffer_ResetFramebufferComponents(&left_buffer, COLOR_COMPONENT_DEPTH);
+	//framebuffer_ResetFramebufferComponents(&geometry_buffer, COLOR_COMPONENT_DEPTH);
+	
+	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);	
+	
+	
+	
 	
 	
 //#define TEST_STENCIL_MF_BUFFER	
@@ -2763,7 +2777,7 @@ void draw_ResolveGBuffer()
 	glVertex3f(0.1, 0.6, -0.5);
 	glEnd();	
 	
-	glStencilFunc(GL_EQUAL, 0x1, 0x1);
+	glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	
 	
@@ -2772,73 +2786,8 @@ void draw_ResolveGBuffer()
 	
 #endif
 	
-	
-	shader_SetShaderByIndex(deferred_process_shader_index);
-	glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
-	glEnableVertexAttribArray(shader_a.shaders[deferred_process_shader_index].v_position);
-	glVertexAttribPointer(shader_a.shaders[deferred_process_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out1);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out2);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, geometry_buffer.z_buffer);
-	//glActiveTexture(GL_TEXTURE5);
-	//glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out3);
-	
-	
-	/* 
-	   To bear in mind:
-	   Don't use the same texture unit for
-	   different types of texture. It works,
-	   but just kinda. 
-	*/
-	
-	
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-
-	//orientation=active_camera->world_orientation;
-	
-	//mat4_t_compose(&cam_transform, &orientation, mul3(active_camera->world_position, 1.0));
-	
-	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
-	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler1, 1);
-	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler2, 5);
-	shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 2);
-	
-	shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 3);
-	shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 4);
-	
-	//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraToWorldMatrix, &cam_transform.floats[0][0]);
-	//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
-	shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_camera->frustum.znear);
-	shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_camera->frustum.zfar);
-	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, left_buffer.width);
-	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, left_buffer.height);
-	//glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_ZNear], active_camera->frustum.znear);
-	//glUniform1f(shader_a.shaders[shader_index].uniforms[UNIFORM_ZFar], active_camera->frustum.zfar);
-	
-	mat4_t_compose(&camera_to_world_matrix, &active_camera->world_orientation, active_camera->world_position);
-	
-	
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-	//glDisable(GL_STENCIL_TEST);
-	//glDisable(GL_CULL_FACE);
-	
-	
-	//glEnable(GL_LIGHT0);
-	//glEnable(GL_LIGHT1);
-	
-
-	
-	
+	//glDisable(GL_DEPTH_TEST);
+	//glDepthMask(GL_FALSE);	
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
@@ -2846,8 +2795,6 @@ void draw_ResolveGBuffer()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
 	
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	
@@ -2857,12 +2804,142 @@ void draw_ResolveGBuffer()
 	{
 
 		case RENDER_DRAWMODE_LIT:
-			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_LIT);
-			//glBlendFunc(GL_ONE, GL_ONE);			/* additive blending... */
-			//glEnable(GL_SCISSOR_TEST);
+		
+		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
+		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
 			
-			c=active_light_a.light_count;
-			for(i=0; i<active_light_a.light_count; i++)
+			c = active_light_a.light_count;
+			
+			shader_SetShaderByIndex(stencil_lights_shader);
+			glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
+			glEnableVertexAttribArray(shader_a.shaders[stencil_lights_shader].v_position);
+			glVertexAttribPointer(shader_a.shaders[stencil_lights_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			
+			glEnable(GL_STENCIL_TEST);
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			
+			
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glDepthMask(GL_FALSE);	
+			
+			glStencilFunc(GL_ALWAYS, 0, 0xff);
+			//glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_INCR, GL_KEEP);
+			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_DECR, GL_KEEP);
+			
+			
+			for(i = 0; i < c; i++)
+			{
+				position = &active_light_a.position_data[i];				
+				glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
+				
+				v[0] = 0;
+		 		v[1] = 0;
+		 		v[2] = 0;
+		 		v[3] = position->radius;
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
+				
+				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
+				
+		 		v[0] = position->world_orientation.floats[0][0];
+				v[1] = position->world_orientation.floats[0][1];
+				v[2] = position->world_orientation.floats[0][2];
+				glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
+				
+				v[0] = position->world_orientation.floats[1][0];
+				v[1] = position->world_orientation.floats[1][1];
+				v[2] = position->world_orientation.floats[1][2];
+				glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
+				
+				v[0] = position->world_orientation.floats[2][0];
+				v[1] = position->world_orientation.floats[2][1];
+				v[2] = position->world_orientation.floats[2][2];
+				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
+				
+				
+				if(position->bm_flags&LIGHT_SPOT)
+				{
+					draw_begin = DRAW_CONE_LOD0_BEGIN;
+					draw_count = DRAW_CONE_LOD0_COUNT;
+					area_type = LIGHT_SPOT;
+					//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR, GL_KEEP);
+					//glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR, GL_KEEP);
+				}
+				else if(position->bm_flags&LIGHT_POINT)
+				{
+					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
+					draw_count = DRAW_SPHERE_LOD0_COUNT;
+					area_type = LIGHT_POINT;	
+					//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_INCR, GL_KEEP);
+					//glStencilOpSeparate(GL_BACK, GL_KEEP, GL_DECR, GL_KEEP);
+				}
+				
+				light_SetAreaType(area_type);
+				
+				glCullFace(GL_BACK);
+				//glStencilOp(GL_KEEP, GL_INCR, GL_KEEP);
+				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
+				
+				glCullFace(GL_FRONT);
+				//glStencilOp(GL_KEEP, GL_DECR, GL_KEEP);
+				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
+			}
+			
+			
+			glStencilFunc(GL_NOTEQUAL, 0x0, 0xff);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			
+			//framebuffer_ResetFramebufferComponents(&left_buffer, COLOR_COMPONENT_DEPTH);
+			//framebuffer_ResetFramebufferComponents(&geometry_buffer, COLOR_COMPONENT_DEPTH);
+			
+			
+			shader_SetShaderByIndex(deferred_process_shader_index);
+			glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
+			glEnableVertexAttribArray(shader_a.shaders[deferred_process_shader_index].v_position);
+			glVertexAttribPointer(shader_a.shaders[deferred_process_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out1);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out2);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, geometry_buffer.z_buffer);
+				
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glActiveTexture(GL_TEXTURE4);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		
+			
+			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
+			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler1, 1);
+			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler2, 5);
+			shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 2);
+			
+			shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 3);
+			shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 4);
+			//shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_LIT);
+			
+			shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_camera->frustum.znear);
+			shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_camera->frustum.zfar);
+			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, left_buffer.width);
+			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, left_buffer.height);
+			
+			mat4_t_compose(&camera_to_world_matrix, &active_camera->world_orientation, active_camera->world_position);
+			
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			//glDepthMask(GL_FALSE);
+			
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE);
+			
+			for(i = 0; i < c; i++)
 			{
 				
 				position = &active_light_a.position_data[i];
@@ -2877,10 +2954,10 @@ void draw_ResolveGBuffer()
 		 		
 		 		glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 		 		
-		 		/* forward vector */
-		 		v[0] = position->world_orientation.floats[2][0];
-				v[1] = position->world_orientation.floats[2][1];
-				v[2] = position->world_orientation.floats[2][2];
+		 		/* right vector */
+		 		v[0] = position->world_orientation.floats[0][0];
+				v[1] = position->world_orientation.floats[0][1];
+				v[2] = position->world_orientation.floats[0][2];
 				glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
 				
 				/* up vector */
@@ -2889,17 +2966,17 @@ void draw_ResolveGBuffer()
 				v[2] = position->world_orientation.floats[1][2];
 				glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
 				
-				/* right vector */
-				v[0] = position->world_orientation.floats[0][0];
-				v[1] = position->world_orientation.floats[0][1];
-				v[2] = position->world_orientation.floats[0][2];
+				/* forward vector */
+				v[0] = position->world_orientation.floats[2][0];
+				v[1] = position->world_orientation.floats[2][1];
+				v[2] = position->world_orientation.floats[2][2];
 				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
 		 		
 		 		
-		 		v[0] = (float)active_light_a.params[i].r / 255.0;
-		 		v[1] = (float)active_light_a.params[i].g / 255.0;
-		 		v[2] = (float)active_light_a.params[i].b / 255.0;
-		 		v[3] = active_light_a.position_data[i].radius;
+		 		v[0] = (float)params->r / 255.0;
+		 		v[1] = (float)params->g / 255.0;
+		 		v[2] = (float)params->b / 255.0;
+		 		v[3] = position->radius;
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
 				
 				
@@ -2939,36 +3016,11 @@ void draw_ResolveGBuffer()
 				{
 					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
 					draw_count = DRAW_SPHERE_LOD0_COUNT;
-					/*if(position->bm_flags & LIGHT_VIEWPOINT_INSIDE_VOLUME)
-					{
-						draw_begin = DRAW_SCREEN_QUAD_BEGIN;
-						draw_count = DRAW_SCREEN_QUAD_COUNT;
-						draw_mode = GL_QUADS;
-						area_type = 0;
-					}
-					else
-					{
-						if(position->screen_value > 0.35)
-						{
-							draw_begin = DRAW_SPHERE_LOD0_BEGIN;
-							draw_count = DRAW_SPHERE_LOD0_COUNT;
-						}
-						else
-						{
-							draw_begin = DRAW_SPHERE_LOD1_BEGIN;
-							draw_count = DRAW_SPHERE_LOD1_COUNT;
-						}
-						
-						draw_mode = GL_TRIANGLES;
-						area_type = LIGHT_POINT;
-					}*/
 					
 					draw_mode = GL_TRIANGLES;
 					area_type = LIGHT_POINT;
 					
 					light_type = LIGHT_POINT;
-				
-					
 				}
 				
 				/* spot exponent goes to the vertex shader... */
@@ -3017,18 +3069,18 @@ void draw_ResolveGBuffer()
 		break;
 		
 		case RENDER_DRAWMODE_WIREFRAME:
-			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_WIREFRAME);
-			glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 0);
-			draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
-			//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+		case RENDER_DRAWMODE_FLAT:			
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, left_buffer.width, left_buffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		break;
 		
-		case RENDER_DRAWMODE_FLAT:
+		/*case RENDER_DRAWMODE_FLAT:
 			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_FLAT);
 			glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 0);
 			draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
-			//glDrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
-		break;
+		break;*/
 	}
 	
 	//glDisable(GL_SCISSOR_TEST);
@@ -3977,7 +4029,7 @@ void draw_BlitToScreen()
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, composite_buffer.id);
 	//glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, backbuffer.width, backbuffer.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	
-
+	camera_t *active_camera = camera_GetActiveCamera();
 	//int i = GL_COLOR_ATTACHMENT0;
 	
 	//framebuffer_BindFramebuffer(&backbuffer);
@@ -4010,8 +4062,11 @@ void draw_BlitToScreen()
 	
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
 	shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 1);
-	shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_light_a.shadow_data[0].znear);
-	shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_light_a.shadow_data[0].zfar);
+	//shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_light_a.shadow_data[0].znear);
+	//shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_light_a.shadow_data[0].zfar);
+	
+	shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_camera->frustum.znear);
+	shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_camera->frustum.zfar);
 	glDisable(GL_DEPTH_TEST);
 	//glDisable(GL_BLEND);
 	glEnable(GL_BLEND);
@@ -4019,6 +4074,7 @@ void draw_BlitToScreen()
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, composite_buffer.color_out1);
+	//glBindTexture(GL_TEXTURE_2D, left_buffer.z_buffer);
 	//glActiveTexture(GL_TEXTURE1);
 	//glBindTexture(GL_TEXTURE_CUBE_MAP, active_light_a.shadow_data[0].shadow_map.shadow_map);
 	//glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out3);

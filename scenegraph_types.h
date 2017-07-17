@@ -1,7 +1,6 @@
 #ifndef SCENEGRAPH_TYPES_H
 #define SCENEGRAPH_TYPES_H
 
-
 enum NODE_TYPE
 {
 	NODE_ROOT=0,
@@ -31,6 +30,13 @@ enum NODE_HINT
 	HINT_DYNAMIC=2  
 };
 
+enum PICK_RESULT_TYPE
+{
+	PICK_ENTITY = 1,
+	PICK_LIGHT,
+	PICK_BMODEL,
+};
+
 typedef struct node_t
 {
 	int index;				/* entry in one of the arrays in the system. This node can refer to cameras, lights, entities... This value is constant
@@ -55,6 +61,13 @@ typedef struct
 	int bm_status;
 	node_t *root;
 }scenegraph_t;
+
+
+typedef struct
+{
+	int type;
+	int index;
+}pick_record_t;
 
 
 

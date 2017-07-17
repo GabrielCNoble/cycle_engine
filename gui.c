@@ -252,6 +252,52 @@ PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags
 	}
 }
 
+PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*dropdown_callback)(swidget_t *, void *, int))
+{
+	wdropdown_t *t = NULL;
+	if(widget)
+	{
+		t = (wdropdown_t *)malloc(sizeof(wdropdown_t));
+		t->swidget.name = strdup(name);
+		
+		t->swidget.x = x;
+		t->swidget.y = y;
+		t->swidget.w = w;
+		t->swidget.h = h;
+		
+		
+		t->swidget.cx = x;
+		t->swidget.cy = y;
+		t->swidget.cw = w;
+		t->swidget.ch = h;
+		
+		t->swidget.type = WIDGET_DROP_DOWN;
+		t->swidget.bm_flags = bm_flags & (~(WIDGET_GRABBABLE | WIDGET_HEADER | WIDGET_RESIZABLE));
+		t->swidget.widget_callback = NULL;
+		t->swidget.next = NULL;
+		
+		t->cur_option = 0;
+		t->max_options = 4;
+		t->options = (woption_t *)malloc(sizeof(woption_t) * 4);
+		t->option_count = 0;
+		t->dropdown_callback = dropdown_callback;
+		
+		if(!widget->sub_widgets)
+		{
+			widget->sub_widgets = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		else
+		{
+			widget->last_added->next = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		widget->sub_widgets_count++;
+	}
+	
+	return t;
+}
+
 PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int ))
 {
 	wtabbar_t *t = NULL;

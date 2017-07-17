@@ -59,12 +59,12 @@ void main()
     
     //vec_to_cam=vec3(-((gl_FragCoord.x/renderTargetWidth)-0.5)*2.0, -((gl_FragCoord.y/renderTargetHeight)-0.5)*2.0, 1.0);
 	
-	//texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
-	texel=texture2D(sysTextureSampler0, UV);
+	texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
+	//texel=texture2D(sysTextureSampler0, UV);
 	//texel=textureCube(textureSamplerCube0, vec3(-1.0, UV.y*2.0-1.0, UV.x*2.0-1.0));
 	
 
-    //texel=vec4(linearDepth(texture2D(textureSampler0, vec2(UV.x, UV.y)).r))*0.01;
+    //texel=vec4(linearDepth(texture2D(sysTextureSampler0, vec2(UV.x, UV.y)).r))*0.01;
     //texel=vec4(linearDepth((textureCube(sys3DShadowSampler, vec3(UV.x*4.0-2.0, 1.0, UV.y*4.0-2.0)).r)))* 0.01;
 	//texel=textureCube(textureSampler1, vec3(1.0, UV.y*4.0-2.0, UV.x*4.0-2.0));
 	//texel = vec4(1.0);

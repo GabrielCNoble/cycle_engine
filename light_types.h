@@ -114,8 +114,8 @@ typedef struct
 	vec4_t local_position;
 	int align1;
 	int align2;
-	char bm_state;
 	short bm_flags;
+	char bm_state;
 	char spot_co;		/* cutoff (in degrees) */
 	//char align4;
 	//vec3_t align2;
