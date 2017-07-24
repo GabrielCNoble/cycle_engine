@@ -20,6 +20,9 @@ SDL_Cursor *dl_arrows;
 SDL_Cursor *dr_arrows;
 
 
+short key_pos_map[SDL_NUM_SCANCODES];
+
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -32,6 +35,7 @@ input_Init
 */
 PEWAPI void input_Init()
 {
+	int i;
 	
 	ibeam = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
 	arrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
@@ -45,6 +49,16 @@ PEWAPI void input_Init()
 	input.kb_event=(SDL_Event *)calloc(1, sizeof(SDL_Event));
 	SDL_WarpMouseInWindow(renderer.window, renderer.screen_width/2, renderer.screen_height/2);
 	input.bm_mouse = 0;
+	input.registered_keys_count = 0;
+	input.max_registered_keys = 0;
+	input.registered_keys = NULL;
+	
+	for(i = 0; i < SDL_NUM_SCANCODES; i++)
+	{
+		key_pos_map[i] = -1;
+	}
+	
+	
 	input_GetInput();
 	return;
 }
@@ -68,6 +82,8 @@ input_GetInput
 PEWAPI void input_GetInput()
 {
 	int bm;
+	int i;
+	int q;
 	//SDL_Cursor *cursor;
 	
 	
@@ -81,6 +97,7 @@ PEWAPI void input_GetInput()
 	//TwEventSDL(input.kb_event, SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
 	
 	bm=SDL_GetMouseState(&input.mouse_x, &input.mouse_y);
+
 	
 	input.mouse_y = renderer.screen_height - input.mouse_y;
 	
@@ -104,6 +121,16 @@ PEWAPI void input_GetInput()
 		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_JUST_RELEASED;
 	}
 	
+	if(input.bm_mouse & MOUSE_MIDDLE_BUTTON_JUST_RELEASED)
+	{
+		input.bm_mouse &= ~MOUSE_MIDDLE_BUTTON_JUST_RELEASED;
+	}
+	
+	if(input.bm_mouse & MOUSE_MIDDLE_BUTTON_JUST_RELEASED)
+	{
+		input.bm_mouse &= ~MOUSE_MIDDLE_BUTTON_JUST_RELEASED;
+	}
+	
 	if(bm & 1)
 	{
 		if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
@@ -121,7 +148,24 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_LEFT_BUTTON_JUST_RELEASED;
 		}
 		input.bm_mouse &= ~MOUSE_LEFT_BUTTON_CLICKED;
-		//TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
+	}
+	
+	if(bm & 2)
+	{
+		if(!(input.bm_mouse & MOUSE_MIDDLE_BUTTON_CLICKED))
+		{
+			input.bm_mouse |= MOUSE_MIDDLE_BUTTON_JUST_CLICKED;
+		}
+		
+		input.bm_mouse |= MOUSE_MIDDLE_BUTTON_CLICKED;
+	}
+	else
+	{
+		if(input.bm_mouse & MOUSE_MIDDLE_BUTTON_CLICKED)
+		{
+			input.bm_mouse |= MOUSE_MIDDLE_BUTTON_JUST_RELEASED;
+		}
+		input.bm_mouse &= ~MOUSE_MIDDLE_BUTTON_CLICKED;
 	}
 	
 	if(bm & 4)
@@ -131,7 +175,6 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_CLICKED;
 		}
 		input.bm_mouse |= MOUSE_RIGHT_BUTTON_CLICKED;
-		//TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_RIGHT);
 	}
 	else
 	{
@@ -140,8 +183,40 @@ PEWAPI void input_GetInput()
 			input.bm_mouse |= MOUSE_RIGHT_BUTTON_JUST_RELEASED;
 		}
 		input.bm_mouse &= ~MOUSE_RIGHT_BUTTON_CLICKED;
-		//TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_RIGHT);
 	}
+	
+	for(i = 0; i < input.registered_keys_count; i++)
+	{
+		q = input.kb_keys[input.registered_keys[i].key];
+		
+		if(input.registered_keys[i].bm_flags & KEY_JUST_PRESSED)
+		{
+			input.registered_keys[i].bm_flags &= ~KEY_JUST_PRESSED;
+		}
+		else if(input.registered_keys[i].bm_flags & KEY_JUST_RELEASED)
+		{
+			input.registered_keys[i].bm_flags &= ~KEY_JUST_RELEASED;
+		}
+		
+		if(q)
+		{
+			if(!(input.registered_keys[i].bm_flags & KEY_PRESSED))
+			{
+				input.registered_keys[i].bm_flags |= KEY_JUST_PRESSED;
+			}
+			input.registered_keys[i].bm_flags |= KEY_PRESSED;
+		}
+		else
+		{
+			if(input.registered_keys[i].bm_flags & KEY_PRESSED)
+			{
+				input.registered_keys[i].bm_flags |= KEY_JUST_RELEASED;
+			}
+			
+			input.registered_keys[i].bm_flags &= ~KEY_PRESSED;
+		}
+	}
+	
 	
 	input.normalized_mouse_x=(float)input.mouse_x/(float)renderer.screen_width;
 	input.normalized_mouse_y=(float)input.mouse_y/(float)renderer.screen_height;
@@ -231,6 +306,16 @@ PEWAPI int input_GetKeyPressed(int key)
 	return input.kb_keys[key];
 }
 
+PEWAPI int input_GetKeyStatus(int key)
+{
+	if(key_pos_map[key] >= 0)
+	{
+		return input.registered_keys[key_pos_map[key]].bm_flags;
+	}
+	return 0;
+	
+}
+
 
 PEWAPI int input_GetMouseButton(int button)
 {
@@ -242,8 +327,8 @@ PEWAPI int input_GetMouseButton(int button)
 			i = input.bm_mouse & (MOUSE_LEFT_BUTTON_CLICKED | MOUSE_LEFT_BUTTON_JUST_CLICKED | MOUSE_LEFT_BUTTON_JUST_RELEASED);
 		break;
 		
-		case  SDL_BUTTON_MIDDLE:
-		
+		case SDL_BUTTON_MIDDLE:
+			i = input.bm_mouse & (MOUSE_MIDDLE_BUTTON_CLICKED | MOUSE_MIDDLE_BUTTON_JUST_CLICKED | MOUSE_MIDDLE_BUTTON_JUST_RELEASED);
 		break;
 		
 		case SDL_BUTTON_RIGHT:
@@ -254,6 +339,59 @@ PEWAPI int input_GetMouseButton(int button)
 	return i;
 }
 
+PEWAPI int input_RegisterKey(int key)
+{
+	key_t *t;
+	int i;
+	
+	if(key_pos_map[key] != -1)
+	{
+		return -1;
+	}
+	
+	if(!input.registered_keys)
+	{
+		input.registered_keys = (key_t *)malloc(sizeof(key_t));
+		input.max_registered_keys = 1;
+	}
+	else if(input.registered_keys_count >= input.max_registered_keys)
+	{
+		t =	(key_t *)malloc(sizeof(key_t) * (input.max_registered_keys + 1));
+		memcpy(t, input.registered_keys, sizeof(key_t) * input.max_registered_keys);
+		free(input.registered_keys);
+		input.registered_keys = t;
+		input.max_registered_keys++;
+	}
+	
+	input.registered_keys[input.registered_keys_count].key = key;
+	input.registered_keys[input.registered_keys_count].bm_flags = 0;
+	key_pos_map[key] = input.registered_keys_count;
+	input.registered_keys_count++;
+	
+}
+
+PEWAPI int input_UnregisterKey(int key)
+{
+	int i;
+	int k;
+	
+	if(key_pos_map[key] == -1)
+	{
+		return -1;
+	}
+	
+	if(input.registered_keys_count < input.max_registered_keys)
+	{
+		i = input.max_registered_keys - 1;
+		k = input.registered_keys[i].key;
+		
+		input.registered_keys[key_pos_map[key]] = input.registered_keys[i];
+		key_pos_map[k] = key_pos_map[key];
+	}
+
+	key_pos_map[key] = -1;
+	input.registered_keys_count--;
+}
 
 
 PEWAPI void input_GetEsc()

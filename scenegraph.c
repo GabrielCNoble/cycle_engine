@@ -2308,7 +2308,6 @@ pick_record_t scenegraph_Pick()
 	
 	float mouse_x = input.mouse_x;
 	float mouse_y = input.mouse_y;
-	
 	mat4_t model_view_matrix;
 	
 	camera_t *active_camera = camera_GetActiveCamera();

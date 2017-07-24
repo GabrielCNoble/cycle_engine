@@ -5,8 +5,6 @@
 #include "console.h"
 #include "pew.h"
 
-//extern gelem_array gelem_a;
-//extern window_class_array window_classes;
 extern input_cache input;
 extern renderer_t renderer;
 extern console_font font;
@@ -17,12 +15,18 @@ int widget_count;
 #define MIN_WIDGET_HEIGHT 32.0 
 #define SCROLLER_FIXED_DIMENSION 0.34
 
+
+
 widget_t *widgets = NULL;
 widget_t *last = NULL;
 widget_t *top_widget = NULL;
 
+
+swidget_t *active_swidget;
+
 unsigned int param_pool_byte_offset = 0;
 unsigned char *param_pool[512];
+
 
 #ifdef __cplusplus
 extern "C"
@@ -42,6 +46,7 @@ PEWAPI void gui_Init()
 	widgets->type = WIDGET_ROOT;
 	widgets->next = NULL;
 	widgets->prev = NULL;
+	widgets->name = strdup("root");
 	//widgets->affect = NULL;
 	widgets->x = 0.0;
 	widgets->y = 0.0;
@@ -123,42 +128,24 @@ PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, fl
 	temp->next = NULL;
 	temp->prev = last;
 	
+	last->next = temp;
+	last = temp;
+	
+	
 	temp->sub_widgets = NULL;
 	temp->last_added = NULL;
 	temp->sub_widgets_count = 0;
 	
-	if(!widget_count)
+	widget_count++;
+	
+	if(!widget_count || b_focused)
 	{
 		gui_SetFocused(temp);
-		//top_widget = temp;
 	}
-	//temp->base = temp;						/* base widget points to itself. */
-	//temp->affect = NULL;
-	//temp->w_widgets = NULL;
-	//temp->w_last = NULL;
-	//temp->widget_count = 0;
 
 	
 	
 	
-	/*if(widget_count == 0)
-	{
-		top_widget = temp;
-	}
-	else
-	{
-		if(b_focused)
-		{
-			
-		}
-		else
-		{*/
-	last->next = temp;
-	last = temp;
-	/*	}
-	}*/
-	
-	widget_count++;
 	
 	return temp;
 }
@@ -252,7 +239,7 @@ PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags
 	}
 }
 
-PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*dropdown_callback)(swidget_t *, void *, int))
+PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, void *data, void (*dropdown_callback)(swidget_t *, void *, int))
 {
 	wdropdown_t *t = NULL;
 	if(widget)
@@ -263,24 +250,27 @@ PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, 
 		t->swidget.x = x;
 		t->swidget.y = y;
 		t->swidget.w = w;
-		t->swidget.h = h;
+		t->swidget.h = OPTION_HEIGHT;
 		
 		
 		t->swidget.cx = x;
 		t->swidget.cy = y;
 		t->swidget.cw = w;
-		t->swidget.ch = h;
+		t->swidget.ch = OPTION_HEIGHT;
 		
 		t->swidget.type = WIDGET_DROP_DOWN;
-		t->swidget.bm_flags = bm_flags & (~(WIDGET_GRABBABLE | WIDGET_HEADER | WIDGET_RESIZABLE));
+		t->swidget.bm_flags &= ~(WIDGET_GRABBABLE | WIDGET_HEADER | WIDGET_RESIZABLE);
 		t->swidget.widget_callback = NULL;
 		t->swidget.next = NULL;
 		
 		t->cur_option = 0;
 		t->max_options = 4;
+		t->active_option = NULL;
 		t->options = (woption_t *)malloc(sizeof(woption_t) * 4);
 		t->option_count = 0;
 		t->dropdown_callback = dropdown_callback;
+		t->data = data;
+		t->bm_flags = bm_flags;
 		
 		if(!widget->sub_widgets)
 		{
@@ -297,6 +287,99 @@ PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, 
 	
 	return t;
 }
+
+PEWAPI void gui_AddOption(wdropdown_t *dropdown, char *name)
+{
+	woption_t *o;
+	if(dropdown)
+	{
+		if(dropdown->option_count >= dropdown->max_options)
+		{
+			o = (woption_t *)malloc(sizeof(woption_t) * (dropdown->max_options + 4));
+			memcpy(o, dropdown->options, sizeof(woption_t) * dropdown->max_options);
+			free(dropdown->options);
+			dropdown->options = o;
+			dropdown->max_options += 4;
+		}
+		
+		o = &dropdown->options[dropdown->option_count++];		
+		o->name = strdup(name);
+		o->bm_flags = 0;
+		o->nested = NULL;
+	}
+}
+
+PEWAPI wdropdown_t *gui_NestleDropDown(wdropdown_t *dropdown, int option_index, char *name, int bm_flags, int width, void *data, void (*dropdown_callback)(swidget_t *, void *, int))
+{
+	wdropdown_t *t = NULL;
+	if(dropdown)
+	{
+		if(option_index >= 0 && option_index < dropdown->option_count)
+		{
+			t = (wdropdown_t *)malloc(sizeof(wdropdown_t));
+			t->swidget.name = strdup(name);
+			
+			t->swidget.x = dropdown->swidget.x + dropdown->swidget.w / 2.0 + width / 2;
+			t->swidget.y = dropdown->swidget.y - OPTION_HEIGHT * (option_index + 1);
+			t->swidget.w = width;
+			t->swidget.h = OPTION_HEIGHT;
+			
+			
+			t->swidget.cx = t->swidget.x;
+			t->swidget.cy = t->swidget.y;
+			t->swidget.cw = width;
+			t->swidget.ch = OPTION_HEIGHT;
+			
+			t->swidget.type = WIDGET_DROP_DOWN;
+			t->swidget.bm_flags &= ~(WIDGET_GRABBABLE | WIDGET_HEADER | WIDGET_RESIZABLE);
+			t->swidget.widget_callback = NULL;
+			t->swidget.next = NULL;
+			
+			t->cur_option = 0;
+			t->max_options = 4;
+			t->active_option = NULL;
+			t->options = (woption_t *)malloc(sizeof(woption_t) * 4);
+			t->option_count = 0;
+			t->dropdown_callback = dropdown_callback;
+			t->data = data;
+			t->bm_flags = bm_flags | DROP_DOWN_DROPPED;
+			
+			dropdown->options[option_index].nested = (swidget_t *)t;
+		}
+	}
+	
+	return t;
+	
+}
+
+/*PEWAPI widget_t *gui_AddNestedDropDown(wdropdown_t *dropdown, int option_index, float width)
+{
+	widget_t *w;
+	if(dropdown)
+	{
+		if(option_index >= 0 && option_index < dropdown->option_count)
+		{
+			if(!dropdown->options[option_index].nested)
+			{
+				w = (widget_t *)malloc(sizeof(widget_t ));
+				w->w = width;
+				w->h = OPTION_HEIGHT;
+				w->x = dropdown->swidget.x + dropdown->swidget.w / 2.0 + width;
+				w->y = dropdown->swidget.y + dropdown->swidget.h / 2.0 - OPTION_HEIGHT * (option_index + 1);
+				w->cw = w->w;
+				w->ch = w->h;
+				w->bm_flags = WIDGET_VISIBLE;
+				w->next = NULL;
+				w->prev = NULL;
+				w->sub_widgets = (swidget_t *)malloc(sizeof(wdropdown_t ));
+				w->sub_widgets_count = 1;
+				
+				dropdown->options[option_index].nested = (swidget_t *)w;
+			}
+			
+		}
+	}
+}*/
 
 PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int ))
 {
@@ -436,9 +519,129 @@ PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm
 }
 
 
-PEWAPI void gui_DeleteWidget(char *name)
+PEWAPI void gui_DeleteWidgetByName(char *name)
 {
+	swidget_t *w;
+
+}
+
+PEWAPI void gui_DeleteWidget(widget_t *widget)
+{
+	swidget_t *w;
+	swidget_t *p;
+	wtab_t *tab; 
+	int i;
+ 	int stack_top = -1;
+	swidget_t *stack[64];
+	w = widget->sub_widgets;
 	
+	_recursive_delete:
+
+	while(w)
+	{
+		switch(w->type)
+		{
+			case WIDGET_TAB_BAR:
+				if(((wtabbar_t *)w)->tab_count)
+				{
+					
+					for(i = 0; i < ((wtabbar_t *)w)->tab_count; i++)
+					{
+						tab = &((wtabbar_t *)w)->tabs[i];
+						
+						if(tab->bm_flags != 0xffffffff)
+						{
+							free(tab->name);
+							tab->bm_flags = 0xffffffff;
+							if(tab->swidget_count)
+							{
+								stack_top++;
+								stack[stack_top] = w;
+								w = tab->swidgets;
+								goto _recursive_delete;	
+							}
+						}
+					}
+				}
+				
+				p = w->next;
+				free(w->name);
+				free(((wtabbar_t *)w)->tabs);
+				free(w);		
+				w = p;
+			break;
+			
+			
+			case WIDGET_DROP_DOWN:	
+				for(i = 0; i < ((wdropdown_t *)w)->option_count; i++)
+				{
+					if(((wdropdown_t *)w)->options[i].nested)
+					{
+						stack_top++;
+						stack[stack_top] = w;
+						p = ((wdropdown_t *)w)->options[i].nested;
+						((wdropdown_t *)w)->options[i].nested = NULL;
+						w = p;
+						goto _recursive_delete;
+					}
+				}
+				free(((wdropdown_t *)w)->options);
+			case WIDGET_BUTTON:
+			case WIDGET_VAR:
+				p = w->next;
+				free(w->name);
+				free(w);
+				w = p;
+			break;
+			
+			default:
+				w = w->next;
+			break;
+		}
+		
+		if(!w)
+		{
+			if(stack_top >= 0)
+			{
+				w = stack[stack_top--];
+			}
+		}
+
+	}
+	
+	if(widget == last)
+	{
+		last = last->prev;
+	}
+	
+	if(widget->prev)
+	{
+		widget->prev->next = widget->next;
+	}
+	if(widget->next)
+	{
+		widget->next->prev = widget->prev;
+	}
+	
+	widget_count--;
+	
+	gui_SetFocused(last);
+	
+	
+	
+	
+	
+	free(widget->name);
+	free(widget);
+	
+}
+
+PEWAPI void gui_MarkForDeletion(widget_t *widget)
+{
+	if(widget)
+	{
+		widget->bm_flags |= WIDGET_DELETE;
+	}
 }
 
 PEWAPI widget_t *gui_GetWidget(char *name)
@@ -468,22 +671,30 @@ void gui_SetFocused(widget_t *widget)
 			top_widget->bm_flags &= ~WIDGET_MOUSE_OVER;
 			if(widget != widgets->next)
 			{
+				
+				if(widget == last)
+				{
+					last = last->prev; 
+				}
+				
+				
 				if(widget->next)
 				{
 					widget->next->prev = widget->prev;
-					widget->prev->next = widget->next;
 				}
-				else 
-				{
-					widget->prev->next = NULL;
-				}
+				
+				widget->prev->next = widget->next;
 				
 				widget->prev = widgets;
 				widget->next = widgets->next;
-				widgets->next = widget;
 				widget->next->prev = widget;
+				widgets->next = widget;
+				
+				
+				
+				
 			}
-			
+
 		}
 		
 		top_widget = widget;
@@ -493,9 +704,11 @@ void gui_SetFocused(widget_t *widget)
 void gui_ProcessWidgets()
 {
 	widget_t *cwidget;
+	widget_t *p;
 	swidget_t *cswidget;
 	wbutton_t *button;
 	wtabbar_t *tabbar;
+	wdropdown_t *dropdown;
 	wtab_t *tab;
 	int stack_top = -1;
 	swidget_t *swidget_stack[64];
@@ -508,10 +721,17 @@ void gui_ProcessWidgets()
 	float rel_x;
 	float rel_y;
 	float tab_label_width;
+	float option_height;
 	
 	int tab_index;
+	int option_index;
 	int pw;
 	int ph;
+	
+	float rw;
+	float rh;
+	float rx;
+	float ry;
 	
 	int rel_ix;
 	int rel_iy;
@@ -541,10 +761,17 @@ void gui_ProcessWidgets()
 	cwidget = widgets->next;
 	//}
 	
+	active_swidget = NULL;
+	
 	while(cwidget)
 	{
 		
 		//_go:
+		
+		if(!(cwidget->bm_flags & WIDGET_VISIBLE))
+		{
+			goto _skip;
+		}
 			
 		cwidget->relative_mouse_x = ((cwidget->x * x_scale - input.normalized_mouse_x) * -2.0) / (cwidget->w * x_scale);
 		cwidget->relative_mouse_y = ((cwidget->y * y_scale - input.normalized_mouse_y) * -2.0) / (cwidget->h * y_scale);
@@ -564,9 +791,11 @@ void gui_ProcessWidgets()
 				rel_iy = ph * (cwidget->relative_mouse_y * 0.5 + 0.5);
 				
 				cwidget->bm_flags |= WIDGET_MOUSE_OVER;
-				input.bm_mouse |= MOUSE_OVER_WIDGET;
+				//input.bm_mouse |= MOUSE_OVER_WIDGET;
 				
 				mouse_over_widgets++;
+				
+				
 
 				if(rel_iy >= ph - WIDGET_BORDER_PIXEL_WIDTH)
 				{
@@ -812,8 +1041,7 @@ void gui_ProcessWidgets()
 		
 		while(cswidget)
 		{
-			
-			_tab_swidgets:
+			_nestled_swidgets:
 			
 			if(cswidget->bm_flags & WIDGET_KEEP_RELATIVE_X_POSITION)
 			{
@@ -830,24 +1058,45 @@ void gui_ProcessWidgets()
 				cswidget->y = cswidget->cy * ch;
 			}
 			
-			cswidget->relative_mouse_x = (((cswidget->x + x) * x_scale - input.normalized_mouse_x) * -2.0) / (cswidget->w * x_scale);
-			cswidget->relative_mouse_y = (((cswidget->y + y) * y_scale - input.normalized_mouse_y) * -2.0) / (cswidget->h * y_scale);
+			ry = cswidget->y;
+			rh = cswidget->h;
 			
-			if(cwidget->bm_flags & WIDGET_MOUSE_OVER && !(cwidget->bm_flags & (WIDGET_MOUSE_OVER_HEADER |
+			if(cswidget->type == WIDGET_DROP_DOWN)
+			{				
+				if(((wdropdown_t *)cswidget)->bm_flags & DROP_DOWN_DROPPED)
+				{
+					rh += (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count);
+					ry -= (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count) / 2.0;
+				}
+			}
+			
+			
+			//printf(" %f  %f\n", ry, rh);
+			
+			cswidget->relative_mouse_x = (((cswidget->x + x) * x_scale - input.normalized_mouse_x) * -2.0) / (cswidget->w * x_scale);
+			cswidget->relative_mouse_y = (((ry + y) * y_scale - input.normalized_mouse_y) * -2.0) / (rh * y_scale);
+			
+			//printf("%s  %f %f\n", cswidget->name, cswidget->relative_mouse_x, cswidget->relative_mouse_y);
+			
+			if(!active_swidget && cwidget->bm_flags & WIDGET_MOUSE_OVER && !(cwidget->bm_flags & (WIDGET_MOUSE_OVER_HEADER |
 																			   WIDGET_MOUSE_OVER_BOTTOM_BORDER|
 																			   WIDGET_MOUSE_OVER_TOP_BORDER|
 																			   WIDGET_MOUSE_OVER_LEFT_BORDER|
-																			   WIDGET_MOUSE_OVER_RIGHT_BORDER)))
+																			   WIDGET_MOUSE_OVER_RIGHT_BORDER)) ||
+																			   (cwidget->bm_flags & WIDGET_NO_BORDERS))
 			{
 				if(cswidget->relative_mouse_x <= 1.0 && cswidget->relative_mouse_x >= -1.0)
 				{
 					if(cswidget->relative_mouse_y <= 1.0 && cswidget->relative_mouse_y >= -1.0)
 					{
 						cswidget->bm_flags |= WIDGET_MOUSE_OVER;
+						input.bm_mouse |= MOUSE_OVER_WIDGET;
+						active_swidget = cswidget;
 						
 						if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 						{
 							cswidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+							cwidget->active_swidget = cswidget;
 						}
 						else
 						{
@@ -862,119 +1111,12 @@ void gui_ProcessWidgets()
 						{
 							cswidget->bm_flags &= ~WIDGET_RECEIVED_LEFT_BUTTON_UP;
 						}
+						
+			
 					}
 					else
 					{
 						cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
-					}
-					
-
-					switch(cswidget->type)
-					{
-						case WIDGET_BUTTON:
-							button = (wbutton_t *)cswidget;
-								
-							if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
-							{
-								if(button->button_flags & BUTTON_CHECK_BOX)
-								{
-									if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
-									{
-										button->button_flags &= ~BUTTON_CHECK_BOX_CHECKED;
-									}
-									else
-									{
-										button->button_flags |= BUTTON_CHECK_BOX_CHECKED;
-									}
-								}
-								/* a normal button... */
-								else
-								{
-									if(button->button_flags & BUTTON_TOGGLE)
-									{
-										if(button->button_flags & BUTTON_TOGGLED)
-										{
-											button->button_flags &= ~BUTTON_TOGGLED;
-										}
-										else
-										{
-											button->button_flags |= BUTTON_TOGGLED;
-										}
-									}
-									else
-									{
-										button->button_flags |= BUTTON_TOGGLED;
-									}
-								}
-								
-								if(cswidget->widget_callback)
-								{
-									cswidget->widget_callback(cswidget, cswidget->data);
-								}
-								
-							}
-							else if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_UP)
-							{
-								
-								if(button->button_flags & BUTTON_TOGGLE)
-								{
-											
-								}
-								else
-								{
-									button->button_flags &= ~BUTTON_TOGGLED;
-								}
-								
-							}
-								
-								
-						break;
-						
-						case WIDGET_TAB_BAR:
-							tabbar = (wtabbar_t *)cswidget;
-							if(tabbar->tab_count)
-							{
-	
-								tab_label_width = tabbar->swidget.w / (float)tabbar->tab_count;
-								tab_index = (int)((tabbar->swidget.w * (tabbar->swidget.relative_mouse_x * 0.5 + 0.5)) / tab_label_width);
-								
-								if(tabbar->swidget.bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
-								{
-									if(tabbar->active_tab != &tabbar->tabs[tab_index])
-									{
-										if(tabbar->active_tab)
-										{
-											tabbar->active_tab->bm_flags &= ~TAB_SELECTED;
-										}
-									}
-									
-									tabbar->active_tab = &tabbar->tabs[tab_index];
-									tabbar->active_tab->bm_flags |= TAB_SELECTED;
-									
-									if(tabbar->tabbar_callback)
-									{
-										tabbar->tabbar_callback(cswidget, NULL, tab_index);
-									}
-									
-								}
-								
-								if(!(tabbar->active_tab->bm_flags & TAB_NO_SUB_WIDGETS) && tabbar->active_tab->swidgets)
-								{
-									stack_top++;
-									swidget_stack[stack_top] = cswidget;
-									pos_stack[stack_top].x = x;
-									pos_stack[stack_top].y = y;
-									
-									x += tabbar->swidget.x;
-									y += tabbar->swidget.y;
-									cswidget = tabbar->active_tab->swidgets;
-									goto _tab_swidgets;
-								}
-									
-								
-							}
-							
-						break;
 					}
 
 				}
@@ -988,6 +1130,201 @@ void gui_ProcessWidgets()
 			else
 			{
 				cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
+			}
+			
+			switch(cswidget->type)
+			{
+				case WIDGET_BUTTON:
+					button = (wbutton_t *)cswidget;
+					
+					if(cswidget->bm_flags & WIDGET_MOUSE_OVER)
+					{
+						if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
+						{
+							if(button->button_flags & BUTTON_CHECK_BOX)
+							{
+								if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+								{
+									button->button_flags &= ~BUTTON_CHECK_BOX_CHECKED;
+								}
+								else
+								{
+									button->button_flags |= BUTTON_CHECK_BOX_CHECKED;
+								}
+							}
+							/* a normal button... */
+							else
+							{
+								if(button->button_flags & BUTTON_TOGGLE)
+								{
+									if(button->button_flags & BUTTON_TOGGLED)
+									{
+										button->button_flags &= ~BUTTON_TOGGLED;
+									}
+									else
+									{
+										button->button_flags |= BUTTON_TOGGLED;
+									}
+								}
+								else
+								{
+									button->button_flags |= BUTTON_TOGGLED;
+								}
+							}
+										
+							if(cswidget->widget_callback)
+							{
+								cswidget->widget_callback(cswidget, cswidget->data);
+							}
+										
+						}
+						else if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_UP)
+						{
+										
+							if(button->button_flags & BUTTON_TOGGLE)
+							{
+													
+							}
+							else
+							{
+								button->button_flags &= ~BUTTON_TOGGLED;
+							}
+										
+						}
+					}
+									
+					
+									
+									
+				break;
+							
+				case WIDGET_TAB_BAR:
+					tabbar = (wtabbar_t *)cswidget;
+					
+					if(cswidget->bm_flags & WIDGET_MOUSE_OVER)
+					{
+						if(tabbar->tab_count)
+						{
+							tab_index = (int)((tabbar->swidget.relative_mouse_x * 0.5 + 0.5) * tabbar->tab_count);									
+										
+							if(tabbar->swidget.bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
+							{
+								if(tabbar->active_tab != &tabbar->tabs[tab_index])
+								{
+									if(tabbar->active_tab)
+									{
+										tabbar->active_tab->bm_flags &= ~TAB_SELECTED;
+									}
+								}
+											
+								tabbar->active_tab = &tabbar->tabs[tab_index];
+								tabbar->active_tab->bm_flags |= TAB_SELECTED;
+											
+								if(tabbar->tabbar_callback)
+								{
+									tabbar->tabbar_callback(cswidget, NULL, tab_index);
+								}
+											
+							}
+										
+							if(!(tabbar->active_tab->bm_flags & TAB_NO_SUB_WIDGETS) && tabbar->active_tab->swidgets)
+							{
+								stack_top++;
+								swidget_stack[stack_top] = cswidget;
+								pos_stack[stack_top].x = x;
+								pos_stack[stack_top].y = y;
+											
+								x += tabbar->swidget.x;
+								y += tabbar->swidget.y;
+								cswidget = tabbar->active_tab->swidgets;
+								goto _nestled_swidgets;
+							}
+											
+										
+						}
+					}
+					
+					
+				break;
+							
+				case WIDGET_DROP_DOWN:
+					dropdown = (wdropdown_t *)cswidget;		
+					
+					if(cswidget->bm_flags & WIDGET_MOUSE_OVER)
+					{
+						if(dropdown->option_count && dropdown->bm_flags & DROP_DOWN_DROPPED)
+						{
+										
+							option_index = (int)((1.0 - (dropdown->swidget.relative_mouse_y * 0.5 + 0.5)) * (dropdown->option_count + 1)) - 1;
+										
+							if(dropdown->active_option)
+							{
+								dropdown->active_option->bm_flags &= ~OPTION_MOUSE_OVER;
+							}
+										
+							if(option_index >= 0 && option_index < dropdown->option_count)
+							{
+											//if()
+								dropdown->options[dropdown->cur_option].bm_flags &= ~OPTION_MOUSE_OVER;
+								dropdown->cur_option = option_index;
+											
+								if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
+								{										
+									dropdown->active_option = &dropdown->options[option_index];
+									if(dropdown->dropdown_callback)
+									{
+										dropdown->dropdown_callback(cswidget, dropdown->data, option_index);
+									}
+												
+								}
+											
+								dropdown->options[option_index].bm_flags |= OPTION_MOUSE_OVER;
+							}
+		
+						}
+									
+						if(cswidget->bm_flags & WIDGET_RECEIVED_LEFT_BUTTON_DOWN)
+						{
+							if(dropdown->bm_flags & DROP_DOWN_DROPPED)
+							{
+								dropdown->bm_flags &= ~DROP_DOWN_DROPPED;
+							}
+							else
+							{
+								dropdown->bm_flags |= DROP_DOWN_DROPPED;
+							}
+										
+							cswidget->bm_flags &= ~WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+										
+						}
+					}
+					else
+					{
+						if(dropdown->option_count > 0)
+						{
+							if(dropdown->cur_option >= 0 && dropdown->cur_option < dropdown->option_count)
+							{
+								if(!dropdown->options[dropdown->cur_option].nested)
+								{
+									dropdown->options[dropdown->cur_option].bm_flags &= ~OPTION_MOUSE_OVER;
+								}
+							}
+						}
+					}			
+					
+								
+					if(dropdown->options[dropdown->cur_option].nested)
+					{
+						{
+							stack_top++;
+							swidget_stack[stack_top] = cswidget;
+							cswidget = dropdown->options[dropdown->cur_option].nested;
+							((wdropdown_t *)cswidget)->bm_flags |= DROP_DOWN_DROPPED;
+							goto _nestled_swidgets;
+						}
+					}
+								
+				break;
 			}
 			
 			cswidget = cswidget->next;
@@ -1005,19 +1342,21 @@ void gui_ProcessWidgets()
 			}
 		}
 		
-		cwidget = cwidget->next;	
+		_skip:
+			
+		if(cwidget->bm_flags & WIDGET_DELETE)
+		{
+			p = cwidget->next;
+			gui_DeleteWidget(cwidget);
+			cwidget = p;	
+		}
+		else
+		{
+			cwidget = cwidget->next;
+		}
 		
-	}
-}
-
-PEWAPI void gui_PrintOnWidget(widget_t *widget, char *str)
-{
-	char *p = widget->text_buffer;
-	char *q = str;
-	
-	while(*q)
-	{
-		*p++ = *q++;
+			
+		
 	}
 }
 
@@ -1068,324 +1407,6 @@ void gui_test_ToggleBloom(widget_t *widget)
 		console_PassParam("enable render_flag use_bloom");
 	}
 }
-/*
-=============
-gui_ResizeWindowArray
-=============
-*/
-/*PEWAPI void gui_ResizeGelemArray(int new_size)
-{
-	gelem_t *temp=(gelem_t *)calloc(new_size, sizeof(gelem_t));
-	if(gelem_a.gelems)
-	{
-		memcpy(temp, gelem_a.gelems, sizeof(gelem_t)*gelem_a.gelem_count);
-		free(gelem_a.gelems);
-	}
-	gelem_a.gelems=temp;
-	gelem_a.gelem_count=new_size;
-}*/
-
-
-/*
-=============
-gui_ResizeWindowClassArray
-=============
-*/
-/*PEWAPI void gui_ResizeWindowClassArray(int new_size)
-{
-	/*window_class *temp=calloc(new_size, sizeof(window_class));
-	if(window_classes.classes)
-	{
-		memcpy(temp, window_classes.classes, sizeof(window_class)*window_classes.class_count);
-		free(window_classes.classes);
-	}
-	window_classes.classes=temp;
-	window_classes.array_size=new_size;
-}*/
-
-
-/*
-=============
-gui_RegisterWindowClass
-=============
-*/
-/*PEWAPI void gui_RegisterWindowClass(window_class *win_class)
-{
-	if(win_class)
-	{
-		if(window_classes.class_count>=window_classes.array_size)
-		{
-			gui_ResizeWindowClassArray(window_classes.array_size+10);
-		}
-		window_classes.classes[window_classes.class_count++]=*win_class;
-		return;
-	}
-}*/
-
-
-/*
-=============
-gui_GetWindowClassIndex
-=============
-*/
-/*PEWAPI int gui_GetWindowClassIndex(char *name)
-{
-	register int i;
-	register int c;
-	c=window_classes.class_count;
-	
-	for(i=0; i<c; i++)
-	{
-		if(!strcmp(name, window_classes.classes[i].class_name))
-		{
-			return i;
-		}
-	}
-	return -1;
-}*/
-
-
-/*PEWAPI gelem_t *gui_GetGelem(char *name)
-{
-	register int i;
-	register int c;
-	c=gelem_a.gelem_count;
-	
-	for(i=0; i<c; i++)
-	{
-		if(!strcmp(name, gelem_a.gelems[i].name))
-		{
-			return &gelem_a.gelems[i];
-		}
-	}
-	return NULL;
-}*/
-
-
-
-/*
-=============
-gui_CreateWindow
-=============
-*/
-/*PEWAPI int gui_CreateGelem(gelem_t *gelem)
-{
-	if(gelem)
-	{
-		if(gelem_a.gelem_count>=gelem_a.array_size)
-		{
-			gui_ResizeGelemArray(gelem_a.gelem_count+10);
-		}
-		gelem->bm_status=0;
-		gelem_a.gelems[gelem_a.gelem_count]=*gelem;
-		if(gelem_a.gelems[gelem_a.gelem_count].gelem_strt_fn) gelem_a.gelems[gelem_a.gelem_count].gelem_strt_fn(&gelem_a.gelems[gelem_a.gelem_count]);
-		gelem_a.gelem_count++;
-		return gelem_a.gelem_count-1;
-	}
-	return-1;
-}
-
-
-
-PEWAPI void gui_ProcessGelems()
-{
-	register int i;
-	register int c;
-	int j;
-	int k;
-	float half_width;
-	float half_height;
-	vec2_t rpos;
-	c=gelem_a.gelem_count;
-	//var_t *var;
-	for(i=0; i<c; i++)
-	{
-		rpos=gui_GetRelativeMouse(&gelem_a.gelems[i]);	
-		if(rpos.floats[0]>-1.0 && rpos.floats[0]<1.0)
-		{
-			if(rpos.floats[1]>-1.0 && rpos.floats[1]<1.0)
-			{
-				gelem_a.gelems[i].bm_status|=WINDOW_MOUSE_OVER;
-				
-				if(gelem_a.gelems[i].bm_flags&WINDOW_HAS_HEADER)
-				{
-					if(rpos.floats[1]>0.9)gelem_a.gelems[i].bm_status|=WINDOW_MOUSE_OVER_HEADER;
-					else gelem_a.gelems[i].bm_status&= ~WINDOW_MOUSE_OVER_HEADER;
-				}
-				
-			}else gelem_a.gelems[i].bm_status&= ~WINDOW_MOUSE_OVER;
-			
-		}else gelem_a.gelems[i].bm_status&= ~WINDOW_MOUSE_OVER;
-		
-		gelem_a.gelems[i].rmouse_x=rpos.floats[0];
-		gelem_a.gelems[i].rmouse_y=rpos.floats[1];
-		
-		if(gelem_a.gelems[i].gelem_proc_fn) gelem_a.gelems[i].gelem_proc_fn(&gelem_a.gelems[i]);
-	}
-}*/
-
-/*PEWAPI var_t *gui_CreateWindowVar(window_t *window, int var_type, char *var_name, var_t_value initial_value)
-{
-	if(window)
-	{
-		if(window->var_count>=window->max_vars)
-		{
-			gui_ExpandWindowVars(window, window->max_vars+10);
-		}
-		window->vars[window->var_count].name=var_name;
-		window->vars[window->var_count].type=var_type;
-		window->vars[window->var_count].value=initial_value;
-		window->var_count++;
-	}
-}*/
-
-
-/*PEWAPI void gui_ExpandWindowVars(window_t *window, int new_count)
-{
-	var_t *temp;
-	if(window)
-	{
-		temp=calloc(new_count, sizeof(var_t));
-		if(window->vars)
-		{
-			memcpy(temp, window->vars, sizeof(window->vars)*window->max_vars);
-			free(window->vars);
-		}
-		window->max_vars=new_count;
-		window->vars=temp;
-	}
-}*/
-
-
-/*PEWAPI var_t *gui_GetWindowVar(window_t *window, char *name)
-{
-	register int i;
-	register int c;
-	c=window->var_count;
-	for(i=0; i<c; i++)
-	{
-		if(!strcmp(name, window->vars[i].name))
-		{
-			return &window->vars[i];
-		}
-	}
-	return NULL;
-}*/
-
-
-/*PEWAPI vec2_t gui_GetRelativeMouse(gelem_t *gelem)
-{
-	vec2_t w_mouse_pos;
-	vec2_t s_mouse_pos=vec2(input.normalized_mouse_x, input.normalized_mouse_y);
-	vec2_t w_center=vec2(gelem->x, gelem->y);
-	w_mouse_pos=sub2(w_center, s_mouse_pos);
-	
-	w_mouse_pos.floats[0]*= -2.0/gelem->width;
-	w_mouse_pos.floats[1]*= -2.0/gelem->height;
-	
-	return w_mouse_pos;
-}
-
-
-PEWAPI vec2_t gui_GetAbsoluteMouse(gelem_t *gelem)
-{
-	vec2_t s_mouse_pos;
-	s_mouse_pos.floats[0]=gelem->x + gelem->rmouse_x*(gelem->width/2.0); 
-	s_mouse_pos.floats[1]=gelem->y + gelem->rmouse_y*(gelem->height/2.0);
-	return s_mouse_pos;
-}
-
-
-PEWAPI vec2_t gui_GetRelativePosition(gelem_t *gelem, vec2_t absolute_pos)
-{
-	vec2_t w_mouse_pos;
-	vec2_t w_center=vec2(gelem->x, gelem->y);
-	w_mouse_pos=sub2(w_center, absolute_pos);
-	
-	w_mouse_pos.floats[0]*= -2.0/gelem->width;
-	w_mouse_pos.floats[1]*= -2.0/gelem->height;
-	
-	return w_mouse_pos;
-}
-
-
-PEWAPI vec2_t gui_GetAbsolutePosition(gelem_t *gelem, vec2_t relative_pos)
-{
-	vec2_t s_mouse_pos;
-	s_mouse_pos.floats[0]=gelem->x + relative_pos.floats[0]*(gelem->width/2.0); 
-	s_mouse_pos.floats[1]=gelem->y + relative_pos.floats[1]*(gelem->height/2.0);
-	return s_mouse_pos;
-}
-
-
-PEWAPI void gui_SetWindowVisible(gelem_t *gelem)
-{
-	gelem->bm_status|=WINDOW_VISIBLE;
-}
-
-
-PEWAPI void gui_SetWindowInvisible(gelem_t *gelem)
-{
-	gelem->bm_status&= ~WINDOW_VISIBLE;
-}*/
-
-
-/*PEWAPI void gui_DrawChar(char ch, gelem_t *gelem, vec2_t pos, vec3_t color)
-{
-	vec2_t v=gui_GetAbsolutePosition(gelem, pos);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	
-	glUseProgram(0);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glColor3f(color.floats[0], color.floats[1], color.floats[2]);
-	glRasterPos3f(v.floats[0], v.floats[1], -0.11);
-	glBitmap(12, 20, 6, 10, 0, 0, (unsigned char *)font.chars[ch-32].start);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-}*/
-
-
-/*PEWAPI var_t_value f_value(float f)
-{
-	var_t_value r;
-	r.f_val=f;
-	return r;
-}*/
-
-/*PEWAPI var_t_value i_value(int i)
-{
-	var_t_value r;
-	r.i_val=i;
-	return r;
-}*/
-
-
-/*void winfn(window_t *window)
-{
-	var_t *timer=gui_GetWindowVar(window, "my_int");
-	vec2_t mpos;
-	timer->value.i_val++;
-	
-	if(window->bm_status&WINDOW_MOUSE_OVER)
-	{
-		window->alpha=fabs(window->rmouse_x);
-	}
-	
-	if(timer->value.i_val>60)
-	{
-		if(window->alpha<1.0) window->alpha=1.0;
-		else window->alpha=0.2;
-		timer->value.i_val=0;
-	}
-	
-	
-}*/
 
 
 #ifdef __cplusplus

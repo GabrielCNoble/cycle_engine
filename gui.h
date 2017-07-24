@@ -206,7 +206,13 @@ enum WIDGET_FLAGS
 												   			
 												   
 	WIDGET_LOCK_X_SCALE = 1 << 26,
-	WIDGET_LOCK_Y_SCALE = 1 << 27											   								   											   
+	WIDGET_LOCK_Y_SCALE = 1 << 27,
+	WIDGET_NO_BORDERS = 1 << 28,			/* this forces the engine to ignore when the mouse goes over headers and borders (to allow
+											   subwidgets to fit perfectly within widgets... */
+											   
+	WIDGET_DELETE = 1 << 29,										   
+												   
+												   											   								   											   
 };
 
 
@@ -262,6 +268,7 @@ enum OPTION_FLAGS
 {
 	OPTION_MOUSE_OVER = 1,
 	OPTION_SELECTED = 1 << 1,
+	OPTION_NESTLED_DROPDOWN,
 };
 
 enum DROP_DOWN_FLAGS
@@ -271,6 +278,9 @@ enum DROP_DOWN_FLAGS
 #define WIDGET_NO_TEXTURE -1
 #define WIDGET_BORDER_PIXEL_WIDTH 8
 #define WIDGET_HEADER_PIXEL_HEIGHT 12
+
+#define OPTION_HEIGHT 20.0
+#define EMPTY_DROP_DOWN_HEIGHT 10.0
 
 
 typedef struct
@@ -346,6 +356,7 @@ typedef struct widget_t
 	int sub_widgets_count;
 	swidget_t *sub_widgets;
 	swidget_t *last_added;
+	swidget_t *active_swidget;
 	char *name;
 	int bm_flags;
 	short type;
@@ -393,15 +404,18 @@ typedef struct
 {
 	char *name;
 	int bm_flags;
+	swidget_t *nested;							/* just a single drop down can be nested by option... */
 }woption_t;
 
 typedef struct
 {
 	swidget_t swidget;
-	int bm_flags;
-	int option_count;
-	int max_options;
-	int cur_option;
+	unsigned char bm_flags;
+	unsigned char option_count;
+	unsigned char max_options;
+	unsigned char cur_option;
+	void *data;
+	woption_t *active_option;
 	woption_t *options;
 	void (*dropdown_callback)(swidget_t *, void *, int);
 }wdropdown_t;
@@ -445,7 +459,15 @@ PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_but
 
 PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
-PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*dropdown_callback)(swidget_t *, void *, int));
+PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, void *data, void (*dropdown_callback)(swidget_t *, void *, int));
+
+PEWAPI void gui_AddOption(wdropdown_t *dropdown, char *name);
+
+PEWAPI wdropdown_t *gui_NestleDropDown(wdropdown_t *dropdown, int option_index, char *name, int bm_flags, int width, void *data, void (*dropdown_callback)(swidget_t *, void *, int));
+
+PEWAPI void gui_AddSeparator(wdropdown_t *dropdown, char *name);
+
+//PEWAPI widget_t *gui_AddNestedDropDown(wdropdown_t *dropdown, int option_index, float width);
 
 PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int));
 
@@ -453,9 +475,14 @@ PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name, int tab_flags);
 
 PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
+
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
-PEWAPI void gui_DeleteWidget(char *name);
+PEWAPI void gui_DeleteWidgetByName(char *name);
+
+PEWAPI void gui_DeleteWidget(widget_t *widget);
+
+PEWAPI void gui_MarkForDeletion(widget_t *widget);
 
 PEWAPI widget_t *gui_GetWidget(char *name);
 

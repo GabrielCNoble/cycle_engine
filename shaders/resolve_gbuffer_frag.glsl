@@ -402,10 +402,10 @@ void main()
 		
 			
 
-		/*if(intensity <= 0.0)
+		if(intensity <= 0.0)
 		{
 			discard;
-		}*/
+		}
 		
 		
 		/*else

@@ -315,6 +315,8 @@ PEWAPI entity_ptr entity_GetEntity(char *name);
 
 PEWAPI entity_def_t *entity_GetEntityDef(char *name);
 
+PEWAPI entity_def_list *entity_GetEntityDefList();
+
 PEWAPI armature_t *entity_GetEntityArmature(int entity_index);
 
 PEWAPI void entity_DestroyEntity(entity_ptr entity);

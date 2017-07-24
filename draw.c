@@ -4174,7 +4174,7 @@ PEWAPI void draw_EnableOutputToBackbuffer(int enable)
 	}
 }
 
-PEWAPI __stdcall void draw_DrawString(int font_index, int size, int x, int y, int line_length, vec3_t color, char *str, ...)
+PEWAPI void draw_DrawString(int font_index, int size, int x, int y, int line_length, vec3_t color, char *str, ...)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -4348,6 +4348,7 @@ PEWAPI void draw_DrawWidgets()
 	swidget_t *cswidget;
 	wbutton_t *button;
 	wtabbar_t *tabbar;
+	wdropdown_t *dropdown;
 	wtab_t *tab;
 	wvar_t *var;
 	
@@ -4375,6 +4376,7 @@ PEWAPI void draw_DrawWidgets()
 	float b;
 	float a;
 	float tab_label_width;
+	float option_height;
 	
 	//float scissor_x;
 	//float scissor_y;
@@ -4571,7 +4573,7 @@ PEWAPI void draw_DrawWidgets()
 			//if(stencil_val == 255) stencil_val--;
 			//draw_DrawString(ui_font, 16, 0, 0, 500, vec3(1.0, 1.0, 1.0), "test");
 			
-			_draw_tab_swidgets:
+			_draw_nested_swidgets:
 			
 			switch(cswidget->type)
 			{
@@ -4907,10 +4909,132 @@ PEWAPI void draw_DrawWidgets()
 							x += tabbar->swidget.x;
 							y += tabbar->swidget.y;
 							cswidget = tabbar->active_tab->swidgets;
-							goto _draw_tab_swidgets;
+							goto _draw_nested_swidgets;
 						}
 						
 					}
+					
+					
+				break;
+				
+				case WIDGET_DROP_DOWN:
+					
+					dropdown = (wdropdown_t *)cswidget;
+					
+					hw = dropdown->swidget.w / 2.0;
+					hh = dropdown->swidget.h / 2.0;
+					
+					
+					//glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+					//glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+					
+					//option_height = dropdown->swidget.h / (float)dropdown->option_count;
+					
+					x0 = dropdown->swidget.x + x - hw;
+					x1 = dropdown->swidget.x + x + hw;
+					y0 = dropdown->swidget.y + y - hh;
+					y1 = 0;
+					if(dropdown->bm_flags & DROP_DOWN_DROPPED)
+					{
+						if(dropdown->option_count)
+						{
+							for(i = 0; i < dropdown->option_count; i++)
+							{
+								if(dropdown->options[i].bm_flags & OPTION_MOUSE_OVER)
+								{
+									r = 0.5;
+									g = 0.5;
+									b = 0.5;
+									//glColor3f(0.5, 0.5, 0.5);
+								}
+								else
+								{
+									r = 0.4;
+									g = 0.4;
+									b = 0.4;
+									//glColor3f(0.4, 0.4, 0.4);
+								}
+								glColor3f(r, g, b);
+								//glDisable(GL_STENCIL_TEST);
+								
+								glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+								glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+								glRectf(x0, y0 - y1 - OPTION_HEIGHT, x1, y0 - y1);
+								
+								
+								
+								if(dropdown->options[i].nested)
+								{
+									glDisable(GL_STENCIL_TEST);
+									
+									if(dropdown->options[i].bm_flags & OPTION_MOUSE_OVER)
+									{
+										glColor3f(1.0, 1.0, 1.0);
+									}
+									else
+									{
+										glColor3f(r - 0.08, g - 0.08, b - 0.08);
+									}
+									
+									
+									//glColor3f(0.1, 0.1, 0.1);
+									
+									glBegin(GL_TRIANGLES);
+									glVertex3f(x1 - 10, y0 - y1 - 5, 0.0);
+									glVertex3f(x1 - 10, y0 - y1 - OPTION_HEIGHT + 5, 0.0);
+									glVertex3f(x1, y0 - y1 - OPTION_HEIGHT / 2.0, 0.0);
+									glEnd();
+									glColor3f(r, g, b);
+									glEnable(GL_STENCIL_TEST);
+								}
+								
+								
+								glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+								glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+								
+								draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y0 - y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->options[i].name);
+								y1 += OPTION_HEIGHT;
+								
+							}
+						}
+						glColor3f(0.35, 0.35, 0.35);
+					}
+					else
+					{
+						glColor3f(0.4, 0.4, 0.4);
+					}
+					
+					y1 = dropdown->swidget.y + y + hh;
+					
+					glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+					glStencilOp(GL_KEEP, GL_INCR, GL_INCR);			
+					glRectf(x0, y0, x1, y1);
+					
+					glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					
+					
+					if(dropdown->active_option)
+					{
+						draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->active_option->name);
+					}
+					
+					if(dropdown->options[dropdown->cur_option].nested && dropdown->bm_flags & DROP_DOWN_DROPPED)
+					{
+						stack_top++;
+						swidget_stack[stack_top] = cswidget;
+						//pos_stack[stack_top].x = x;
+						//pos_stack[stack_top].y = y;
+						stencil_stack[stack_top] = base_stencil;
+										
+						//x += dropdown->swidget.x;
+						//y += dropdown->swidget.y;
+						cswidget = dropdown->options[dropdown->cur_option].nested;
+						goto _draw_nested_swidgets;
+					}
+					
+					//glEnable(GL_STENCIL_TEST);
+					
 					
 					
 				break;

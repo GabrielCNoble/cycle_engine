@@ -70,11 +70,72 @@ entity_ptr e = {NULL, NULL, NULL, NULL};
 char *editor_state = "editing";
 
 pick_record_t r = {0, 0};
+pick_record_t cr = {0, 0};
 
+widget_t *menu0 = NULL;
+widget_t *info = NULL;
+widget_t *options = NULL;
+
+widget_t *add_to_world_menu = NULL;
 
 int max_records;
 int record_count;
 pick_record_t *selected_objects;
+
+
+
+void add_to_world_fn(swidget_t *swidget, void *data, int i)
+{
+	mat3_t id = mat3_t_id();
+	
+	if(i > 1)
+	{
+		entity_def_list *def_list = (entity_def_list *)data;
+		entity_def_t def0 = def_list->defs[i - 2];
+		entity_SpawnEntity("_spawn_", &def0, vec3(0.0, 0.0, 0.0), &id);
+	}
+	else
+	{
+		switch(i)
+		{
+			case 0:
+				light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 50.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+			break;
+			
+			case 1:
+				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(00.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+			break;
+		}
+	}
+
+}
+
+void add_light(swidget_t *swidget, void *data, int i)
+{
+	mat3_t id = mat3_t_id();
+	
+
+	switch(i)
+	{
+		case 0:
+			light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 50.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		break;
+			
+		case 1:
+			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+		break;	
+	}
+}
+
+void add_def(swidget_t *swidget, void *data, int i)
+{
+	mat3_t id = mat3_t_id();
+	entity_def_list *def_list = (entity_def_list *)data;
+	entity_def_t def0 = def_list->defs[i];
+	entity_SpawnEntity("_spawn_", &def0, vec3(0.0, 0.0, 0.0), &id);
+}
+
+
 
 void gmain(float delta_time)
 {
@@ -99,12 +160,25 @@ void gmain(float delta_time)
 	{
 		editor_state = "editing";
 		
-		if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+		if(input_GetKeyStatus(SDL_SCANCODE_SPACE) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
 		{
+			open_add_to_world_menu();
+		}
+		else if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+		{
+			close_add_to_world_menu();
+			
 			if(!(input.bm_mouse & MOUSE_OVER_WIDGET))
 			{
 				
-				check_3d_handle(handle_3d_mode);
+				//close_add_to_world_menu();
+				//handle_3d_bm = 0;
+				
+				if(selected_position)
+				{
+					check_3d_handle(handle_3d_mode);
+				}
+				
 				if(!handle_3d_bm)
 				{
 					r = scenegraph_Pick();	
@@ -115,6 +189,8 @@ void gmain(float delta_time)
 							selected_position = &e.position_data->world_position;
 							selected_orientation = &e.position_data->world_orientation;
 							selected_name = e.extra_data->name;
+							
+							cr = r;
 						break;
 						
 						case PICK_LIGHT:
@@ -122,15 +198,31 @@ void gmain(float delta_time)
 							selected_position = &l.position_data->world_position.vec3;
 							selected_orientation = &l.position_data->world_orientation;
 							selected_name = l.extra_data->name;
+							
+							cr = r;
 						break;
 					}
 				}
-
 			}
+			
+			//destroy_option_dropdown();
+			//close_add_to_world_menu();
+			
 		}
-		else if(input.bm_mouse & MOUSE_RIGHT_BUTTON_CLICKED)
+		/*else if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
+		{
+			create_option_dropdown();
+		}*/
+		else if(input.bm_mouse & MOUSE_MIDDLE_BUTTON_CLICKED)
 		{
 			ginput(delta_time);
+		}
+		else if(input_GetKeyStatus(SDL_SCANCODE_A) & KEY_JUST_PRESSED)
+		{
+			selected_position = NULL;
+			selected_orientation = NULL;
+			selected_name = NULL;
+			handle_3d_bm = 0;
 		}
 		
 		if(selected_position)
@@ -194,7 +286,7 @@ void gmain(float delta_time)
 						p.y /= f;
 						f = p.x * delta_x + p.y * delta_y;
 						
-						if(r.type == PICK_ENTITY)
+						if(cr.type == PICK_ENTITY)
 						{
 							entity_TranslateEntity(&e, v, f, 0);
 						}
@@ -235,7 +327,7 @@ void gmain(float delta_time)
 						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
 						if(p.z < 0.0) f = -f;
 						
-						if(r.type == PICK_ENTITY)
+						if(cr.type == PICK_ENTITY)
 						{
 							entity_RotateEntity(&e, v, -f * 0.5, 0);
 						}
@@ -257,7 +349,7 @@ void gmain(float delta_time)
 				handle_3d_bm = 0;
 			}
 			
-			if(r.type == PICK_ENTITY)
+			if(cr.type == PICK_ENTITY)
 			{
 				draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.3, 1.0), 4.0, 0);
 			}
@@ -570,6 +662,88 @@ void ginput(float delta_time)
 	
 }
 
+void create_option_dropdown()
+{
+	
+	if(options)
+	{
+		gui_DeleteWidget(options);
+	}
+	
+	options = gui_CreateWidget("options", WIDGET_TRANSLUCENT, input.normalized_mouse_x * renderer.width * 0.5 + 100, input.normalized_mouse_y * renderer.height * 0.5 - 130, 200, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	wdropdown_t *dd = gui_AddDropDown(options, "context_menu", DROP_DOWN_DROPPED, 0, 120, 190, NULL, NULL);
+	gui_AddOption(dd, "op0");
+	gui_AddOption(dd, "op1");
+	gui_AddOption(dd, "op2");
+	gui_AddOption(dd, "op3");
+}
+
+void destroy_option_dropdown()
+{
+	if(options)
+	{
+		gui_DeleteWidget(options);
+		options = NULL;
+	}
+	
+}
+
+void open_add_to_world_menu()
+{
+	int i;
+	if(add_to_world_menu)
+	{
+		//gui_MarkForDeletion(add_to_world_menu);
+		gui_DeleteWidget(add_to_world_menu);
+	}
+	
+	entity_def_list *def_list = entity_GetEntityDefList();
+	
+	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
+	gui_AddOption(dd, "Lights");
+	gui_AddOption(dd, "Defs");
+	gui_AddOption(dd, "Test");
+	wdropdown_t *lights = gui_NestleDropDown(dd, 0, "Lights", DROP_DOWN_DROPPED, 200, NULL, add_light);
+	
+	gui_AddOption(lights, "Point Light");
+	gui_AddOption(lights, "Spot Light");
+	
+	wdropdown_t *defs = gui_NestleDropDown(dd, 1, "Defs", DROP_DOWN_DROPPED, 200, def_list, add_def);
+	
+	for(i = 0; i < def_list->count; i++)
+	{
+		gui_AddOption(defs, def_list->defs[i].name);
+	}
+	
+	wdropdown_t *test = gui_NestleDropDown(dd, 2, "test0", DROP_DOWN_DROPPED, 200, NULL, NULL);
+	gui_AddOption(test, "op0");
+	gui_AddOption(test, "op1");
+	gui_AddOption(test, "op2");
+	gui_AddOption(test, "op3");
+	gui_AddOption(test, "op4");
+	gui_AddOption(test, "op5");
+	gui_AddOption(test, "op6");
+	gui_AddOption(test, "op7");
+	
+	wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED, 200, NULL, NULL);
+	gui_AddOption(test2, "op8");
+	gui_AddOption(test2, "op9");
+	gui_AddOption(test2, "op10");
+	gui_AddOption(test2, "op11");
+	gui_AddOption(test2, "op12");
+	gui_AddOption(test2, "op13");
+}
+
+void close_add_to_world_menu()
+{
+	if(add_to_world_menu)
+	{
+		//gui_DeleteWidget(add_to_world_menu);
+		gui_MarkForDeletion(add_to_world_menu);
+		add_to_world_menu = NULL;
+	}
+}
 
 void draw_3d_handle(int mode)
 {
@@ -596,7 +770,6 @@ void check_3d_handle(int mode)
 {
 	
 	handle_3d_bm = 0;
-	
 	int i;
 	int k;
 	int divs = 12;
@@ -850,6 +1023,24 @@ void tabbar_fn(swidget_t *sub_widget, void *data, int tab_index)
 	//printf("tab %d is active\n", tab_index);
 }
 
+void dropdown_fn(swidget_t *sub_widget, void *data, int option_index)
+{
+	switch(option_index)
+	{
+		case 0:
+			draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
+		break;
+		
+		case 1:
+			draw_SetRenderDrawMode(RENDER_DRAWMODE_FLAT);
+		break;
+		
+		case 2:
+			draw_SetRenderDrawMode(RENDER_DRAWMODE_WIREFRAME);
+		break;
+	}
+}
+
 void ginit()
 {
 	material_t ma;
@@ -868,6 +1059,10 @@ void ginit()
 	
 	init_editor();
 	
+	
+	input_RegisterKey(SDL_SCANCODE_A);
+	input_RegisterKey(SDL_SCANCODE_SPACE);
+	input_RegisterKey(SDL_SCANCODE_LSHIFT);
 	//init_3d_handle();
 	
 //	TwInit(TW_OPENGL, NULL);
@@ -1039,64 +1234,65 @@ void ginit()
 //	holesptr = model_GetMeshPtr("holes");
 	
 	
+	float y = -renderer.height * 0.5 + 15;
+	
+	menu0 = gui_CreateWidget("mode", WIDGET_NO_BORDERS, 0, y ,100, 30, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1);
+	wtabbar_t *tabbar = gui_AddTabBar(menu0, "mode_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 100, 30, tabbar_fn);
+	gui_AddTab(tabbar, "T", TAB_NO_SUB_WIDGETS);
+	gui_AddTab(tabbar, "R", TAB_NO_SUB_WIDGETS);
+	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
+	
+	
+	/*widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, 0, renderer.height / 2.0 - 130, 900, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	wdropdown_t *dd = gui_AddDropDown(ppp, "render_mode", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
+	gui_AddOption(dd, "op0");
+	gui_AddOption(dd, "op1");
+	gui_AddOption(dd, "op2");
+	gui_AddOption(dd, "op3");
+	
+	wdropdown_t *qq = gui_NestleDropDown(dd, 0, "nestled test", DROP_DOWN_DROPPED, 200, NULL, NULL);
+	gui_AddOption(qq, "op4");
+	gui_AddOption(qq, "op5");
+	gui_AddOption(qq, "op6");
+	gui_AddOption(qq, "op7");
+	gui_AddOption(qq, "op8");
+	gui_AddOption(qq, "op9");
+	gui_AddOption(qq, "op10");
+	gui_AddOption(qq, "op11");*/
 	
 	
 	
-	widget_t *w = gui_CreateWidget("test0", WIDGET_TRANSLUCENT, renderer.width / 2.0 - 350 / 2.0, 0.0, 350, renderer.height, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(w, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.height * 0.5 - 20, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
-	gui_AddButton(w, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 40, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
-	gui_AddButton(w, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 60, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
-	gui_AddButton(w, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, renderer.height * 0.5 - 80, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
+	
+	/*gui_AddOption(dd, "name3");
+	gui_AddOption(dd, "name4");
+	gui_AddOption(dd, "name5");
+	gui_AddOption(dd, "name6");
+	gui_AddOption(dd, "name7");
+	gui_AddOption(dd, "name8");
+	gui_AddOption(dd, "name9");
+	gui_AddOption(dd, "name10");
+	gui_AddOption(dd, "name11");*/
 	
 	
-	gui_AddVar(w, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 100, 330, 15.0, &draw_calls);
-	//gui_AddVar(w, "Texture binds", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, 0, 290.0, 15.0, &texture_binds);
-	gui_AddVar(w, "Shader swaps", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 120, 330, 15.0, &shader_swaps);
+	/*menu0 = gui_CreateWidget("test0", WIDGET_TRANSLUCENT, renderer.width / 2.0 - 350 / 2.0, 0.0, 350, renderer.height, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
+	gui_AddButton(menu0, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.height * 0.5 - 20, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
+	gui_AddButton(menu0, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 40, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
+	gui_AddButton(menu0, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 60, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
+	gui_AddButton(menu0, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, renderer.height * 0.5 - 80, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
 	
-	gui_AddVar(w, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 140, 330, 15.0, &selected_name);
-	
-	gui_AddVar(w, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, renderer.height * 0.5 - 160, 330, 15.0, &selected_pos);
-	
-	gui_AddVar(w, "Engine state", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 180, 330, 15.0, &editor_state);
-	//gui_AddVar(w, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 290.0, 60.0, &selected_rot);
-	
-	//w = gui_CreateWidget("handle mode", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -400.0, -200.0, 320, 240, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	//gui_AddButton(w, "Translation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_TRANSLATION, set_handle_mode);
-	//gui_AddButton(w, "Rotation", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0, (void *)HANDLE_3D_ROTATION, set_handle_mode);
-	
-	wtabbar_t *tabbar = gui_AddTabBar(w, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, renderer.height * 0.5 - 200, 330, 20.0, tabbar_fn);
+	gui_AddVar(menu0, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 100, 330, 15.0, &draw_calls);
+	gui_AddVar(menu0, "Shader swaps", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 120, 330, 15.0, &shader_swaps);
+	gui_AddVar(menu0, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 140, 330, 15.0, &selected_name);
+	gui_AddVar(menu0, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, renderer.height * 0.5 - 160, 330, 15.0, &selected_pos);
+	gui_AddVar(menu0, "Engine state", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 180, 330, 15.0, &editor_state);
+	wtabbar_t *tabbar = gui_AddTabBar(menu0, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, renderer.height * 0.5 - 200, 330, 20.0, tabbar_fn);
 	gui_AddTab(tabbar, "Translation", TAB_NO_SUB_WIDGETS);
 	int tbb = gui_AddTab(tabbar, "Rotation", 0);
-	//gui_AddTab(tabbar, "Test", TAB_NO_SUB_WIDGETS);
 	
-	gui_AddVarToTab(tabbar, tbb, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 330, 60.0, &selected_rot);
+	gui_AddVarToTab(tabbar, tbb, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 330, 60.0, &selected_rot);*/
+
 	
-	//gui_AddTab(tabbar, "tab2");
-	//gui_AddTab(tabbar, "tab3");
-	//gui_AddTab(tabbar, "tab4");
-	//w = gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, 50.0, -2.0, 320, 240, 0.8, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	//gui_AddButton(w, "button0", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 0, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
-	//gui_AddButton(w, "button1", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, -20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
-	//gui_AddButton(w, "button2", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, 20, 290.0, 15.0, 1.0, 1.0, 1.0, 1.0);
-	//gui_CreateWidget("test1", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT, 0.0, 0.0, 320, 240, 0.5, 0.3, 0.2, 0.7, WIDGET_NO_TEXTURE, 0);
-	
-	//gui_CreateWidget("test2", WIDGET_HEADER|WIDGET_GRABBABLE|WIDGET_MOVABLE|WIDGET_TRANSLUCENT|WIDGET_HIGHTLIGHT_BORDERS, -10.0, 0.0, 640.0, 240.0, 0.5, 0.5, 1.0, 1.0, WIDGET_NO_TEXTURE, 0);
-	//gui_AddSubWidget(test, 0, WIDGET_BUTTON, "test_button", -0.8, 0.0, 0.5, 0.3, 0.0, 0.0, 0.5, 0.0, 0.0, 0.9, texture_GetTextureID("pew"), test, (void *)gui_test_CloseWidget);
-	//gui_AddSubWidget(test, 0, WIDGET_BUTTON, "console_button", 0.8, 0.0, 0.5, 0.3, 0.0, 0.0, 0.0, 0.5, 0.0, 1.0, WIDGET_NO_TEXTURE, test, (void *)gui_test_CloseConsole);
-	//gui_AddSubWidget(test, 0, WIDGET_VERTICAL_SCROLLER, "test_vertical_scroller", 1.0, 0.0, 0.0, 1.0, 0.5, -0.5, 0.2, 0.2, 0.2, 1.0, WIDGET_NO_TEXTURE, test, NULL);
-	
-	
-	//gui_AddSubWidget(serious_test, 0, WIDGET_BUTTON, "toggle volumetric lights", -0.5, -0.2, 0.3, 0.3, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, WIDGET_NO_TEXTURE, serious_test, (void *)gui_test_ToggleVolumetricLights);
-	//gui_AddSubWidget(serious_test, 0, WIDGET_BUTTON, "toggle shadows", 0.0, -0.2, 0.3, 0.3, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, WIDGET_NO_TEXTURE, serious_test, (void *)gui_test_ToggleShadows);
-	//gui_AddSubWidget(serious_test, 0, WIDGET_BUTTON, "toggle bloom", 0.5, -0.2, 0.3, 0.3, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, WIDGET_NO_TEXTURE, serious_test, (void *)gui_test_ToggleBloom);
-	
-	
-/*	material_SetMaterialDiffuseColor(&ma, 1.0, 1.0, 1.0 , 1.0);
-	
-	ma.diff_mult.r=1;
-	ma.diff_mult.g=1;
-	ma.diff_mult.b=1;
-	ma.diff_mult.a=1;*/
+
 	
 	
 	
@@ -1118,7 +1314,7 @@ void ginit()
 	material_CreateMaterial("red", 0.5, 0.0, vec4(1.0, 0.0, 0.0, 1.0), 0.0, 0, NULL);
 	material_CreateMaterial("green", 0.5, 0.0, vec4(0.0, 1.0, 0.0, 1.0), 0.0, 0, NULL);
 	material_CreateMaterial("blue", 0.5, 0.0, vec4(0.0, 0.0, 1.0, 1.0), 0.0, 0, NULL);
-	material_CreateMaterial("white", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, 0, NULL);
+	material_CreateMaterial("white", 0.9, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, 0, NULL);
 	
 	//material_CreateMaterial("green", 0.5, 0.0, vec4(0.0, 1.0, 0.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_HeightTexture, &tif);
 	
@@ -1223,7 +1419,7 @@ void ginit()
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("cobble_stone"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("white"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("wall", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("tile"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("cieling", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
@@ -1256,11 +1452,11 @@ void ginit()
 	def0 = entity_GetEntityDef("plane");
 	entity_SpawnEntity("plane", def0, vec3(0.0, -3.0, 0.0), &id);
 	
-	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 1.0, 1);
-	entity_SpawnEntity("plane", def0, vec3(0.0, 3.0, 0.0), &id);
+	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 1.0, 1);
+	//entity_SpawnEntity("plane", def0, vec3(0.0, 3.0, 0.0), &id);
 	
-	def0 = entity_GetEntityDef("cube");
-	id = mat3_t_id();
+	//def0 = entity_GetEntityDef("cube");
+	//id = mat3_t_id();
 	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
 	//entity_SpawnEntity("cube", def0, vec3(0.0, -5.0, 0.0), &id);
 	/*mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.5, 1);
@@ -1283,7 +1479,7 @@ void ginit()
 	//def0 = entity_GetEntityDef("cargo");
 	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);
 	
-	def2 = entity_GetEntityDef("ico_tufted_leather");
+	/*def2 = entity_GetEntityDef("ico_tufted_leather");
 	entity_SpawnEntity("ico_tufted_leather", def2, vec3(0.0, 0.0, 6.0), &id);
 	
 	def0 = entity_GetEntityDef("ico_brushed_metal");
@@ -1332,7 +1528,7 @@ void ginit()
 
 
 	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
-	def2 = entity_GetEntityDef("pole");
+	def2 = entity_GetEntityDef("pole");*/
 	//entity_SpawnEntity("pole", def2, vec3(8.0, -8.0, 6.0), &id);
 	
 	/*mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), -0.5, 1);
@@ -1346,11 +1542,11 @@ void ginit()
 	{	
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
-		light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
-		light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
-		light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		//light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		//light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+	//	light_CreatePointLight("lightwow2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spot2", LIGHT_GENERATE_SHADOWS, vec4(10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(-10.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);

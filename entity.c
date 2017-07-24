@@ -778,6 +778,11 @@ PEWAPI entity_def_t *entity_GetEntityDef(char *name)
 	return NULL;
 }
 
+PEWAPI entity_def_list *entity_GetEntityDefList()
+{
+	return &entity_defs;
+}
+
 PEWAPI armature_t *entity_GetEntityArmature(int entity_index)
 {
 	if(entity_index > -1)
