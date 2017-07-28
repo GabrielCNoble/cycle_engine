@@ -4,5 +4,6 @@
 
 void main()
 {
-    gl_FragColor = vec4(1.0);
+	vec3 light_color = sysLightParams[0].sysLightColor;
+    gl_FragColor = vec4(light_color, 1.0);
 }

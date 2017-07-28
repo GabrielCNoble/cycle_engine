@@ -2,12 +2,11 @@
 # Material Count: 1
 
 newmtl Cargo01
-Ns 92.156863
+Ns 578.431373
 Ka 0.000000 0.000000 0.000000
 Kd 0.512000 0.512000 0.512000
-Ks 0.000000 0.000000 0.000000
+Ks 0.055344 0.055344 0.055344
 Ni 1.550000
 d 1.000000
 illum 2
 map_Kd C:\Users\Noble\Documents\Props\Cargo_container_01\Cargo01_D.tga
-map_Bump C:\\Users\\Noble\\Documents\\Props\\Cargo_container_01\\Cargo01_N.tga

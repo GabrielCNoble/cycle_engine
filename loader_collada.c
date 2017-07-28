@@ -10,7 +10,7 @@
 #include "console.h"
 #include "tinyxml2.h"
 #include "file.h"
-#include "scene.h"
+//#include "scene.h"
 #include "armature.h"
 
 extern int mesh_path_len;
@@ -702,6 +702,8 @@ void resolve(visitor *v, float **v_data, float **n_data, float **t_data, float *
 	}
 }
 
+#if 0
+
 int build_armature(aiNode *root, aiBone **bone, int bone_count)
 {
 	int i;
@@ -724,7 +726,6 @@ int build_armature(aiNode *root, aiBone **bone, int bone_count)
 	char new_root[64];
 	q = root;
 	children[stack_top] = 0;
-	//while(q)
 	
 	
 	c = bone_count;
@@ -840,7 +841,10 @@ int build_armature(aiNode *root, aiBone **bone, int bone_count)
 	return -1;
 }
 
+#endif
 
+
+#if 0
 PEWAPI mesh_t loader_LoadCollada(char *file_name)
 {
 	struct aiScene *s;// = (aiScene*)aiImportFile(file_name, 0);
@@ -1058,6 +1062,8 @@ PEWAPI mesh_t loader_LoadCollada(char *file_name)
 	return mesh;
 }
 
+
+#endif
 
 
 

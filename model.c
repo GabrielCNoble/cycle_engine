@@ -705,9 +705,9 @@ PEWAPI void model_LoadModel(char *file_name, char *name)
 			m = loader_LoadWavefront(file_name);
 		break;
 		
-		case COLLADA:
+		/*case COLLADA:
 			m = loader_LoadCollada(file_name);
-		break;
+		break;*/
 	}
 		
 

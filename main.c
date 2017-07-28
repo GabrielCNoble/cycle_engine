@@ -1133,6 +1133,7 @@ void ginit()
 //	model_LoadModel("pew_plane.obj", "pew_plane");
 	model_LoadModel("BigPlane.obj", "plane");
 	model_LoadModel("Cargo_container_01.obj", "cargo");
+	model_LoadModel("Vending_Machine_2.obj", "vending_machine");
 	//model_LoadModel("stairs.obj", "stairs");
 	//model_LoadModel("plat2.obj", "plat2");
 
@@ -1190,6 +1191,9 @@ void ginit()
 	texture_LoadTexture("Cargo01_D.png", "cargo_diffuse", 0);
 	texture_LoadTexture("Cargo01_N.png", "cargo_normal", 0);
 	texture_LoadTexture("Cargo01_H.png", "cargo_height", 0);
+	
+	texture_LoadTexture("Vending_Machine_D.tga", "vending_machine_diffuse", 0);
+	texture_LoadTexture("Vending_Machine_N.tga", "vending_machine_normal", 0);
 	//texture_LoadTexture("harsh_metalness.png", "oakfloor_mettalic", 0);
 	//texture_LoadTexture("oakfloor_Height.png", "oakfloor_height", 0);
 	
@@ -1394,6 +1398,10 @@ void ginit()
 	tif.heig_tex = (short)texture_GetTextureIndex("cargo_height");
 	material_CreateMaterial("cargo", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
 	
+	tif.diff_tex = (short)texture_GetTextureIndex("vending_machine_diffuse");
+	tif.norm_tex = (short)texture_GetTextureIndex("vending_machine_normal");
+	material_CreateMaterial("vending_machine", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
+	
 	/*tif.diff_tex = (short)texture_GetTextureIndex("brick_d");
 	tif.norm_tex = (short)texture_GetTextureIndex("brick_n");
 	
@@ -1437,6 +1445,7 @@ void ginit()
 	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	
 	entity_CreateEntityDef("cargo", 0, material_GetMaterialIndex("cargo"), -1, model_GetMeshPtr("cargo"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("vending_machine", 0, material_GetMaterialIndex("vending_machine"), -1, model_GetMeshPtr("vending_machine"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);

@@ -26,5 +26,5 @@ void main()
 	//delta = vec2(position.x - last_position.x, position.y - last_position.y);
     normal=gl_NormalMatrix*vNormal.xyz;
     tangent = gl_NormalMatrix * vTangent.xyz;
-    UV = vTexCoord;
+    UV = vTexCoord - vec2(0.0, 0.5);
 }

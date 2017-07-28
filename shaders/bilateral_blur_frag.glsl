@@ -13,18 +13,18 @@ uniform float sysZFar;
 
 float bilateralBlendWeight(float centerDepth, float sampleDepth)
 {
-#if 1
+//#if 1
     float bilateralStrenght = 1000.0;
     float weight = 1.0/ (bilateralStrenght*abs(centerDepth-sampleDepth)+1.0);
     return weight;
-#else
+//#else
     // From LotF
-    #define BLUR_DEPTH_FALLOFF 100.0
-    float depthDiff = abs ( sampleDepth - centerDepth );
-    float r2 = BLUR_DEPTH_FALLOFF * depthDiff;
-    float w = exp ( -r2*r2 );
-    return w;
-#endif
+//    #define BLUR_DEPTH_FALLOFF 100.0
+//    float depthDiff = abs ( sampleDepth - centerDepth );
+//    float r2 = BLUR_DEPTH_FALLOFF * depthDiff;
+//    float w = exp ( -r2*r2 );
+//    return w;
+//#endif
 }
 
 

@@ -71,6 +71,8 @@ int shader_AddDefine(char *shader_str, define_t **root, int *cur_index);
 
 int shader_CheckDefine(define_t *root, char *shader_str, int *cur_index);
 
+int shader_TestDefine(define_t *defines, char *define);
+
 int shader_FindEndif(char *shader_str, int str_len, int cur_index);
 
 cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned int cur_index);

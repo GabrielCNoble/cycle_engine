@@ -118,7 +118,7 @@ enum SHADER_FLAGS
 #define MATERIAL_PARAMS_FIELDS 5
 
 #define LIGHT_PARAMS_BINDING 1
-#define LIGHT_PARAMS_FIELDS 5
+#define LIGHT_PARAMS_FIELDS 9
 
 
 
@@ -174,7 +174,9 @@ typedef struct cond_t
 {
 	int nested_count;
 	int max_nested;
-	struct cond_t **nested;
+	//struct cond_t **nested;
+	struct cond_t *nested;
+	struct cond_t *last_nested;
 	struct cond_t *parent_cond;
 	struct cond_t *next_cond;
 	struct cond_t *last;

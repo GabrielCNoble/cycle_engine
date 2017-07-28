@@ -34,18 +34,28 @@ static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "s
 																			  "sysMaterialFlags"};
 static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];	
 static int material_params_uniform_types[MATERIAL_PARAMS_FIELDS];
-int material_params_uniform_buffer_size;																		  
+int material_params_uniform_buffer_size;
+
+int min_uniform_block_size;																		  
 																			  																		  
 													
 													
 
-static char *light_params_uniform_block = {"sysLightParams"};
+static char *light_params_uniform_block = {"sysLightParamsUniformBlock"};
+static char *light_params_uniform_name = {"sysLightParams"};
 
-static char *light_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = {"sysLightPosition",
-																		  "sysLightRadius",
-																		  "sysLightLinearAttenuation",
-																		  "sysLightQuadraticAttenuation",
-																		  "sysLightType"};
+static char *light_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = {
+																		  "sysLightParams[0].sysLightOrientation",
+																		  "sysLightParams[0].sysLightPosition",
+																		  "sysLightParams[0].sysLightColor",
+																		  "sysLightParams[0].sysLightShadowMapOrigin",
+																		  "sysLightParams[0].sysLightRadius",
+																		  "sysLightParams[0].sysLightLinearAttenuation",
+																		  "sysLightParams[0].sysLightQuadraticAttenuation",
+																		  "sysLightParams[0].sysLightType",
+																		  "sysLightParams[0].sysLightShadowMapSize"};
+																		  
+																		  
 static int light_params_uniform_offsets[LIGHT_PARAMS_FIELDS];	
 static int light_params_uniform_types[LIGHT_PARAMS_FIELDS];
 int light_params_uniform_buffer_size;	
@@ -176,6 +186,7 @@ PEWAPI void shader_Init(char *path)
 	shader_ResizeShaderArray(16);
 	shader_t *init_shader;
 	int i;
+	int s;
 	int init_shader_index;
 	unsigned int indexes[MATERIAL_PARAMS_FIELDS + LIGHT_PARAMS_FIELDS];
 	
@@ -183,9 +194,6 @@ PEWAPI void shader_Init(char *path)
 	shader_path_len = strlen(shader_path);
 	
 	
-	
-	/* TODO: add support for #else directives to
-	the shader pre-processor */
 	if((glBindBufferBase))
 	{
 		shader_AddGlobalDefine("_GL3A_");
@@ -195,7 +203,7 @@ PEWAPI void shader_Init(char *path)
 		shader_AddGlobalDefine("_GL2B_");
 	}
 	
-	
+	//glGetIntegerv(GL_UNIFORM_BU)
 	
 	/* got to find a less ugly way to do this... */
 	init_shader_index = shader_LoadShader("init_vert.glsl", "init_frag.glsl", "init");
@@ -205,12 +213,29 @@ PEWAPI void shader_Init(char *path)
 		exit(-4);
 	}
 	if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
-	{
-		//glUniformBlockBinding(init_shader->shader_ID, i, MATERIAL_PARAMS_BINDING);
+	{	
+		
 		glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
 		glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &material_params_uniform_buffer_size);
 		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
 		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
+		
+		/*printf("offsets:\n");
+		for(i = 0; i < 5; i++)
+		{
+			printf("	-->%d\n", material_params_uniform_offsets[i]);
+		}*/
+		
+		//glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &i);
+		//printf("-->%d\n", i);
+		
+		//glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &i);
+		//printf("-->%d\n", i);
+		
+		//glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &i);
+		//printf("-->%d\n", i);
+
+		//printf("-->%d\n", material_params_uniform_buffer_size);
 	}
 	else
 	{
@@ -218,32 +243,61 @@ PEWAPI void shader_Init(char *path)
 		printf("init shader appears to have problems! aborting...\n");
 		exit(-5);
 	}
-	if((i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block)) != GL_INVALID_INDEX)
+	
+	if(glBindBufferBase)
 	{
-		glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
-		glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &light_params_uniform_buffer_size);
-		glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
-		glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
+		if((i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block)) != GL_INVALID_INDEX)
+		{
+			glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &light_params_uniform_buffer_size);
+		}
+		else
+		{
+			/* something wrong with the init shader... */
+			printf("init shader appears to have problems! aborting...\n");
+			exit(-5);
+		}
 	}
 	else
 	{
-		/* something wrong with the init shader... */
-		printf("init shader appears to have problems! aborting...\n");
-		exit(-5);
+		//if((i = gl ))
 	}
+	
+	
+	//glGetUniformIndices()
+	
+	glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
+	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
+	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
+	
+	printf("offsets:\n");
+	for(i = 0; i < 8; i++)
+	{
+		printf("	-->%d\n", light_params_uniform_offsets[i]);
+	}
+	
+	
+	
+	//else
+	//{
+	//	
+	//}
+	
+	
 	
 	shader_DeleteShaderByIndex(init_shader_index);
 	
 	
 	screen_quad_shader_index=shader_LoadShader("screen_quad_vert.glsl", "screen_quad_frag.glsl", "screen_quad");
-	//z_prepass_shader_index = shader_LoadShader("z_prepass_vert.txt", "z_prepass_frag.txt", "z_prepass");
 	composite_shader_index=shader_LoadShader("composite_vert.glsl", "composite_frag.glsl", "composite");
 	
 	
 	lit_shader_index = shader_LoadShader("lit_vert.glsl", "lit_frag.glsl", "lit");
 	draw_translucent_shader_index = shader_LoadShader("draw_translucent_vert.glsl", "draw_translucent_frag.glsl", "draw_translucent");
 	blend_translucent_shader_index = shader_LoadShader("resolve_translucent_vert.glsl", "resolve_translucent_frag.glsl", "resolve_translucent");
+	
+	
 	deferred_process_shader_index=shader_LoadShader("resolve_gbuffer_vert.glsl", "resolve_gbuffer_frag.glsl", "resolve_gbuffer");
+	
 	wireframe_shader_index=shader_LoadShader("wireframe_vert.glsl", "wireframe_frag.glsl", "wireframe");
 	flat_shader_index=shader_LoadShader("flat_vert.glsl", "flat_frag.glsl", "flat");
 	smap_shader_index=shader_LoadShader("smap_vert.glsl", "smap_frag.glsl", "smap");
@@ -262,6 +316,7 @@ PEWAPI void shader_Init(char *path)
 	
 	stencil_lights_shader = shader_LoadShader("stencil_lights_vert.glsl", "stencil_lights_frag.glsl", "stencil_lights");
 	
+	printf("here\n");
 	
 	//shader_LoadShader("skinner_simple_vert.txt", "skinner_simple_frag.txt", "skinner");
 	
@@ -955,78 +1010,12 @@ int shader_Preprocess(char **shader_str, int *flags)
 				else if(s[i] == 'i' && s[i + 1] == 'f')
 				{
 					i += 2;
-					j = shader_FindEndif(s, c, m);
-					//h = shader_CreateCondTree(s, c, m);
-					
-					if(
-					   s[i] 	== 'n' && 
-					   s[i + 1] == 'd' && 
-					   s[i + 2] == 'e' && 
-					   s[i + 3] == 'f'
-					  )
-					{
-						//printf("z0\n");
-						if(j < 0)
-						{
-							printf("error! #ifndef without a #endif! line: %d\n", line);
-							//shader_ReleaseDefines(r);
-							//return 1;
-							rtrn = 1;
-							goto _gtfo_preprocess;
-						}
+					h = shader_CreateCondTree(s, c, m);
+					shader_SolveCondTree(s, c, m, h, r);
 						
-						i += 4;
-						if(shader_CheckDefine(r, s, &i))
-						{
-							shader_EraseInBetweenDirectives(s, m, j);
-						}
-						else
-						{
-							shader_EraseDirectivesOnly(s, m, j);
-						}
-						
-						i = 0;
-						line = 0;
-						*shader_str = s;
-						//printf("z1\n");
-						
-					}
-					
-					else if(
-							s[i]     == 'd' && 
-					   		s[i + 1] == 'e' && 
-					   		s[i + 2] == 'f'
-					   	   )
-					{
-						//printf("t0\n");
-						if(j < 0)
-						{
-							printf("error! #ifdef without a #endif! line: %d\n", line);
-							//shader_ReleaseDefines(r);
-							//return 1;
-							rtrn = 1;
-							goto _gtfo_preprocess;
-						}
-						
-						i += 3;
-						if(!shader_CheckDefine(r, s, &i))
-						{
-							shader_EraseInBetweenDirectives(s, m, j);
-						}
-						else
-						{
-							shader_EraseDirectivesOnly(s, m, j);
-						}
-						
-						i = 0;
-						line = 0;
-						*shader_str = s;
-						//printf("t1\n");
-					}
-					else
-					{
-						
-					}   	   
+					i = 0;
+					line = 0;
+					*shader_str = s;
 				}
 				
 				if(s[i] 	== 'p' &&
@@ -1049,7 +1038,6 @@ int shader_Preprocess(char **shader_str, int *flags)
 				{
 					i += 2;
 					while(s[i] != '\n' && s[i] != '\0') i++;
-					//shader_RemoveCommented(s, j, i);
 				}
 				else if(s[i + 1] == '*')
 				{
@@ -1065,7 +1053,10 @@ int shader_Preprocess(char **shader_str, int *flags)
 						else if(s[i] == '\n') line++;
 						i++;
 					}
-					//shader_RemoveCommented(s, j, i);
+				}
+				else
+				{
+					break;
 				}
 				
 				shader_RemoveCommented(s, j, i);
@@ -1344,6 +1335,36 @@ int shader_CheckDefine(define_t *root, char *shader_str, int *cur_index)
 	return 0;
 }
 
+int shader_TestDefine(define_t *defines, char *define)
+{
+	define_t *t = defines;
+	
+	while(t)
+	{
+		if(!strcmp(t->str, define))
+		{
+			return 1;
+		}
+		
+		t = t->next;
+		
+	}
+	
+	t = global_defines;
+	
+	while(t)
+	{
+		if(!strcmp(t->str, define))
+		{
+			return 1;
+		}
+		
+		t = t->next;
+	}
+	
+	return 0;
+}
+
 int shader_FindEndif(char *shader_str, int str_len, int cur_index)
 {
 	int i = cur_index;
@@ -1400,10 +1421,11 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 {
 	cond_t *root = NULL;
 	cond_t *q;
-	cond_t *cur;
+	cond_t *cur = (cond_t *)0xffffffff;
 	cond_t **t;
 	cond_t *p;
 	unsigned int i = cur_index;
+	unsigned int j;
 	unsigned int pos;
 	int c = str_len;
 	char *s = shader_str;
@@ -1425,11 +1447,10 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				i += 2;
 				level++;
 				
-				
 				q = (cond_t *)malloc(sizeof(cond_t));
 				q->max_nested = 0;
-				//q->nested = (cond_t **)malloc(sizeof(cond_t *) * 8);
 				q->nested = NULL;
+				q->last_nested = NULL;
 				q->nested_count = 0;
 				q->next_cond = NULL;
 				q->last = q;
@@ -1438,7 +1459,8 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				if((s[i] 	 == 'n' && 
 					s[i + 1] == 'd' && 
 					s[i + 2] == 'e' && 
-					s[i + 3] == 'f')
+					s[i + 3] == 'f' &&
+					s[i + 4] == ' ')
 				  )
 				{
 					q->type = COND_IFNDEF;
@@ -1447,10 +1469,15 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 									   
 				else if(s[i] 	 == 'd' && 
 						s[i + 1] == 'e' && 
-						s[i + 2] == 'f')
+						s[i + 2] == 'f' &&
+						s[i + 3] == ' ')
 				{
 					q->type = COND_IFDEF;
 					i += 3;
+				}
+				else
+				{
+					q->type = COND_IF;
 				}
 				
 				if(!root)
@@ -1461,20 +1488,17 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				}
 				else
 				{
-					
-					if(cur->nested_count >= cur->max_nested)
+					if(!cur->nested)
 					{
-						t = (cond_t **)malloc(sizeof(cond_t *) * cur->max_nested + 8);
-						memcpy(t, cur->nested, sizeof(cond_t **) * cur->max_nested);
-						if(cur->nested)
-						{
-							free(cur->nested);	
-						}
-						cur->nested = t;
-						cur->max_nested += 8;
+						cur->nested = q;
+					}
+					else
+					{
+						cur->last_nested->next_cond = q;
 					}
 					
-					cur->nested[cur->nested_count++] = q;
+					cur->last_nested = q;
+					
 					q->parent_cond = cur;
 					cur = q;
 				}
@@ -1502,7 +1526,8 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				if(s[i] 	== 'e' &&
 				   s[i + 1] == 'l' &&
 				   s[i + 2] == 'i' &&
-				   s[i + 3] == 'f')
+				   s[i + 3] == 'f' &&
+				   s[i + 4] == ' ')
 				{
 					i += 4;
 					
@@ -1511,7 +1536,7 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 					if(s[i] == '!')
 					{
 						while(s[i] == ' ') i++;
-						type = COND_ELIF_NDEF;
+						q->type = COND_ELIF_NDEF;
 					}
 					
 					if(s[i] 	== 'd' &&
@@ -1520,17 +1545,19 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 					   s[i + 3] == 'i' &&
 					   s[i + 4] == 'n' &&
 					   s[i + 5] == 'e' &&
-					   s[i + 6] == 'd')
+					   s[i + 6] == 'd' &&
+					   s[i + 7] == ' ')
 					{
 						i += 7;
 						if(!type)
 						{
-							type = COND_ELIF_DEF;
+							q->type = COND_ELIF_DEF;
 						}
+
 					}
 					else
 					{
-						type = COND_ELIF;	
+						q->type = COND_ELIF;	
 					}
 					
 					p = cur;
@@ -1540,7 +1567,9 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				else if(s[i] 	 == 'e' &&
 						s[i + 1] == 'l' &&
 						s[i + 2] == 's' &&
-						s[i + 3] == 'e')
+						s[i + 3] == 'e' &&
+					   (s[i + 4] == ' ' || 
+					    s[i + 4] == '\n'))
 				{
 					i += 4;
 					type = COND_ELSE;
@@ -1551,7 +1580,10 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 						s[i + 1] == 'n' &&
 						s[i + 2] == 'd' &&
 						s[i + 3] == 'i' &&
-						s[i + 4] == 'f')
+						s[i + 4] == 'f' &&
+					   (s[i + 5] == ' ' || 
+					    s[i + 5] == '\n'|| 
+						s[i + 5] == '\0'))
 				{
 					i += 5;
 					level--;
@@ -1561,23 +1593,31 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 				
 				else
 				{
-					continue;
+					continue;	
 				}
 				
 				q = (cond_t *)malloc(sizeof(cond_t));
 				q->type = type;
 				q->nested = NULL;
+				q->last_nested = NULL;
+				q->nested_count = 0;
 				q->last = NULL;
 				q->parent_cond = cur;
 				q->next_cond = NULL;
 				q->pos = pos;
+				q->exp = NULL;
 					
 				cur->last->next_cond = q;
 				cur->last = q;
 				
+				if(cur->parent_cond)
+				{
+					cur->parent_cond->last_nested = q;
+				}
+				
 				cur = p;
 				
-				if(type != COND_ENDIF)
+				if(type != COND_ENDIF && type != COND_ELSE)
 				{
 					while(s[i] == ' ') i++;
 				
@@ -1595,13 +1635,42 @@ cond_t *shader_CreateCondTree(char *shader_str, unsigned int str_len, unsigned i
 					exp[exp_index] = '\0';
 					
 					q->exp = strdup(exp);
-					
-					
+						
 				}
 					
 			}
 			
 		}
+		else if(s[i] == '/')
+		{
+			j = i;
+			if(s[i + 1] == '/')
+			{
+				i += 2;
+				while(s[i] != '\n' && s[i] != '\0') i++;
+				
+				shader_RemoveCommented(s, j, i);
+				
+			}
+			else if(s[i + 1] == '*')
+			{
+				i += 2;
+							
+				while(s[i] != '\0')
+				{
+					if(s[i] == '*' && s[i + 1] == '/')
+					{
+						i += 2;
+						break;
+					}
+					i++;
+				}
+				
+				shader_RemoveCommented(s, j, i);
+			}
+			
+		}
+						
 	}
 	
 	return root;
@@ -1612,78 +1681,130 @@ void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int c
 	cond_t *cur = root;
 	cond_t *p;
 	cond_t *t;
-	int i;
-	int c;
-	int cond_passed;
+	cond_t *r;
+	
 	cond_t *passed;
 	int stack_top = -1;
-	int stack[64];
+	cond_t *stack[64];
 	
 	while(cur)
 	{
 		p = cur;
-		cond_passed = 0;
 		passed = NULL;
-		stack_top = -1;
-		stack[0] = 0;
 		while(p && !passed)
 		{
+
+			cur = NULL;			
+			
 			switch(p->type)
 			{
 				case COND_IFDEF:
 				case COND_ELIF_DEF:
-					if(shader_CheckDefine(defines, p->exp, 0))
+					if(shader_TestDefine(defines, p->exp) && !passed)
 					{
 						passed = p;	
+						goto _passed;
 					}
-				break;	
+					
+				goto _delete;
 					
 				case COND_IFNDEF:
 				case COND_ELIF_NDEF:
-					if(!shader_CheckDefine(defines, p->exp, 0))
+					if(!shader_TestDefine(defines, p->exp) && !passed)
 					{
 						passed = p;	
+						goto _passed;
 					}
-				break;
+				goto _delete;
 				
-				/* exp evaluation... */
 				case COND_IF:
 				case COND_ELIF:
-				
+					/* TODO: this... */
 				break;
-			}
-			
-			if(!passed || (passed && (p != passed)))
-			{
-				while(p->nested)
-				{
-					if(stack[stack_top] < p->max_nested)
-					{
-						stack_top++;
-						p = p->nested[stack[stack_top]];
-						stack[stack_top]++;
-						stack_top++;
-						stack[stack_top] = 0;
-					}
-					else
-					{
-						
-					}
-					
-					
-				}
 				
-			}
-			
+				case COND_ELSE:
+					passed = p;
+					goto _passed;
+				break;
+				
+				case 0xffffffff:
+					_passed:
+					shader_EraseDirectivesOnly(shader_str, passed->pos, passed->next_cond->pos);
+		
+					if(p->nested)
+					{
+						cur = p->nested;
+					}
+					
+					t = p->next_cond;
+					free(p->exp);
+					free(p);
+					p = t;
+
+					if(p->type == COND_ENDIF)
+					{
+						t = p->next_cond;
+						free(p);
+						p = t;
+						passed = NULL;
+						continue;
+					}
+				
+				case 0xfffffffe:
+					_delete:
+					t = p;
+					stack_top = 0;
+					
+					shader_EraseInBetweenDirectives(shader_str, p->pos, p->next_cond->pos);
+					p = p->next_cond;
+					do
+					{
+						if(t->nested)
+						{
+							stack[stack_top] = t;
+							stack_top++;
+							t = t->nested;
+							continue;
+						}
+						else
+						{
+							r = t->next_cond;
+							if(t->exp)
+							{
+								free(t->exp);
+							}
+							free(t);
+							t = r;
+							
+						}
+						
+						if(stack_top > 0)
+						{
+							t = stack[stack_top];
+							stack_top--;
+						}
+					}while(t != p);
+					
+					if(p)
+					{
+						if(p->type == COND_ENDIF)
+						{
+							t = p->next_cond;
+							free(p);
+							p = t;
+							continue;
+						}
+						else if(passed)
+						{
+							goto _delete;
+						}
+					}
+
+				break;
+					
+			}	
 			p = p->next_cond;
-		}
-		
-		
-		
-		//while()
-		
-		
-		
+		}	
 	}
 	
 }

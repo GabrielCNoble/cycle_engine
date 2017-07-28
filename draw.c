@@ -789,7 +789,7 @@ draw_Init
 	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width * 0.5, renderer.width * 0.5, renderer.height * 0.5, -renderer.height * 0.5, -1.5, 1.5, NULL);
 	
 	draw_debug_Init();
-	draw_profile_Init();
+	//draw_profile_Init();
 	
 	/*int b[32] = {123};
 	int q = gpu_Alloc(128);
@@ -816,7 +816,7 @@ void draw_Finish()
 	int i;
 	
 	draw_debug_Finish();
-	draw_profile_Finish();
+	//draw_profile_Finish();
 	
 	SDL_DestroyWindow(renderer.window);
 	SDL_GL_DeleteContext(renderer.context);

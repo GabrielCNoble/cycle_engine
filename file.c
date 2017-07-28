@@ -70,13 +70,12 @@ unsigned int file_GetFileSize(FILE *f)
 	return size;
 }
 
-aiScene *file_OpenFile(char *file_name, int flags)
+/*aiScene *file_OpenFile(char *file_name, int flags)
 {
 	aiScene *s = (aiScene *)aiImportFile(file_name, 0);
 	if(!s) return NULL;
 	return s;
-	//return  Assimp :: ReadFile(file_name, 0);
-}
+}*/
 
 
 
