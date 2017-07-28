@@ -29,7 +29,8 @@ layout (shared) uniform sysLightParamsUniformBlock
 
 #else
 
-uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
+#extension ARB_explicit_uniform_location : enable
+layout(location = 0, std140) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
 
 #endif
 

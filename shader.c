@@ -212,40 +212,22 @@ PEWAPI void shader_Init(char *path)
 		printf("error loading init shader! aborting...\n");
 		exit(-4);
 	}
-	if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
-	{	
-		
-		glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
-		glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &material_params_uniform_buffer_size);
-		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
-		glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
-		
-		/*printf("offsets:\n");
-		for(i = 0; i < 5; i++)
-		{
-			printf("	-->%d\n", material_params_uniform_offsets[i]);
-		}*/
-		
-		//glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &i);
-		//printf("-->%d\n", i);
-		
-		//glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &i);
-		//printf("-->%d\n", i);
-		
-		//glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &i);
-		//printf("-->%d\n", i);
 
-		//printf("-->%d\n", material_params_uniform_buffer_size);
-	}
-	else
-	{
-		/* something wrong with the init shader... */
-		printf("init shader appears to have problems! aborting...\n");
-		exit(-5);
-	}
-	
 	if(glBindBufferBase)
 	{
+		
+		if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
+		{			
+			glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &material_params_uniform_buffer_size);
+		}
+		else
+		{
+			/* something wrong with the init shader... */
+			printf("init shader appears to have problems! aborting...\n");
+			exit(-5);
+		}
+		
+		
 		if((i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block)) != GL_INVALID_INDEX)
 		{
 			glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &light_params_uniform_buffer_size);
@@ -261,9 +243,6 @@ PEWAPI void shader_Init(char *path)
 	{
 		//if((i = gl ))
 	}
-	
-	
-	//glGetUniformIndices()
 	
 	glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
 	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
