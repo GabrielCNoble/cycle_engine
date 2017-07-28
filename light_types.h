@@ -112,7 +112,7 @@ typedef struct
 	
 	mat3_t local_orientation;
 	vec4_t local_position;
-	int align1;
+	int light_index;
 	int align2;
 	short bm_flags;
 	char bm_state;
@@ -218,6 +218,8 @@ typedef struct light_array
 {
 	int array_size;
 	int light_count;
+	int stack_top;
+	int *free_stack;
 	//light_world_data *world_data;
 	//light_local_data *local_data;
 	light_data2 *shadow_data;

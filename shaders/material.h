@@ -1,10 +1,6 @@
 
 
-
-#ifdef _GL3A_
-#extension ARB_uniform_buffer_object : enable
-
-layout(shared) uniform sysMaterialParams
+struct sysMaterialFields
 {
 	vec4 sysMaterialBaseColor;
 	float sysMaterialGlossiness;
@@ -12,15 +8,21 @@ layout(shared) uniform sysMaterialParams
 	float sysMaterialEmissive;
 	int sysMaterialFlags;
 };
+
+
+#ifdef _GL2B_
+#extension ARB_explicit_uniform_location : enable
+
+uniform sysMaterialFields sysMaterialParams;
+
 	
-
 #else
+#extension ARB_uniform_buffer_object : enable
 
-	uniform vec4 sysMaterialBaseColor;
-	uniform float sysMaterialGlossiness;
-	uniform float sysMaterialMetallic;
-	uniform float sysMaterialEmissive;
-	uniform int sysMaterialFlags;
+layout(location = 0, shared) uniform sysMaterialParamsUniformBlock
+{
+	sysMaterialFields sysMaterialParams;
+};
 
 #endif
 

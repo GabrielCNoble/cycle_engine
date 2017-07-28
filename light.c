@@ -65,6 +65,7 @@ void light_Init()
 	light_a.extra_data=NULL;
 	light_a.params=NULL;
 	light_a.light_count=0;
+	light_a.stack_top = -1;
 	light_ResizeLightArray(&light_a, 8);
 	
 	affecting_lights.lights = NULL;
@@ -145,6 +146,7 @@ void light_ResizeLightArray(light_array *larray, int new_size)
 	light_data0 *ctemp=(light_data0 *)calloc(new_size, sizeof(light_data0));
 	light_data3 *etemp=(light_data3 *)calloc(new_size, sizeof(light_data3));
 	light_data1 *ptemp=(light_data1 *)calloc(new_size, sizeof(light_data1));
+	int *temp = (int *)malloc(sizeof(int) * new_size);
 	
 	if(larray->position_data)
 	{
@@ -161,6 +163,7 @@ void light_ResizeLightArray(light_array *larray, int new_size)
 		free(larray->position_data);
 		free(larray->extra_data);
 		free(larray->params);
+		free(larray->free_stack);
 	}
 	
 	//larray->world_data=wtemp;
@@ -170,17 +173,9 @@ void light_ResizeLightArray(light_array *larray, int new_size)
 	larray->extra_data=etemp;
 	larray->params=ptemp;
 	larray->array_size=new_size;
+	larray->free_stack = temp;
 	return;
 	
-	/*light_t *temp=(light_t *)calloc(new_size, sizeof(light_t));
-	if(larray->lights)
-	{
-		memcpy(temp, larray->lights, sizeof(light_t)*larray->light_count);
-		free(larray->lights);
-	}
-	larray->lights=temp;
-	larray->array_size=new_size;
-	return;*/
 }
 
 void light_ResizeAffectingLightList(int new_size)
@@ -301,17 +296,32 @@ void light_ResizeAffectingLightList(int new_size)
 
 PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples,  int shadow_map_res, int max_shadow_aa_samples, int tex_index)
 {
-	int light_index = light_a.light_count++;
+	int light_index;
 	light_data0 *position_data;
 	light_data1 *params;
 	light_data2 *shadow_data;
 	light_data3 *extra_data;
 	int c;
 	float frustum_angle;
-	if(light_index >= light_a.array_size)
+	
+	
+	
+	if(light_a.stack_top >= 0)
 	{
-		light_ResizeLightArray(&light_a, light_a.array_size<<1);
+		light_index = light_a.free_stack[light_a.stack_top--];
 	}
+	else
+	{
+		if(light_index >= light_a.array_size)
+		{
+			light_ResizeLightArray(&light_a, light_a.array_size<<1);
+		}
+		
+		light_index = light_a.light_count++;
+	}
+	
+	
+	
 	
 	position_data = &light_a.position_data[light_index];
 	params = &light_a.params[light_index];
@@ -329,6 +339,7 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	if(radius > LIGHT_MAX_RADIUS) radius = LIGHT_MAX_RADIUS;
 	else if(radius < LIGHT_MIN_RADIUS) radius = LIGHT_MIN_RADIUS;
 	
+	position_data->light_index = light_index;
 	position_data->radius = radius;
 	position_data->bm_flags = bm_flags;
 	//light_a.position_data[light_index].bm_state = LIGHT_HAS_MOVED;
@@ -483,6 +494,28 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	
 }*/
 
+PEWAPI void light_DestroyLight(light_ptr light)
+{
+	int light_index;
+	if(light.position_data)
+	{
+		light_index = light.position_data->light_index;
+		
+		light_a.stack_top++;
+		light_a.free_stack[light_a.stack_top] = light_index;
+		
+		if(light_a.position_data[light_index].bm_flags & LIGHT_GENERATE_SHADOWS)
+		{
+			light_DestroyShadowMap(&light_a.shadow_data[light_index].shadow_map);
+		}
+		
+		light.position_data->light_index = -1;
+		
+		scenegraph_RemoveNode(light.extra_data->assigned_node, 0);
+		
+	}
+}
+
 PEWAPI void light_DestroyLightByIndex(int light_index)
 {
 	
@@ -578,6 +611,16 @@ smap_t light_CreateShadowCubeMap(int resolution)
 	return smap;
 	
 	
+}
+
+void light_DestroyShadowMap(smap_t *shadow_map)
+{
+	unsigned int id;
+	if(shadow_map)
+	{
+		id = shadow_map->shadow_map;
+		glDeleteTextures(1, &id);
+	}
 }
 
 

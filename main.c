@@ -37,6 +37,14 @@ enum HANDLE_3D_MODE
 };
 
 
+static struct
+{
+	int max_selected;
+	int selected_count;
+	pick_record_t *selected;
+}selection_list;
+
+
 int handle_3d_bm;
 int handle_3d_mode = HANDLE_3D_TRANSLATION;
 vec3_t handle_3d_pos;
@@ -76,11 +84,67 @@ widget_t *menu0 = NULL;
 widget_t *info = NULL;
 widget_t *options = NULL;
 
+widget_t *delete_menu = NULL;
+
 widget_t *add_to_world_menu = NULL;
 
 int max_records;
 int record_count;
 pick_record_t *selected_objects;
+
+
+void resize_selection_list()
+{
+	pick_record_t *p = (pick_record_t *)malloc(sizeof(pick_record_t) * (selection_list.max_selected + 8));
+	memcpy(p, selection_list.selected, sizeof(pick_record_t ) * selection_list.selected_count);
+	free(selection_list.selected);
+	selection_list.selected = p;
+	selection_list.max_selected += 8;	
+}
+
+void add_selection(pick_record_t *pick)
+{
+	
+	drop_selection(pick);
+	
+	if(selection_list.selected_count >= selection_list.max_selected)
+	{
+		resize_selection_list();
+	}
+	
+	selection_list.selected[selection_list.selected_count++] = *pick;
+}
+
+void drop_selection(pick_record_t *pick)
+{
+	int i;
+	int c = selection_list.selected_count;
+	
+	int k;
+	
+	for(i = 0; i < c; i++)
+	{
+		if(pick->type == selection_list.selected[i].type)
+		{
+			if(pick->index == selection_list.selected[i].index)
+			{
+				for(k = i; k < c - 1; k++)
+				{
+					selection_list.selected[k] = selection_list.selected[k + 1];
+				}
+				
+				selection_list.selected_count--;
+				
+			}
+		}
+	}
+}
+
+void clear_selection_list()
+{
+	selection_list.selected_count = 0;
+}
+
 
 
 
@@ -103,11 +167,44 @@ void add_to_world_fn(swidget_t *swidget, void *data, int i)
 			break;
 			
 			case 1:
-				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(00.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 			break;
 		}
 	}
 
+}
+
+void delete_fn(swidget_t *swidget, void *data, int i)
+{
+	//pick_record_t *p = (pick_record_t *)data;
+	//selection_list *s = (selection_list *)data;
+	entity_ptr eptr;
+	light_ptr lptr;
+	int k;
+	
+	for(k = 0; k < selection_list.selected_count; k++)
+	{
+		switch(selection_list.selected[k].type)
+		{
+			case PICK_ENTITY:
+				eptr = entity_GetEntityByIndex(selection_list.selected[k].index);
+				entity_DestroyEntity(eptr);
+			break;
+			
+			case PICK_LIGHT:
+				lptr = light_GetLightByIndex(selection_list.selected[k].index);
+				light_DestroyLight(lptr);
+			break;
+		}
+	}
+	
+	cr.type = 0;
+	cr.index = -1;
+	
+	clear_selection_list();
+	
+	
+	
 }
 
 void add_light(swidget_t *swidget, void *data, int i)
@@ -146,7 +243,9 @@ void gmain(float delta_time)
 	vec3_t v;
 	mat3_t orientation = mat3_t_id();
 	mat4_t model_view_projection_matrix;
-	
+	int i;
+	int index;
+	int type;
 	vec4_t p;
 	camera_t *active_camera = camera_GetActiveCamera();
 	float screen_x;
@@ -163,16 +262,15 @@ void gmain(float delta_time)
 		if(input_GetKeyStatus(SDL_SCANCODE_SPACE) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
 		{
 			open_add_to_world_menu();
+			close_delete_menu();
 		}
 		else if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 		{
 			close_add_to_world_menu();
+			close_delete_menu();
 			
 			if(!(input.bm_mouse & MOUSE_OVER_WIDGET))
 			{
-				
-				//close_add_to_world_menu();
-				//handle_3d_bm = 0;
 				
 				if(selected_position)
 				{
@@ -191,7 +289,8 @@ void gmain(float delta_time)
 							selected_name = e.extra_data->name;
 							
 							cr = r;
-						break;
+							
+						goto _add_selection;
 						
 						case PICK_LIGHT:
 							l = light_GetLightByIndex(r.index);
@@ -200,6 +299,19 @@ void gmain(float delta_time)
 							selected_name = l.extra_data->name;
 							
 							cr = r;
+							
+						goto _add_selection;	
+						
+						case 0xffffffff:
+							_add_selection:
+							
+							if(!(input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED))
+							{
+								clear_selection_list();							
+							}
+							
+							add_selection(&cr);	
+								
 						break;
 					}
 				}
@@ -219,10 +331,27 @@ void gmain(float delta_time)
 		}
 		else if(input_GetKeyStatus(SDL_SCANCODE_A) & KEY_JUST_PRESSED)
 		{
+			
+			clear_selection_list();
+			
 			selected_position = NULL;
 			selected_orientation = NULL;
 			selected_name = NULL;
 			handle_3d_bm = 0;
+			cr.index = -1;
+			cr.type = 0;
+		}
+		else if(input_GetKeyStatus(SDL_SCANCODE_DELETE) & KEY_JUST_PRESSED)
+		{
+			if(cr.type > 0)
+			{
+				close_add_to_world_menu();
+				open_delete_menu();
+				selected_position = NULL;
+				selected_orientation = NULL;
+				selected_name = NULL;
+				handle_3d_bm = 0;
+			}
 		}
 		
 		if(selected_position)
@@ -288,7 +417,7 @@ void gmain(float delta_time)
 						
 						if(cr.type == PICK_ENTITY)
 						{
-							entity_TranslateEntity(&e, v, f, 0);
+							entity_TranslateEntity(e, v, f, 0);
 						}
 						else
 						{
@@ -306,6 +435,19 @@ void gmain(float delta_time)
 								
 						cur_grab_offset_x /= f;
 						cur_grab_offset_y /= f;
+						
+						/*f = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
+						f *= f;
+						if(f >= 0.9999999)
+						{
+							f = asin(0.0);
+						}
+						else
+						{
+							f = asin(sqrt(1.0 - f));
+						}*/
+						
+						//printf("[%f %f]    [%f %f]\n", cur_grab_offset_x, cur_grab_offset_y, last_grab_offset_x, last_grab_offset_y);
 								
 						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x);
 						switch(handle_3d_bm)
@@ -329,14 +471,12 @@ void gmain(float delta_time)
 						
 						if(cr.type == PICK_ENTITY)
 						{
-							entity_RotateEntity(&e, v, -f * 0.5, 0);
+							entity_RotateEntity(e, v, -f * 0.5, 0);
 						}
 						else
 						{
 							light_RotateLight(l, v, -f * 0.5, 0);
 						}
-						
-						
 						
 						last_grab_offset_x = cur_grab_offset_x;
 						last_grab_offset_y = cur_grab_offset_y;
@@ -347,6 +487,22 @@ void gmain(float delta_time)
 			else
 			{
 				handle_3d_bm = 0;
+			}
+			
+			
+			for(i = 0; i < selection_list.selected_count; i++)
+			{
+				index = selection_list.selected[i].index;
+				type = selection_list.selected[i].type;
+				
+				if(index == cr.index && type == cr.type) continue;
+
+				switch(selection_list.selected[i].type)
+				{
+					case PICK_ENTITY:
+						draw_debug_DrawOutline(entity_a.position_data[index].world_position, &entity_a.position_data[index].world_orientation, entity_a.draw_data[index].mesh, vec3(0.4, 0.15, 0.4), 4.0, 0);
+					break;
+				}
 			}
 			
 			if(cr.type == PICK_ENTITY)
@@ -745,6 +901,27 @@ void close_add_to_world_menu()
 	}
 }
 
+void open_delete_menu()
+{
+	if(delete_menu)
+	{
+		gui_DeleteWidget(delete_menu);
+	}
+	
+	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED, 0, 0, 200, &cr, delete_fn);
+	gui_AddOption(d, "DO IT!");
+}
+
+void close_delete_menu()
+{
+	if(delete_menu)
+	{
+		gui_MarkForDeletion(delete_menu);
+		delete_menu = NULL;
+	}
+}
+
 void draw_3d_handle(int mode)
 {
 	
@@ -939,9 +1116,10 @@ void init_3d_handle()
 
 void init_editor()
 {
-	max_records = 8;
-	record_count = 0;
-	selected_objects = (pick_record_t *)malloc(sizeof(pick_record_t) * max_records);
+
+	selection_list.max_selected = 8;
+	selection_list.selected_count = 0;
+	selection_list.selected = (pick_record_t *)malloc(sizeof(pick_record_t) * selection_list.max_selected);
 	
 	init_3d_handle();
 }
@@ -1063,6 +1241,7 @@ void ginit()
 	input_RegisterKey(SDL_SCANCODE_A);
 	input_RegisterKey(SDL_SCANCODE_SPACE);
 	input_RegisterKey(SDL_SCANCODE_LSHIFT);
+	input_RegisterKey(SDL_SCANCODE_DELETE);
 	//init_3d_handle();
 	
 //	TwInit(TW_OPENGL, NULL);

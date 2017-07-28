@@ -331,9 +331,9 @@ PEWAPI entity_ptr entity_RayCast(vec3_t from, vec3_t to);
 
 PEWAPI void entity_ProcessEntities();
 
-PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, int set_rotation);
+PEWAPI void entity_RotateEntity(entity_ptr entity, vec3_t axis, float angle, int set_rotation);
 
-PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float amount, int b_set);
+PEWAPI void entity_TranslateEntity(entity_ptr entity, vec3_t direction, float amount, int b_set);
 
 void entity_CalculateAABB(entity_aabb_t *aabb, entity_position_t *position);
 

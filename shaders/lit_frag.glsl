@@ -1,5 +1,5 @@
 #include "material.h"
-//#include "default_uniforms.h"
+
 #extension GL_EXT_gpu_shader4 : enable
 
 varying vec3 normal;
@@ -18,48 +18,11 @@ uniform sampler2D sysTextureSampler2;
 uniform sampler2D sysTextureSampler3;
 uniform sampler2D sysTextureSampler4;
 
-/*uniform int sysFlagShadeless;
-uniform int sysFlagDiffuseTexture;
-uniform int sysFlagNormalTexture;
-uniform int sysFlagHeightTexture;
-uniform int sysFlagGlossTexture;
-uniform int sysFlagMetallicTexture;
-uniform int sysFlagFrontAndBack;*/
+
 uniform float sysTime;
 uniform float sysEntityIndex;
 
 
-//uniform sampler2D sysTextureSampler0;
-//uniform sampler2D sysTextureSampler1;
-//uniform sampler2D sysTextureSampler2;
-//uniform sampler2D sysTextureSampler3;
-
-//uniform int mFlagShadeless;
-//uniform int mFlagDiffuseTexture;
-//uniform int mFlagNormalTexture;
-//uniform int mFlagHeightTexture;
-//uniform int mFlagSpecularTexture;
-//uniform int mFlagFrontAndBack;
-//uniform float time;
-//uniform float sysEntityIndex;
-
-
-
-
-
-
-/*uniform float zNear;
-uniform float zFar;
-
-
-
-float linearDepth(float depthSample)
-{
-    float zlin;
-    depthSample=2.0*depthSample-1.0;
-    zlin=(2.0*zNear*zFar)/(zFar+zNear-depthSample*(zFar-zNear));
-    return zlin;
-}*/
 
 vec4 get_view_pos(vec4 homogeneous_position, mat4 inverse_projection_matrix)
 {
@@ -114,7 +77,7 @@ void main()
     
     /* parallax occlusion mapping */
     //if(sysFlagHeightTexture == MATERIAL_HeightTexture)
-    if(sysMaterialFlags & MATERIAL_HeightTexture)
+    if(sysMaterialParams.sysMaterialFlags & MATERIAL_HeightTexture)
 	{
 		tangent_eye = transpose(tbn) * normalize(-position.xyz);
 		
@@ -212,71 +175,57 @@ void main()
 	}
     
     //if(sysFlagDiffuseTexture == MATERIAL_DiffuseTexture)
-    if(sysMaterialFlags & MATERIAL_DiffuseTexture)
+    if(sysMaterialParams.sysMaterialFlags & MATERIAL_DiffuseTexture)
 	{
 		diffv = vec4(texture2D(sysTextureSampler0, nUV));
 	}
 	else
 	{
 		//diffv = gl_FrontMaterial.diffuse;
-		diffv = sysMaterialBaseColor;
+		diffv = sysMaterialParams.sysMaterialBaseColor;
 	}
 	
 	//diffv.w = float(gl_FrontMaterial.shininess);
 	
 	/* normal mapping */
 	//if(sysFlagNormalTexture == MATERIAL_NormalTexture)
-	if(sysMaterialFlags & MATERIAL_NormalTexture)
+	if(sysMaterialParams.sysMaterialFlags & MATERIAL_NormalTexture)
 	{
 		vec3 n = (texture2D(sysTextureSampler1, nUV).xyz * 2.0 - 1.0);
 		//n.y *= n_dir;
 		//n.y = -n.y;
 		normv = vec4(tbn * n, 1.0);
 		
-		/*if(sysFlagFrontAndBack == MATERIAL_FrontAndBack)
-		{
-			if(gl_FrontFacing == false)
-			{
-				normv = -normv;
-			}
-		}*/
 		
 	}
 	else
 	{
 		normv = vec4(normal.xyz, 1.0);
 		
-		/*if(sysFlagFrontAndBack == MATERIAL_FrontAndBack)
-		{
-			if(gl_FrontFacing == false)
-			{
-				normv = -normv;
-			}
-		}*/
 	}
 	//normv.a = 1.0;
 	//normv.a = gl_FrontMaterial.specular.a;
 	
 	//if(sysFlagGlossTexture == MATERIAL_GlossTexture)
-	if(sysMaterialFlags & MATERIAL_GlossTexture)
+	if(sysMaterialParams.sysMaterialFlags & MATERIAL_GlossTexture)
 	{
 		diffv.a = texture2D(sysTextureSampler3, nUV).r;
 	}
 	else
 	{
 		//diffv.a = gl_FrontMaterial.shininess;
-		diffv.a = sysMaterialGlossiness;
+		diffv.a = sysMaterialParams.sysMaterialGlossiness;
 	}
 	
 	//if(sysFlagMetallicTexture == MATERIAL_MetallicTexture)
-	if(sysMaterialFlags & MATERIAL_MetallicTexture)
+	if(sysMaterialParams.sysMaterialFlags & MATERIAL_MetallicTexture)
 	{
 		normv.a = texture2D(sysTextureSampler4, nUV).r;
 	}
 	else
 	{
 		//normv.a = 0.0;
-		normv.a = sysMaterialMetallic;
+		normv.a = sysMaterialParams.sysMaterialMetallic;
 	}
     
     gl_FragData[0] = diffv;

@@ -1178,6 +1178,9 @@ static void scenegraph_CullLights()
 	{
 		//light_a.lights[i].bm_status|= LIGHT_FRUSTUM_CULLED;
 		
+		if(light_a.position_data[i].light_index < 0) continue;
+		
+		
 		l_org4 = light_a.position_data[i].world_position;
 		l_rad = light_a.position_data[i].radius;
 		

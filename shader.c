@@ -25,13 +25,13 @@ static char capture_varyings[3][10] = {"_vcap_",
 									   "_ncap_", 
 									   "_tcap_"};
 									   
-static char *material_params_uniform_block = {"sysMaterialParams"};
+static char *material_params_uniform_block = {"sysMaterialParamsUniformBlock"};
 
-static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "sysMaterialBaseColor",
-																			  "sysMaterialGlossiness",
-																			  "sysMaterialMetallic",
-																			  "sysMaterialEmissive",
-																			  "sysMaterialFlags"};
+static char *material_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = { "sysMaterialParams.sysMaterialBaseColor",
+																			  "sysMaterialParams.sysMaterialGlossiness",
+																			  "sysMaterialParams.sysMaterialMetallic",
+																			  "sysMaterialParams.sysMaterialEmissive",
+																			  "sysMaterialParams.sysMaterialFlags"};
 static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];	
 static int material_params_uniform_types[MATERIAL_PARAMS_FIELDS];
 int material_params_uniform_buffer_size;
@@ -189,12 +189,26 @@ PEWAPI void shader_Init(char *path)
 	int s;
 	int init_shader_index;
 	unsigned int indexes[MATERIAL_PARAMS_FIELDS + LIGHT_PARAMS_FIELDS];
+	char *ext_str;
 	
 	strcpy(shader_path, path);
 	shader_path_len = strlen(shader_path);
 	
 	
-	if((glBindBufferBase))
+	/*if((glBindBufferBase))
+	{
+		shader_AddGlobalDefine("_GL3A_");
+	}
+	else
+	{
+		shader_AddGlobalDefine("_GL2B_");
+	}*/
+	
+	ext_str = (char *)glGetString(GL_EXTENSIONS);
+	ext_str = strstr(ext_str, "GL_ARB_uniform_buffer_object");
+	
+	
+	if(ext_str)
 	{
 		shader_AddGlobalDefine("_GL3A_");
 	}
@@ -203,17 +217,16 @@ PEWAPI void shader_Init(char *path)
 		shader_AddGlobalDefine("_GL2B_");
 	}
 	
-	//glGetIntegerv(GL_UNIFORM_BU)
 	
-	/* got to find a less ugly way to do this... */
 	init_shader_index = shader_LoadShader("init_vert.glsl", "init_frag.glsl", "init");
 	if(!(init_shader = shader_GetShaderByIndex(init_shader_index)))
 	{
 		printf("error loading init shader! aborting...\n");
 		exit(-4);
 	}
+	
 
-	if(glBindBufferBase)
+	if(ext_str)
 	{
 		
 		if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
@@ -222,7 +235,6 @@ PEWAPI void shader_Init(char *path)
 		}
 		else
 		{
-			/* something wrong with the init shader... */
 			printf("init shader appears to have problems! aborting...\n");
 			exit(-5);
 		}
@@ -234,25 +246,30 @@ PEWAPI void shader_Init(char *path)
 		}
 		else
 		{
-			/* something wrong with the init shader... */
+
 			printf("init shader appears to have problems! aborting...\n");
 			exit(-5);
 		}
 	}
 	else
 	{
-		//if((i = gl ))
+		
 	}
+	
+	glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
+	glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
+	glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
+	
 	
 	glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
 	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
 	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
 	
-	printf("offsets:\n");
+	/*printf("offsets:\n");
 	for(i = 0; i < 8; i++)
 	{
 		printf("	-->%d\n", light_params_uniform_offsets[i]);
-	}
+	}*/
 	
 	
 	
@@ -295,7 +312,7 @@ PEWAPI void shader_Init(char *path)
 	
 	stencil_lights_shader = shader_LoadShader("stencil_lights_vert.glsl", "stencil_lights_frag.glsl", "stencil_lights");
 	
-	printf("here\n");
+	//printf("here\n");
 	
 	//shader_LoadShader("skinner_simple_vert.txt", "skinner_simple_frag.txt", "skinner");
 	
@@ -490,6 +507,8 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 		console_Print(MESSAGE_ERROR, "fragment shader [%s] has problematic preprocessor directives!\n", fragment_shader_name);
 		return -1;
 	}
+	
+	//printf("%s\n", f_shader_str);
 	//printf("a-2");
 	
 	v_shader_obj=glCreateShader(GL_VERTEX_SHADER);
@@ -1709,7 +1728,10 @@ void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int c
 				case 0xffffffff:
 					_passed:
 					shader_EraseDirectivesOnly(shader_str, passed->pos, passed->next_cond->pos);
-		
+					
+					
+					//printf("%s\n", shader_str);
+					
 					if(p->nested)
 					{
 						cur = p->nested;
@@ -1735,6 +1757,9 @@ void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int c
 					stack_top = 0;
 					
 					shader_EraseInBetweenDirectives(shader_str, p->pos, p->next_cond->pos);
+					
+					//printf("%s\n", shader_str);
+					
 					p = p->next_cond;
 					do
 					{
@@ -1779,7 +1804,7 @@ void shader_SolveCondTree(char *shader_str, unsigned int str_len, unsigned int c
 						}
 					}
 
-				break;
+				continue;
 					
 			}	
 			p = p->next_cond;

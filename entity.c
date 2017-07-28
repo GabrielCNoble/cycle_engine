@@ -901,14 +901,14 @@ PEWAPI void entity_ProcessEntities()
 entity_RotateEntity
 =============
 */
-PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, int set_rotation)
+PEWAPI void entity_RotateEntity(entity_ptr entity, vec3_t axis, float angle, int set_rotation)
 {
 	float temp;
 	float v[24];
 	//mat3_t_rotate(&entity->local_orientation, axis, angle, set_rotation);
 	mat3_t r;
 	mat4_t transform;
-	r = entity->extra_data->local_orientation;
+	r = entity.extra_data->local_orientation;
 	mat3_t_rotate(&r, axis, angle, set_rotation);
 	btVector3 max;
 	btVector3 min;
@@ -916,12 +916,12 @@ PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, in
 	btDefaultMotionState *ms;
 	general_collider_t *collider;
 	
-	memcpy(&entity->extra_data->local_orientation, &r, sizeof(mat3_t));
+	memcpy(&entity.extra_data->local_orientation, &r, sizeof(mat3_t));
 	
-	if(entity->position_data->collider_index >= 0)
+	if(entity.position_data->collider_index >= 0)
 	{
 		
-		collider = &collider_a.colliders[entity->position_data->collider_index];
+		collider = &collider_a.colliders[entity.position_data->collider_index];
 		btMatrix3x3 m;
 		
 		m[0].setValue(r.floats[0][0], r.floats[1][0], r.floats[2][0]);
@@ -931,31 +931,31 @@ PEWAPI void entity_RotateEntity(entity_ptr *entity, vec3_t axis, float angle, in
 		collider->base.rigid_body->activate(true);
 		collider->base.rigid_body->getWorldTransform().setBasis(m);
 	}
-	entity->position_data->bm_flags |= ENTITY_HAS_MOVED;
+	entity.position_data->bm_flags |= ENTITY_HAS_MOVED;
 }
 
 
-PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float amount, int b_set)
+PEWAPI void entity_TranslateEntity(entity_ptr entity, vec3_t direction, float amount, int b_set)
 {
 	mat4_t transform;
 	general_collider_t *collider;
 	btTransform t;
 	if(!b_set)
 	{
-		entity->extra_data->local_position.floats[0]+=direction.floats[0]*amount;
-		entity->extra_data->local_position.floats[1]+=direction.floats[1]*amount;
-		entity->extra_data->local_position.floats[2]+=direction.floats[2]*amount;
+		entity.extra_data->local_position.floats[0]+=direction.floats[0]*amount;
+		entity.extra_data->local_position.floats[1]+=direction.floats[1]*amount;
+		entity.extra_data->local_position.floats[2]+=direction.floats[2]*amount;
 	}
 	else
 	{
-		entity->extra_data->local_position.floats[0]=direction.floats[0]*amount;
-		entity->extra_data->local_position.floats[1]=direction.floats[1]*amount;
-		entity->extra_data->local_position.floats[2]=direction.floats[2]*amount;
+		entity.extra_data->local_position.floats[0]=direction.floats[0]*amount;
+		entity.extra_data->local_position.floats[1]=direction.floats[1]*amount;
+		entity.extra_data->local_position.floats[2]=direction.floats[2]*amount;
 	}
 	
-	if(entity->position_data->collider_index >= 0)
+	if(entity.position_data->collider_index >= 0)
 	{
-		collider = &collider_a.colliders[entity->position_data->collider_index];
+		collider = &collider_a.colliders[entity.position_data->collider_index];
 		//collider->base.rigid_body->getMotionState()->getWorldTransform(t);
 		//t.setOrigin(btVector3(entity_a.extra_data->local_position.x, entity_a.extra_data->local_position.y, entity_a.extra_data->local_position.z));
 		//collider->base.rigid_body->getMotionState()->setWorldTransform(t);
@@ -966,7 +966,7 @@ PEWAPI void entity_TranslateEntity(entity_ptr *entity, vec3_t direction, float a
 		collider->base.rigid_body->activate(true);
 	}
 	
-	entity->position_data->bm_flags |= ENTITY_HAS_MOVED;
+	entity.position_data->bm_flags |= ENTITY_HAS_MOVED;
 	
 	
 }

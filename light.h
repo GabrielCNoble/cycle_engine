@@ -57,6 +57,8 @@ PEWAPI inline int light_CreatePointLight(char *name, int flags, vec4_t position,
 
 PEWAPI inline int light_CreateSpotLight(char *name, int flags, vec4_t position, mat3_t *orientation, vec3_t color, float distance, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples, int shadow_map_res, int tex_index);
 
+PEWAPI void light_DestroyLight(light_ptr light);
+
 //PEWAPI void light_DestroyLight(light_t *light);
 
 //PEWAPI void light_DestroyLightByIndex(int light_index);
@@ -64,6 +66,8 @@ PEWAPI inline int light_CreateSpotLight(char *name, int flags, vec4_t position, 
 smap_t light_CreateShadowMap(int resolution);
 
 smap_t light_CreateShadowCubeMap(int resolution);
+
+void light_DestroyShadowMap(smap_t *shadow_map);
 
 /* sort by world position */
 void light_SortLights();
