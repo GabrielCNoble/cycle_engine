@@ -592,42 +592,49 @@ void light_CacheGPULight(light_ptr light)
 	
 	/*memcpy(p, &light.extra_data->light_projection_matrix.floats[0][0], sizeof(mat4_t));
 	
-	p = ((char *)p) + type_offsets[OFFSET_MAT4];
+	p = ((char *)p) + type_offsets[OFFSET_MAT4];*/
 	
-	((vec4_t *)p)->x = light.position_data->world_orientation.floats[0][0];
+	/*((vec4_t *)p)->x = light.position_data->world_orientation.floats[0][0];
 	((vec4_t *)p)->y = light.position_data->world_orientation.floats[0][1];
 	((vec4_t *)p)->z = light.position_data->world_orientation.floats[0][2];
 	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	p = ((char *)p) + sizeof(float) * 4;
 	
 	((vec4_t *)p)->x = light.position_data->world_orientation.floats[1][0];
 	((vec4_t *)p)->y = light.position_data->world_orientation.floats[1][1];
 	((vec4_t *)p)->z = light.position_data->world_orientation.floats[1][2];
 	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	p = ((char *)p) + sizeof(float) * 4;
 	
 	((vec4_t *)p)->x = light.position_data->world_orientation.floats[2][0];
 	((vec4_t *)p)->y = light.position_data->world_orientation.floats[2][1];
 	((vec4_t *)p)->z = light.position_data->world_orientation.floats[2][2];
 	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	p = ((char *)p) + sizeof(float) * 4;
 	
-	((vec4_t *)p)->x = light.position_data->world_position.x;
-	((vec4_t *)p)->y = light.position_data->world_position.y;
-	((vec4_t *)p)->z = light.position_data->world_position.z;
-	((vec4_t *)p)->w = 1.0;
-	p = ((char *)p) + sizeof(float) * 3;
-		
-	*((float *)p) = light.position_data->radius;
-	p = ((char *)p) + type_offsets[OFFSET_FLOAT];*/
+	((vec3_t *)p)->x = light.position_data->world_position.x;
+	((vec3_t *)p)->y = light.position_data->world_position.y;
+	((vec3_t *)p)->z = light.position_data->world_position.z;
+	p = ((char *)p) + sizeof(float) * 3;*/
+	
 	
 	((vec3_t *)p)->r = (float)light.params->r / 255.0;
 	((vec3_t *)p)->g = (float)light.params->g / 255.0;
 	((vec3_t *)p)->b = (float)light.params->b / 255.0;
 	p = ((char *)p) + sizeof(float) * 3;
+	
 	*((float *)p) = light.position_data->radius;	
-		
-
+	p = ((char *)p) + sizeof(float);
+	
+	*((float *)p) = (float)light.position_data->spot_co;
+	p = ((char *)p) + sizeof(float);
+	
+	*((float *)p) = cos(DegToRad(((float)light.position_data->spot_co)));	
+	p = ((char *)p) + sizeof(float);
+	
+	*((float *)p) = (float)light.params->spot_e;	
+	p = ((char *)p) + sizeof(float);
+	
 	light.position_data->cache_index = index;
 	light.position_data->bm_flags |= LIGHT_CACHED;
 	

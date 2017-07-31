@@ -290,9 +290,12 @@ PEWAPI void shader_Init(char *path)
 		material_params_uniform_buffer_size = (material_params_uniform_buffer_size + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 	//	light_params_uniform_buffer_size = (light_params_uniform_buffer_size / 16 + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 		
-		//printf("size: %d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size);
 		
-		light_params_uniform_buffer_size /= 16;
+		light_params_uniform_buffer_size /= 4;
+		
+		printf("size: %d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size);
+		
+		
 		
 	}
 	

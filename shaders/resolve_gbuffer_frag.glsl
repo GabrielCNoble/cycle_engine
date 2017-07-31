@@ -314,7 +314,7 @@ vec4 get_view_pos(vec4 h_pos, mat4 inverse_projection_matrix)
 	return temp;
 }
 
-float attenuate_point(vec3 light_vec, float light_radius, float linear_fallof, float quadratic_fallof)
+/*float attenuate_point(vec3 light_vec, float light_radius, float linear_fallof, float quadratic_fallof)
 {
 	//vec3 light_vec = frag_pos - light_pos;
 	float l = length(light_vec);
@@ -334,7 +334,7 @@ float attenuate_spot(vec3 light_vec, vec3 spot_direction, float light_distance, 
 	
 	a *= cos * smoothstep(spot_cos_cutoff, spot_cos_cutoff + float(spot_exponent) / 255.0, cos) * clamp((light_distance - l) / light_distance, 0.0, 1.0);
 	return a;
-}
+}*/
 
 
 void main()
@@ -395,7 +395,7 @@ void main()
 		}
 		else if(sysLightType == LIGHT_SPOT)
 		{
-			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[0].sysLightRadius, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[0].sysLightRadius, sysLightParams[0].sysLightSpotCosCutoff, sysLightParams[0].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);

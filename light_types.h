@@ -117,7 +117,7 @@ typedef struct
 	int cache_index;
 	short bm_flags;
 	char bm_state;
-	char spot_co;		/* cutoff (in degrees) */
+	char spot_co;		/* cutoff cos */
 	//char align4;
 	//vec3_t align2;
 }light_data0;	/* 128 bytes (2 cache lines) */
