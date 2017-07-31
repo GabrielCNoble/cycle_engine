@@ -355,16 +355,16 @@ void material_CacheGPUMaterial(material_t *material)
 	((vec4_t *)p)->b = (float)material->diff_color.b / 0xff; 
 	((vec4_t *)p)->a = (float)material->diff_color.a / 0xff; 
 		
-	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	p = ((char *)p) + sizeof(float) * 4;
 		
 	*((float *)p) = (float)material->glossiness / 0xffff;
-	p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+	p = ((char *)p) + sizeof(float);
 		
 	*((float *)p) = (float)material->metallic / 0xffff;
-	p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+	p = ((char *)p) + sizeof(float);
 		
 	*((float *)p) = ((float)material->emissive / 0xffff) * MAX_MATERIAL_EMISSIVE;
-	p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+	p = ((char *)p) + sizeof(float);
 		
 	*((int *)p) = (int)material->bm_flags;
 	

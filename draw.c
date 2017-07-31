@@ -3361,6 +3361,7 @@ void draw_DrawShadowMaps()
 
 				asm volatile
 				(
+					"movl %[rq], %%esi\n"
 					"movl %[mc], %%ebx\n"
 					"shl $6, %%ebx\n"
 					"lea (%%ebx, %%esi), %%eax\n"

@@ -2,10 +2,12 @@
 #define LIGHT_SPOT 2
 #define LIGHT_DIRECTIONAL 4
 
-#define MAX_LIGHTS_PER_CALL 4
+#define MAX_LIGHTS_PER_CALL 32
 
 #extension GL_ARB_explicit_uniform_location : enable
 uniform int sysLightCount;
+
+uniform int sysLightIndexes[MAX_LIGHTS_PER_CALL];
 
 struct sysLightParamsFields
 {
@@ -20,7 +22,7 @@ struct sysLightParamsFields
 #ifdef _GL3A_
 #extension GL_ARB_uniform_buffer_object : enable
 
-layout (shared) uniform sysLightParamsUniformBlock
+layout (std140) uniform sysLightParamsUniformBlock
 {
 	sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
 };
@@ -28,7 +30,7 @@ layout (shared) uniform sysLightParamsUniformBlock
 #else
 
 
-layout(shared) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
+layout(std140) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
 
 #endif
 

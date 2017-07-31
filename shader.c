@@ -222,18 +222,6 @@ PEWAPI void shader_Init(char *path)
 	shader_path_len = strlen(shader_path);
 	
 	
-	/*if((glBindBufferBase))
-	{
-		shader_AddGlobalDefine("_GL3A_");
-	}
-	else
-	{
-		shader_AddGlobalDefine("_GL2B_");
-	}*/
-	
-	//ext_str = (char *)glGetString(GL_EXTENSIONS);
-	//ext_str = strstr(ext_str, "GL_ARB_uniform_buffer_object");
-	
 	
 	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
@@ -251,12 +239,7 @@ PEWAPI void shader_Init(char *path)
 		printf("error loading init shader! aborting...\n");
 		exit(-4);
 	}
-	
-	//glGetIntegerv(GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS, &i);
-	//printf("==>%d\n", i);
-	
-	//glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_alignment);
-	//printf("alignment: %d\n", uniform_buffer_alignment);
+
 	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
 		
@@ -285,48 +268,30 @@ PEWAPI void shader_Init(char *path)
 			exit(-5);
 		}
 		
-	//	printf("size: %d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size / 16);
-		
 		material_params_uniform_buffer_size = (material_params_uniform_buffer_size + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 	//	light_params_uniform_buffer_size = (light_params_uniform_buffer_size / 16 + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 		
-		
-		light_params_uniform_buffer_size /= 4;
-		
-		printf("size: %d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size);
-		
-		
+		light_params_uniform_buffer_size /= 32;
 		
 	}
 	
-	glGetUniformIndices(init_shader->shader_ID, OFFSET_TYPE_COUNT + 1, (const char **)offset_uniform_fields, indexes);
-	glGetActiveUniformsiv(init_shader->shader_ID, OFFSET_TYPE_COUNT + 1, indexes, GL_UNIFORM_OFFSET, (int *)type_offsets);
-	
-	for(i = 0; i < OFFSET_TYPE_COUNT; i++)
-	{
-		type_offsets[i] = type_offsets[i + 1] - type_offsets[i];
-	}
-	
-	/*for(i = 0; i < OFFSET_TYPE_COUNT; i++)
-	{
-		printf("	-->%d\n", type_offsets[i]);
-	}*/
+
 	
 	
-	glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
-	glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
-	glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
+	//glGetUniformIndices(init_shader->shader_ID, OFFSET_TYPE_COUNT, (const char **)offset_uniform_fields, indexes);
+	//glGetActiveUniformsiv(init_shader->shader_ID, OFFSET_TYPE_COUNT, indexes, GL_UNIFORM_OFFSET, (int *)type_offsets);
 	
 	
-	glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
-	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
-	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
+	//glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
+	//glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
+	//glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
+		
 	
-	/*printf("offsets:\n");
-	for(i = 0; i < 9; i++)
-	{
-		printf("	-->%d\n", light_params_uniform_offsets[i]);
-	}*/
+	//glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
+	//glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
+	//glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
+	
+	
 	
 	
 	
@@ -677,18 +642,21 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	shader->default_uniforms = (unsigned char *)malloc(UNIFORM_Last + 1);
 	shader->flags = flags;
 	
-	
-	if((i = glGetUniformBlockIndex(shader_prog, material_params_uniform_block)) != GL_INVALID_INDEX)
+	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
-		glUniformBlockBinding(shader_prog, i, MATERIAL_PARAMS_BINDING);
-		printf("shader %s has material uniform block %d\n", name, i);
+		if((i = glGetUniformBlockIndex(shader_prog, material_params_uniform_block)) != GL_INVALID_INDEX)
+		{
+			glUniformBlockBinding(shader_prog, i, MATERIAL_PARAMS_BINDING);
+			printf("shader %s has material uniform block %d\n", name, i);
+		}
+		
+		if((i = glGetUniformBlockIndex(shader_prog, light_params_uniform_block)) != GL_INVALID_INDEX)
+		{
+			glUniformBlockBinding(shader_prog, i, LIGHT_PARAMS_BINDING);
+			printf("shader %s has light uniform block %d\n", name, i);
+		}
 	}
-	
-	if((i = glGetUniformBlockIndex(shader_prog, light_params_uniform_block)) != GL_INVALID_INDEX)
-	{
-		glUniformBlockBinding(shader_prog, i, LIGHT_PARAMS_BINDING);
-		printf("shader %s has light uniform block %d\n", name, i);
-	}
+
 	
 	
 	/* Flag the shaders for deletion,

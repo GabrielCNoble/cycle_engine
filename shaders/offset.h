@@ -8,21 +8,21 @@ struct sysOffsetFields
 	vec2 sysVec2Field;
 	float sysFloatField;
 	int sysIntField;
-	short sysShortField;
-	short sysLastField;
+	//short sysShortField;
+	//short sysLastField;
 };
 
 #ifdef _GL3A_
 #extension ARB_uniform_buffer_object : enable
 
-layout(shared) uniform sysOffsetQueryUniformBlock
+layout(std140) uniform sysOffsetQueryUniformBlock
 {
 	sysOffsetFields sysOffsets;
 };
 
 #else
-#extension ARB_explicit_uniform_location : enable
-layout(shared) uniform sysOffsetFields sysOffsets;
+
+layout(std140) uniform sysOffsetFields sysOffsets;
 
 #endif
 

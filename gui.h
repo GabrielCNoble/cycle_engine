@@ -161,6 +161,7 @@ enum WIDGET_TYPES
 	WIDGET_BUTTON,
 	WIDGET_TAB_BAR,
 	WIDGET_DROP_DOWN,
+	WIDGET_SLIDER,
 	WIDGET_VAR,
 	WIDGET_VERTICAL_SCROLLER,
 	WIDGET_HORIZONTAL_SCROLLER
@@ -420,6 +421,14 @@ typedef struct
 	woption_t *options;
 	void (*dropdown_callback)(swidget_t *, void *, int);
 }wdropdown_t;
+
+typedef struct
+{
+	swidget_t swidget;
+	unsigned int bm_flags;
+	float pos;
+	void *data;
+}wslider_t;
 
 typedef struct
 {
