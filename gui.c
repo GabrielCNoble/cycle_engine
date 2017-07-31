@@ -518,6 +518,11 @@ PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm
 	}
 }
 
+PEWAPI void gui_AddSlider(widget_t *widget, char *name, short bm_flags, float pos, void *data, void (*slider_callback)(swidget_t *, void *, float))
+{
+	
+}
+
 
 PEWAPI void gui_DeleteWidgetByName(char *name)
 {
