@@ -59,6 +59,12 @@ PEWAPI inline int light_CreateSpotLight(char *name, int flags, vec4_t position, 
 
 PEWAPI void light_DestroyLight(light_ptr light);
 
+PEWAPI void light_UpdateGPULight(light_ptr light);
+
+PEWAPI void light_BindLightCache();
+
+PEWAPI void light_UnbindLightCache();
+
 //PEWAPI void light_DestroyLight(light_t *light);
 
 //PEWAPI void light_DestroyLightByIndex(int light_index);

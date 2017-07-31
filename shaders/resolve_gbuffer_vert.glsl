@@ -1,16 +1,11 @@
-
-#define LIGHT_POINT 1
-#define LIGHT_SPOT 2
-#define LIGHT_DIRECTIONAL 4
-
-
-#include "default_attribs.h"
+attribute vec4 vPosition;
+attribute vec4 vNormal;
+attribute vec4 vTangent;
+attribute vec2 vTexCoord;
 
 
-#define sysLightType int(gl_LightSource[1].spotCutoff)
-#define sysLightRadius gl_LightSource[0].diffuse.a
 
-#define DegToRad(x) ((3.14159265*x)/180.0)
+#include "light.h"
 
 
 uniform mat4 sysCameraProjectionMatrix;
@@ -41,13 +36,13 @@ void main()
 	
 	if(int(gl_LightSource[1].spotExponent) == LIGHT_POINT)
 	{
-		p = vec4(gl_NormalMatrix * (p.xyz * gl_LightSource[0].diffuse.a * 1.08) + gl_LightSource[0].position.xyz, 1.0);
+		p = vec4(gl_NormalMatrix * (p.xyz * sysLightParams[0].sysLightRadius * 1.08) + gl_LightSource[0].position.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}
 	else if(int(gl_LightSource[1].spotExponent) == LIGHT_SPOT)
 	{
-		p.xy *= tan(((3.14159265*gl_LightSource[0].spotCutoff)/180.0)) * gl_LightSource[0].diffuse.a * 1.05;
-		p.z *= gl_LightSource[0].diffuse.a;
+		p.xy *= tan(((3.14159265*gl_LightSource[0].spotCutoff)/180.0)) * sysLightParams[0].sysLightRadius * 1.05;
+		p.z *= sysLightParams[0].sysLightRadius;
 		p = vec4(l_rot * p.xyz  + gl_LightSource[0].position.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}

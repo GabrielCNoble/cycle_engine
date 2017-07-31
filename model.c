@@ -695,7 +695,7 @@ PEWAPI void model_LoadModel(char *file_name, char *name)
 	mesh_t m;
 	mesh_t *t;
 	int i = strlen(file_name);
-	
+	float *f;
 	while(file_name[i] != '.') i--;
 	i++;
 	

@@ -1067,6 +1067,11 @@ void gui_ProcessWidgets()
 				{
 					rh += (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count);
 					ry -= (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count) / 2.0;
+					
+					/*if(((wdropdown_t *)cswidget)->bm_flags & DROP_DOWN_NO_HEADER)
+					{
+						ry += OPTION_HEIGHT;
+					}*/
 				}
 			}
 			
@@ -1255,7 +1260,12 @@ void gui_ProcessWidgets()
 						if(dropdown->option_count && dropdown->bm_flags & DROP_DOWN_DROPPED)
 						{
 										
-							option_index = (int)((1.0 - (dropdown->swidget.relative_mouse_y * 0.5 + 0.5)) * (dropdown->option_count + 1)) - 1;
+							option_index = (int)((1.0 - (dropdown->swidget.relative_mouse_y * 0.5 + 0.5)) * (dropdown->option_count + 1));
+							
+							if(!(dropdown->bm_flags & DROP_DOWN_NO_HEADER))
+							{
+								option_index--;
+							}
 										
 							if(dropdown->active_option)
 							{

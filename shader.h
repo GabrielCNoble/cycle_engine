@@ -40,7 +40,7 @@ PEWAPI inline shader_t *shader_GetActiveShader();
 
 PEWAPI void shader_SetShaderByIndex(int shader_index);
 
-PEWAPI void shader_UploadMaterialParams(material_t *material);
+//PEWAPI void shader_UploadMaterialParams(material_t *material);
 
 PEWAPI inline void shader_SetCurrentShaderUniform1i(int uniform, int value);
 

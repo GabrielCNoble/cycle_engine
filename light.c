@@ -29,13 +29,21 @@ mat4_t cube_shadow_mats[6];
 
 unsigned int extra_framebuffer;
 
-//static unsigned int _64_extra_map;
-//static unsigned int _128_extra_map;
-//static unsigned int _256_extra_map;
-//unsigned int _512_extra_map;
-//static unsigned int _1024_extra_map;
-//static unsigned int _2048_extra_map;
+static int light_cache_size;
+static int cached_light_count;
+static int free_stack_top;
+static int *free_stack;
+static unsigned int light_cache;
 
+extern int bm_extensions;
+
+extern int uniform_buffer_alignment;
+extern int light_params_uniform_buffer_size;
+extern int type_offsets[];
+
+void light_CacheGPULight(light_ptr light);
+
+void light_DropGPULight(light_ptr light);
 
 void light_Init()
 {
@@ -57,7 +65,25 @@ void light_Init()
  	
  	glGenFramebuffers(1, &extra_framebuffer);
  	
-	glGetIntegerv(GL_MAX_LIGHTS, &max_lights_per_pass);
+	//glGetIntegerv(GL_MAX_LIGHTS, &max_lights_per_pass);
+	
+	light_cache_size = 256;
+	cached_light_count = 0;
+	free_stack_top = -1;
+	free_stack = (int *)malloc(sizeof(int) * light_cache_size);
+	
+	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
+	{
+		glGenBuffers(1, &light_cache);
+		glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
+		glBufferData(GL_UNIFORM_BUFFER, light_params_uniform_buffer_size * light_cache_size, NULL, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+	
+	
+	
+	
+	
 	
 	
 	light_a.shadow_data=NULL;
@@ -189,110 +215,6 @@ void light_ResizeAffectingLightList(int new_size)
 	affecting_lights.lights = a;
 	affecting_lights.size = new_size;
 }
-/*PEWAPI int light_CreateLightFromData(light_position_data *position_data, light_params *lparams)
-{
-	int light_index;
-	float frustum_angle;
-	if(likely(position_data && lparams))
-	{
-		if(light_a.light_count>=light_a.array_size)
-		{
-			light_ResizeLightArray(&light_a, light_a.array_size<<1);
-		}
-		
-		
-		light_index=light_a.light_count;
-		
-		
-		if(position_data->bm_flags&LIGHT_POINT)
-		{
-			
-			position_data->local_position.floats[3]=1.0;
-			if(position_data->bm_flags&LIGHT_GENERATE_SHADOWS)
-			{
-				light_a.shadow_data[light_index].shadow_map=light_CreateShadowCubeMap(512);
-			}
-			
-			frustum_angle=45.0;		
-			position_data->spot_co=0;
-		}
-		else if(position_data->bm_flags&LIGHT_SPOT)
-		{
-			position_data->local_position.floats[3]=1.0;
-			if(position_data->bm_flags&LIGHT_GENERATE_SHADOWS)
-			{
-				light_a.shadow_data[light_index].shadow_map=light_CreateShadowMap(512);
-			}
-			
-			frustum_angle=(float)position_data->spot_co;
-		}
-		else
-		{
-			position_data->local_position.floats[3]=0.0;
-		}
-	
-		light_a.position_data[light_index].world_orientation=position_data->local_orientation;
-		light_a.position_data[light_index].local_orientation=position_data->local_orientation;
-		light_a.position_data[light_index].world_position=position_data->local_position;
-		light_a.position_data[light_index].local_position=position_data->local_position;
-		light_a.position_data[light_index].radius=position_data->radius;
-		light_a.position_data[light_index].bm_flags=position_data->bm_flags;
-		light_a.position_data[light_index].bm_state=LIGHT_HAS_MOVED;
-		light_a.position_data[light_index].spot_co=position_data->spot_co;
-		
-		if(position_data->bm_flags&LIGHT_POINT)
-		{
-			light_a.shadow_data[light_index].shadow_map=light_CreateShadowCubeMap(512);
-			frustum_angle=90.0;
-		}
-		else
-		{
-			light_a.shadow_data[light_index].shadow_map=light_CreateShadowMap(512);
-			frustum_angle=(float)position_data->spot_co;
-		}
-		
-		CreatePerspectiveMatrix(&light_a.extra_data[light_index].light_projection_matrix, DegToRad(frustum_angle) , 1.0, 0.1, position_data->radius, light_a.extra_data[light_index].generated_frustums);
-		light_a.shadow_data[light_index].znear = light_a.extra_data[light_index].generated_frustums[0].znear;
-		light_a.shadow_data[light_index].zfar = light_a.extra_data[light_index].generated_frustums[0].zfar;
-		//light_a.shadow_data[light_index].shadow_map=light_CreateShadowMap(512);
-		//light_a.shadow_data[light_index].bm_shadow_flags=position_data->bm_flags;
-	
-		light_a.shadow_data[light_index].l_queue.command_buffers=NULL;
-		light_a.shadow_data[light_index].l_queue.count=0;
-		light_ResizeLightRenderQueue(&light_a.shadow_data[light_index], 16);
-
-
-		lparams->assigned_node=scenegraph_AddNode(NODE_LIGHT, light_index, lparams->name);
-		lparams->bm_status=0;
-		light_a.params[light_index]=*lparams;
-		light_a.light_count++;
-		
-		lparams->assigned_node=NULL;
-		return light_index;
-		switch(light->type)
-		{
-			case LIGHT_POINT:
-				light->spot_co=180.0;
-			case LIGHT_SPOT:
-				light->local_position.floats[3]=1.0;
-			break;
-			
-			case LIGHT_DIRECTIONAL:
-				light->local_position.floats[3]=0.0;
-			break;
-		}
-		light_index=light_a.light_count;
-		light->world_position=light->local_position;
-		light->const_fallof=light->radius;
-		CreatePerspectiveMatrix(&light->light_projection_matrix, 3.14159265*0.35, 1.0, 0.1, light->radius, NULL);
-		light->shadow_map=light_CreateShadowMap(1024);
-		light->assigned_node=scenegraph_AddNode(NODE_LIGHT, light_index, light->name);
-		light_a.lights[light_a.light_count++]=*light;
-		light->assigned_node=NULL;
-		
-		//return light_a.light_count-1;
-	}
-}*/
 
 PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples,  int shadow_map_res, int max_shadow_aa_samples, int tex_index)
 {
@@ -301,6 +223,7 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	light_data1 *params;
 	light_data2 *shadow_data;
 	light_data3 *extra_data;
+	light_ptr light;
 	int c;
 	float frustum_angle;
 	
@@ -482,6 +405,12 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	extra_data->name = strdup(name);
 	extra_data->assigned_node = scenegraph_AddNode(NODE_LIGHT, light_index, -1, name);
 	
+	light.position_data = position_data;
+	light.extra_data = extra_data;
+	light.params = params;
+	light.shadow_data = shadow_data;
+	
+	light_CacheGPULight(light);
 
 	//light_a.light_count++;
 
@@ -489,10 +418,6 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 }
 
 
-/*PEWAPI void light_DestroyLight(light_t *light)
-{
-	
-}*/
 
 PEWAPI void light_DestroyLight(light_ptr light)
 {
@@ -510,6 +435,7 @@ PEWAPI void light_DestroyLight(light_ptr light)
 		}
 		
 		light.position_data->light_index = -1;
+		light_DropGPULight(light);
 		
 		scenegraph_RemoveNode(light.extra_data->assigned_node, 0);
 		
@@ -629,6 +555,98 @@ void light_SortLights()
 	return;
 }
 
+PEWAPI void light_BindLightCache()
+{
+	//glUniformBlockBinding(shader_a.shaders[renderer.active_shader_index].shader_ID, 1, LIGHT_PARAMS_BINDING);
+	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
+	glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_PARAMS_BINDING, light_cache);
+}
+
+PEWAPI void light_UnbindLightCache()
+{
+	glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_PARAMS_BINDING, 0);
+}
+
+PEWAPI void light_UpdateGPULight(light_ptr light)
+{
+	
+}
+
+void light_CacheGPULight(light_ptr light)
+{
+	int index;
+	void *p;
+	if(free_stack_top >= 0)
+	{
+		index = free_stack[free_stack_top--];
+	}
+	else
+	{
+		index = cached_light_count++;
+	}
+	
+	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
+	p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	
+	p = (char *)p + light_params_uniform_buffer_size * index;
+	
+	/*memcpy(p, &light.extra_data->light_projection_matrix.floats[0][0], sizeof(mat4_t));
+	
+	p = ((char *)p) + type_offsets[OFFSET_MAT4];
+	
+	((vec4_t *)p)->x = light.position_data->world_orientation.floats[0][0];
+	((vec4_t *)p)->y = light.position_data->world_orientation.floats[0][1];
+	((vec4_t *)p)->z = light.position_data->world_orientation.floats[0][2];
+	((vec4_t *)p)->w = 0.0;
+	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	
+	((vec4_t *)p)->x = light.position_data->world_orientation.floats[1][0];
+	((vec4_t *)p)->y = light.position_data->world_orientation.floats[1][1];
+	((vec4_t *)p)->z = light.position_data->world_orientation.floats[1][2];
+	((vec4_t *)p)->w = 0.0;
+	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	
+	((vec4_t *)p)->x = light.position_data->world_orientation.floats[2][0];
+	((vec4_t *)p)->y = light.position_data->world_orientation.floats[2][1];
+	((vec4_t *)p)->z = light.position_data->world_orientation.floats[2][2];
+	((vec4_t *)p)->w = 0.0;
+	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+	
+	((vec4_t *)p)->x = light.position_data->world_position.x;
+	((vec4_t *)p)->y = light.position_data->world_position.y;
+	((vec4_t *)p)->z = light.position_data->world_position.z;
+	((vec4_t *)p)->w = 1.0;
+	p = ((char *)p) + sizeof(float) * 3;
+		
+	*((float *)p) = light.position_data->radius;
+	p = ((char *)p) + type_offsets[OFFSET_FLOAT];*/
+	
+	((vec3_t *)p)->r = (float)light.params->r / 255.0;
+	((vec3_t *)p)->g = (float)light.params->g / 255.0;
+	((vec3_t *)p)->b = (float)light.params->b / 255.0;
+	p = ((char *)p) + sizeof(float) * 3;
+	*((float *)p) = light.position_data->radius;	
+		
+
+	light.position_data->cache_index = index;
+	light.position_data->bm_flags |= LIGHT_CACHED;
+	
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	
+}
+
+void light_DropGPULight(light_ptr light)
+{
+	
+	if(light.position_data->bm_flags & LIGHT_CACHED)
+	{
+		free_stack_top++;
+		free_stack[free_stack_top] = light.position_data->cache_index;
+		light.position_data->bm_flags &= ~MATERIAL_Cached;
+	}
+	
+}
+
 void light_SetLightsByIndex(int *IDs, int light_count)
 {
 	/*register int i;
@@ -726,151 +744,6 @@ void light_SetLights(int *IDs, int light_count)
 	return;*/
 }
 
-
-/*void light_SetLight(int ID)
-{
-	vec4_t pos;
-	//mat4_t light_model_view_projection_matrix;
-	mat4_t camera_to_light_clipspace;
-	mat4_t ctransform;
-	vec4_t fv;
-	float d[3];
-	float c[4];
-	camera_t *active_camera=camera_GetActiveCamera();
-	light_data0 *position_data;
-	light_data1 *params;
-	light_data2 *shadow_data;
-	//mat4_t camera_to_light_clipspace_matrix;
-	//mat3_t cam_orientation=camera_a.cameras[renderer.active_camera_index].world_orientation;
-	//vec3_t cam_position=camera_a.cameras[renderer.active_camera_index].world_position;
-	//mat4_t camera_transform
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadMatrixf(&camera_a.cameras[renderer.active_camera_index].world_to_camera_matrix.floats[0][0]);
-	
-	if(ID>=0)
-	{
-		
-		//mat3_t_transpose(&cam_orientation);
-		
-		//mat4_t_mult(&light_model_view_projection_matrix, &active_light_a.world_data[ID].world_to_light_matrix, &active_light_a.world_data[ID].light_projection_matrix);
-		//mat4_t_mult(&camera_to_light_clipspace_matrix, &)
-		
-		//position_data = &active_light_a.position_data[ID]
-		
-		
-		d[0]=-active_light_a.position_data[ID].world_orientation.floats[2][0];
-		d[1]=-active_light_a.position_data[ID].world_orientation.floats[2][1];
-		d[2]=-active_light_a.position_data[ID].world_orientation.floats[2][2];
-		glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, d);
-		
-		c[0]=color_conversion_lookup_table[active_light_a.params[ID].r];
-		c[1]=color_conversion_lookup_table[active_light_a.params[ID].g];
-		c[2]=color_conversion_lookup_table[active_light_a.params[ID].b];
-		c[3]=active_light_a.position_data[ID].radius;
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, c);
-		
-		
-		glLightfv(GL_LIGHT0, GL_POSITION, &active_light_a.position_data[ID].world_position.floats[0]);
-		
-	
-		
-		//glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, light_a.lights[IDs[i]].const_fallof);
-		//glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, light_a.lights[IDs[i]].lin_fallof);
-		//glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, light_a.lights[IDs[i]].sqr_fallof);
-		glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)active_light_a.position_data[ID].spot_co);
-		glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, (int)active_light_a.params[ID].spot_e);
-		glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)active_light_a.params[ID].lin_fallof/255.0);
-		glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)active_light_a.params[ID].sqr_fallof/255.0);
-		
-		glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, active_light_a.params[ID].scattering);
-		glLighti(GL_LIGHT1, GL_SPOT_CUTOFF, active_light_a.params[ID].volume_samples);
-		//printf("light is using %d samples\n", active_light_a.params[ID].max_samples);
-		
-		//glPushMatrix();
-
-		//glUniformMatrix4fv(shader_a.shaders[renderer.active_shader_index].uniforms[UNIFORM_LightModelViewProjectionMatrix], 1, 0, &light_model_view_projection_matrix.floats[0][0]);
-		
-		//glUniformMatrix4fv(shader_a.shaders[renderer.active_shader_index].uniforms[UNIFORM_LightModelViewProjectionMatrix], 1, 0, &active_light_a.shadow_data[ID].model_view_projection_matrix.floats[0][0]);
-		//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_LightModelViewProjectionMatrix, &active_light_a.shadow_data[ID].model_view_projection_matrix.floats[0][0]);
-		//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_LightProjectionMatrix, &active_light_a.extra_data[ID].light_projection_matrix.floats[0][0]);
-		//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_LightModelViewMatrix, &active_light_a.extra_data[ID].world_to_light_matrix.floats[0][0]);
-		
-		shader_SetCurrentShaderUniform1f(UNIFORM_LightZNear, active_light_a.shadow_data[ID].znear);
-		shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, active_light_a.shadow_data[ID].zfar);
-		
-		
-
-		//glUniform1f(shader_a.shaders[renderer.active_shader_index].uniforms[UNIFORM_LightLinearFallof], (float)active_light_a.params[ID].lin_fallof/255.0);
-		//glUniform1f(shader_a.shaders[renderer.active_shader_index].uniforms[UNIFORM_LightSquaredFallof], (float)active_light_a.params[ID].sqr_fallof/255.0);
-		//glUniform1f(shader_a.shaders[renderer.active_shader_index].uniforms[UNIFORM_LightRadius], active_light_a.position_data[ID].radius);
-		//glUniform1i(shader_a.shaders[renderer.active_shader_index].uniforms[UNIFORM_LightCount], 1);
-		//glPopMatrix();
-	
-	}
-	//glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	
-	
-	return;
-	
-}*/
-
-void light_GetAffectingLights(render_queue *rqueue)
-{
-	int i;
-	int c;
-	int j;
-	int k;
-	int closest_index;
-	vec3_t vec_to_light;
-	vec3_t p;
-	float v;
-	float r;
-	//c=light_a.light_count;
-	//light_list->count=0;
-	affecting_lights_t *a;
-	c = affecting_lights.count;
-	for(i=0; i < c; i++)
-	{
-		a = &affecting_lights.lights[i];
-		k = a->count;
-		for(j = 0; j < k; j++)
-		{
-			
-		}
-		/*if(!(light_a.lights[i].bm_status&LIGHT_FRUSTUM_CULLED))
-		{
-			v=light_a.lights[i].world_position.floats[0];
-			if(v<entity->c_maxmins[3]-0.01+entity->world_position.floats[0])v=entity->c_maxmins[3]-0.01+entity->world_position.floats[0];
-			if(v>entity->c_maxmins[0]+0.01+entity->world_position.floats[0])v=entity->c_maxmins[0]+0.01+entity->world_position.floats[0];
-			p.floats[0]=v;
-		
-			v=light_a.lights[i].world_position.floats[1];
-			if(v<entity->c_maxmins[4]-0.01+entity->world_position.floats[1])v=entity->c_maxmins[4]-0.01+entity->world_position.floats[1];
-			if(v>entity->c_maxmins[1]+0.01+entity->world_position.floats[1])v=entity->c_maxmins[1]+0.01+entity->world_position.floats[1];
-			p.floats[1]=v;
-		
-			v=light_a.lights[i].world_position.floats[2];
-			if(v<entity->c_maxmins[5]-0.01+entity->world_position.floats[2])v=entity->c_maxmins[5]-0.01+entity->world_position.floats[2];
-			if(v>entity->c_maxmins[2]+0.01+entity->world_position.floats[2])v=entity->c_maxmins[2]+0.01+entity->world_position.floats[2];
-			p.floats[2]=v;
-		
-			vec_to_light.floats[0]=light_a.lights[i].world_position.floats[0]-p.floats[0];
-			vec_to_light.floats[1]=light_a.lights[i].world_position.floats[1]-p.floats[1];
-			vec_to_light.floats[2]=light_a.lights[i].world_position.floats[2]-p.floats[2];
-			if(dot3(vec_to_light, vec_to_light)<light_a.lights[i].radius*light_a.lights[i].radius)
-			{
-				light_list->light_IDs[light_list->count]=i;
-				light_list->count++;
-			}
-		}*/
-		
-	
-	}
-	return;
-}
-
 PEWAPI void light_TranslateLight(light_ptr light, vec3_t direction, float amount, int b_set)
 {
 	mat4_t transform;
@@ -894,66 +767,6 @@ PEWAPI void light_RotateLight(light_ptr light, vec3_t axis, float angle, int b_s
 	r = light.position_data->local_orientation;
 	mat3_t_rotate(&r, axis, angle, b_set);
 	memcpy(&light.position_data->local_orientation, &r, sizeof(mat3_t));
-}
-
-void light_GetAffectedTiles()
-{
-	/*int i;
-	int c;
-	int j;
-	int k;
-	camera_t *camera=camera_GetActiveCamera();
-	c=light_a.light_count;
-	vec4_t w_position;
-	mat4_t model_view_projection_matrix;
-	
-	float x_max;
-	float y_max;
-	float x_min;
-	float y_min;
-	
-	mat4_t_mult(&model_view_projection_matrix, &camera->world_to_camera_matrix, &camera->projection_matrix);
-	draw_ClearScreenTiles();
-	for(i=0; i<c; i++)
-	{
-		w_position=light_a.lights[i].world_position;
-		w_position=MultiplyVector4(&model_view_projection_matrix, w_position);
-		
-		w_position.floats[0]/=w_position.floats[3];	
-		w_position.floats[1]/=w_position.floats[3];
-		w_position.floats[2]/=w_position.floats[3];
-		
-		w_position.floats[0]=(w_position.floats[0]/2.0)+0.5;
-		w_position.floats[1]=(w_position.floats[1]/2.0)+0.5;
-		w_position.floats[2]=(w_position.floats[2]/2.0)+0.5;
-		
-		j=(int)(renderer.screen_width*w_position.floats[0])/screen_tiles.tile_width;
-		k=(int)(renderer.screen_height*w_position.floats[1])/screen_tiles.tile_height;
-		
-		if(j<0)j=0;
-		else if(j>=screen_tiles.tiles_per_row)j=screen_tiles.tiles_per_row-1;
-		if(k<0)k=0;
-		else if(k>=screen_tiles.tiles_per_coloumn)k=screen_tiles.tiles_per_coloumn-1;
-
-		
-		if(w_position.floats[0]>screen_tiles.tiles[j+k*screen_tiles.tiles_per_row].x_min && 
-		   w_position.floats[0]<screen_tiles.tiles[j+k*screen_tiles.tiles_per_row].x_max)
-		{
-			if(w_position.floats[1]>screen_tiles.tiles[j+k*screen_tiles.tiles_per_row].y_min && 
-		   	   w_position.floats[1]<screen_tiles.tiles[j+k*screen_tiles.tiles_per_row].y_max)
-			{
-				screen_tiles.tiles[j+k*screen_tiles.tiles_per_row].light_count++;
-			}
-		
-		}
-		
-	}*/
-}
-
-
-void light_CalculatePointLightFrustums(frustum_t *generated_frustum, frustum_t *frustums)
-{
-	
 }
 
 PEWAPI light_ptr light_GetLight(char *name)
@@ -1006,227 +819,11 @@ PEWAPI light_ptr light_GetLightByIndex(int light_index)
 	return lptr;
 }
 
-void light_CullLights()
-{
-	/*register int i;
-	register int c;
-	int s;
-	vec3_t l_origin;
-	plane_t top;
-	plane_t bottom;
-	plane_t right;
-	plane_t left;
-	plane_t near;
-	plane_t far;
-	
-	float distance;
-	camera_t *active_camera=camera_GetActiveCamera();
-	vec3_t fvec=camera_GetCameraWorldForwardVector(active_camera);
-	vec3_t uvec=camera_GetCameraWorldUpVector(active_camera);
-	vec3_t rvec=camera_GetCameraWorldRightVector(active_camera);
-	
-	vec3_t cpos=active_camera->world_position;
-	
-	vec3_t ftl;
-	vec3_t fbl;
-	vec3_t ftr;
-	vec3_t fbr;
-	
-	vec3_t ntl;
-	vec3_t nbl;
-	vec3_t ntr;
-	vec3_t nbr;
-	
-	vec3_t fc;
-	vec3_t nc;
-	float nzfar=-active_camera->frustum.zfar;
-	float nznear=-active_camera->frustum.znear;
-	
-	float ftop=(nzfar*active_camera->frustum.top)/nznear;
-	float ntop=active_camera->frustum.top;
-
-	float fright=(nzfar*active_camera->frustum.right)/nznear;
-	float nright=active_camera->frustum.right;
-
-	
-	nc=add3(cpos, mul3(fvec, nznear));
-	fc=add3(cpos, mul3(fvec, nzfar));
-
-	ftl.floats[0]=fc.floats[0] - rvec.floats[0]*fright + uvec.floats[0]*ftop;
-	ftl.floats[1]=fc.floats[1] - rvec.floats[1]*fright + uvec.floats[1]*ftop;
-	ftl.floats[2]=fc.floats[2] - rvec.floats[2]*fright + uvec.floats[2]*ftop;
-	
-	ftr.floats[0]=fc.floats[0] + rvec.floats[0]*fright + uvec.floats[0]*ftop;
-	ftr.floats[1]=fc.floats[1] + rvec.floats[1]*fright + uvec.floats[1]*ftop;
-	ftr.floats[2]=fc.floats[2] + rvec.floats[2]*fright + uvec.floats[2]*ftop;
-	
-	fbl.floats[0]=fc.floats[0] - rvec.floats[0]*fright - uvec.floats[0]*ftop;
-	fbl.floats[1]=fc.floats[1] - rvec.floats[1]*fright - uvec.floats[1]*ftop;
-	fbl.floats[2]=fc.floats[2] - rvec.floats[2]*fright - uvec.floats[2]*ftop;
-	
-	fbr.floats[0]=fc.floats[0] + rvec.floats[0]*fright - uvec.floats[0]*ftop;
-	fbr.floats[1]=fc.floats[1] + rvec.floats[1]*fright - uvec.floats[1]*ftop;
-	fbr.floats[2]=fc.floats[2] + rvec.floats[2]*fright - uvec.floats[2]*ftop;
-	
-	
-	ntl.floats[0]=nc.floats[0] - rvec.floats[0]*nright + uvec.floats[0]*ntop;
-	ntl.floats[1]=nc.floats[1] - rvec.floats[1]*nright + uvec.floats[1]*ntop;
-	ntl.floats[2]=nc.floats[2] - rvec.floats[2]*nright + uvec.floats[2]*ntop;
-	
-	nbl.floats[0]=nc.floats[0] - rvec.floats[0]*nright - uvec.floats[0]*ntop;
-	nbl.floats[1]=nc.floats[1] - rvec.floats[1]*nright - uvec.floats[1]*ntop;
-	nbl.floats[2]=nc.floats[2] - rvec.floats[2]*nright - uvec.floats[2]*ntop;
-	
-	ntr.floats[0]=nc.floats[0] + rvec.floats[0]*nright + uvec.floats[0]*ntop;
-	ntr.floats[1]=nc.floats[1] + rvec.floats[1]*nright + uvec.floats[1]*ntop;
-	ntr.floats[2]=nc.floats[2] + rvec.floats[2]*nright + uvec.floats[2]*ntop;
-
-
-	c=light_a.light_count;
-
-	top=ComputePlane(cpos, ftl, ftr);
-	bottom=ComputePlane(cpos, fbr, fbl);
-	left=ComputePlane(cpos, fbl, ftl);
-	right=ComputePlane(cpos, ftr, fbr);
-	near=ComputePlane(ntl, ntr, nbl);
-	far=ComputePlane(ftl, fbr, ftr);
-	
-	active_light_a.light_count=0;
-	
-	for(i=0; i<c; i++)
-	{
-		//light_a.lights[i].bm_status|= LIGHT_FRUSTUM_CULLED;
-		
-		l_origin=vec4vec3(light_a.world_data[i].world_position);
-		
-
-
-		distance=dot3(l_origin, top.normal) - top.d;
-		if(distance<-light_a.params[i].radius) continue;
-
-
-		distance=dot3(l_origin, bottom.normal) - bottom.d;
-		if(distance<-light_a.params[i].radius) continue;
-
-
-		distance=dot3(l_origin, left.normal) - left.d;
-		if(distance<-light_a.params[i].radius) continue;
-
-
-		distance=dot3(l_origin, right.normal) - right.d;
-		if(distance<-light_a.params[i].radius) continue;
-
-
-		distance=dot3(l_origin, near.normal) - near.d;
-		if(distance<-light_a.params[i].radius) continue;
-		
-	
-		distance=dot3(l_origin, far.normal) - far.d;
-		if(distance<-light_a.params[i].radius) continue;
-		//printf("light inside frustum\n");
-		if(active_light_a.light_count<active_light_a.array_size)
-		{
-			//active_light_a.lights[active_light_a.light_count++]=light_a.lights[i];
-			active_light_a.world_data[active_light_a.light_count]=light_a.world_data[i];
-			active_light_a.local_data[active_light_a.light_count]=light_a.local_data[i];
-			active_light_a.params[active_light_a.light_count]=light_a.params[i];
-			active_light_a.light_count++;
-		}
-		else
-		{
-			light_ResizeLightArray(&active_light_a, active_light_a.array_size<<1);
-			active_light_a.world_data[active_light_a.light_count]=light_a.world_data[i];
-			active_light_a.local_data[active_light_a.light_count]=light_a.local_data[i];
-			active_light_a.params[active_light_a.light_count]=light_a.params[i];
-			active_light_a.light_count++;
-			
-			//active_light_a.lights[active_light_a.light_count++]=light_a.lights[i];
-		}
-		
-		
-		//light_a.lights[i].bm_status&= ~LIGHT_FRUSTUM_CULLED;
-		
-		
-
-
-	}
-	//printf("\n");
-	//printf("%d\n", active_light_a.light_count);*/
-}
-
-
-/*void light_ResizeLightRenderQueue(light_shadow_data *lshadow_data, int new_size)
-{
-	command_buffer_t *ctemp;
-	if(lshadow_data)
-	{
-		ctemp=calloc(new_size, sizeof(command_buffer_t));
-		if(lshadow_data->l_queue.command_buffers)
-		{
-			memcpy(ctemp, lshadow_data->l_queue.command_buffers, sizeof(command_buffer_t)*lshadow_data->l_queue.count);
-			free(lshadow_data->l_queue.command_buffers);
-		}
-		lshadow_data->l_queue.command_buffers=ctemp;
-		lshadow_data->l_queue.queue_size=new_size;
-	}
-	
-	return;
-}*/
-
-/*PEWAPI int light_GetMaxLightCount()
-{
-	return max_lights_per_pass;
-}*/
-
 
 PEWAPI int light_GetLightCount()
 {
 	return light_a.light_count;
 }
-
-
-/*PEWAPI unsigned char light_FloatToChar(float f)
-{
-	int c;
-	c=255*f;
-	if(c>255)c=255;
-	else if(c<0) c=0;
-	return c;
-}*/
-
-/*PEWAPI vec3_t light_GetLightForwardVector(light_position_data *pdata)
-{
-	vec3_t v;
-	v.floats[0]=pdata->world_orientation.floats[2][0];
-	v.floats[1]=pdata->world_orientation.floats[2][1];
-	v.floats[2]=pdata->world_orientation.floats[2][2];
-	return v;
-}
-
-PEWAPI vec3_t light_GetLightUpVector(light_position_data *pdata)
-{
-	vec3_t v;
-	v.floats[0]=pdata->world_orientation.floats[1][0];
-	v.floats[1]=pdata->world_orientation.floats[1][1];
-	v.floats[2]=pdata->world_orientation.floats[1][2];
-	return v;
-}
-
-PEWAPI vec3_t light_GetLightRightVector(light_position_data *pdata)
-{
-	vec3_t v;
-	v.floats[0]=pdata->world_orientation.floats[0][0];
-	v.floats[1]=pdata->world_orientation.floats[0][1];
-	v.floats[2]=pdata->world_orientation.floats[0][2];
-	return v;
-}*/
-
-
-
-
-
-
-
 
 
 

@@ -11,7 +11,7 @@ ResourceIncludes=
 MakeIncludes=
 Compiler=
 CppCompiler=-Wno-write-strings_@@__@@__@@_
-Linker=-lmingw32_@@_-lopengl32_@@_-lSDL2main_@@_-lSDL2_@@_-lSDL2_ttf_@@_-lglew32_@@_-lBulletDynamics_@@_-lBulletCollision_@@_-lLinearMath_@@_-lassimp.dll_@@__@@__@@__@@__@@__@@_libs/OPENAL/Win32/OpenAL32.lib_@@_
+Linker=-lmingw32_@@_-lopengl32_@@_-lSDL2main_@@_-lSDL2_@@_-lSDL2_ttf_@@_-lglew32_@@_-lBulletDynamics_@@_-lBulletCollision_@@_-lLinearMath_@@__@@__@@__@@__@@__@@__@@_libs/OPENAL/Win32/OpenAL32.lib_@@_
 IsCpp=1
 Icon=
 ExeOutput=
@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0000000100000000001000000
-UnitCount=107
+UnitCount=105
 
 [VersionInfo]
 Major=1
@@ -1090,16 +1090,6 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit105]
-FileName=draw_profile.c
-CompileCpp=1
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
 [Unit106]
 FileName=draw_profile.h
 CompileCpp=1
@@ -1111,6 +1101,16 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit107]
+FileName=engine.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit105]
 FileName=engine.h
 CompileCpp=1
 Folder=

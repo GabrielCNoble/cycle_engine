@@ -1,26 +1,21 @@
+#define LIGHT_POINT 1
+#define LIGHT_SPOT 2
+#define LIGHT_DIRECTIONAL 4
 
+#define MAX_LIGHTS_PER_CALL 16
 
+#extension GL_ARB_explicit_uniform_location : enable
 uniform int sysLightCount;
-
-#define MAX_LIGHTS_PER_CALL 128
-
 
 struct sysLightParamsFields
 {
-	mat3 sysLightOrientation;
-	vec3 sysLightPosition;
 	vec3 sysLightColor;
-	vec2 sysLightShadowMapOrigin;
 	float sysLightRadius;
-	float sysLightLinearAttenuation;
-	float sysLightQuadraticAttenuation;
-	float sysLightShadowMapSize;
-	int sysLightType;
 };
 
 
 #ifdef _GL3A_
-#extension ARB_uniform_buffer_object : enable
+#extension GL_ARB_uniform_buffer_object : enable
 
 layout (shared) uniform sysLightParamsUniformBlock
 {
@@ -29,8 +24,8 @@ layout (shared) uniform sysLightParamsUniformBlock
 
 #else
 
-#extension ARB_explicit_uniform_location : enable
-layout(location = 0, std140) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
+
+layout(shared) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
 
 #endif
 

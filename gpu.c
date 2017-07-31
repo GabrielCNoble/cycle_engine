@@ -3,7 +3,7 @@
 #include "vector.h"
 //#define GPU_HEAP_SIZE 134217728		/* 128 MB heap should be enough... */
 #define GPU_HEAP_SIZE 33554432			/* 32 MB */
-#define GPU_MIN_ALLOC sizeof(vec3_t)			
+#define GPU_MIN_ALLOC sizeof(float)			
 #define FREE_THRESHOLD 15
 
 //int vcache_size;
@@ -11,6 +11,7 @@
 
 unsigned int gpu_heap;
 int frees;
+
 
 
 /*typedef struct
@@ -478,6 +479,10 @@ PEWAPI void gpu_Write(int handle, int offset, void *buffer, int count, int raw)
 		{
 			glMapBuffer(GL_ARRAY_BUFFER, mapped_array_access);
 		}
+	}
+	else
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	//printf("end of gpu_Write\n");
 }

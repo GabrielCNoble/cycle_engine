@@ -16,7 +16,16 @@ extern int material_params_uniform_buffer_size;
 static int material_path_lenght = 0;
 static char material_path[256];
 
+static int material_cache_size;
+static int cached_material_count;
+static int free_stack_top;
+static int *free_stack;
+static unsigned int material_cache;
 
+extern int bm_extensions;
+
+extern int uniform_buffer_alignment;
+extern int type_offsets[];
 
 
 #ifdef __cplusplus
@@ -26,8 +35,11 @@ extern "C"
 
 PEWAPI void (*material_SetMaterialByIndex)(int material_index);
 
+/* those are not supposed to be used by any other part of the engine... */
 static void material_SetMaterialByIndexGL3A(int material_index);
 static void material_SetMaterialByIndexGL2B(int material_index);
+static void material_CacheGPUMaterial(material_t *material);
+static void material_DropGPUMaterial(material_t *material);
 
 /*
 =============
@@ -43,21 +55,28 @@ PEWAPI void material_Init(char *path)
 	strcpy(material_path, path);
 	material_path_lenght = strlen(material_path);
 	
-	/*for(i=0; i<256; i++)
-	{
-		color_conversion_lookup_table[i]=(float)i/255.0;
-	}*/
+	//char *ext_str = (char *)glGetString(GL_EXTENSIONS);
+	//ext_str = strstr(ext_str, "GL_ARB_uniform_buffer_object");
 	
-	if((glBindBufferBase))
+	
+	material_cache_size = 512;
+	cached_material_count = 0;
+	free_stack_top = -1;
+	free_stack = (int *)malloc(sizeof(int) * material_cache_size);
+	
+	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
 		material_SetMaterialByIndex = material_SetMaterialByIndexGL3A; 
+		glGenBuffers(1, &material_cache);
+		glBindBuffer(GL_UNIFORM_BUFFER, material_cache);
+		glBufferData(GL_UNIFORM_BUFFER, material_params_uniform_buffer_size * material_cache_size, NULL, GL_DYNAMIC_DRAW);
 	}
 	else
 	{
-		//printf("warning: glBindBufferBase not supported. Using compatibility code...\n");
+		console_Print(MESSAGE_WARNING, "uniform buffer objects not supported. using compatibility code...\n");
 		material_SetMaterialByIndex = material_SetMaterialByIndexGL2B;
 	}
-	
+
 	return;
 }
 
@@ -70,6 +89,10 @@ material_Finish
 PEWAPI void material_Finish()
 {
 	free(material_a.materials);
+	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
+	{
+		glDeleteBuffers(1, &material_cache);
+	}
 	return;
 }
 
@@ -89,8 +112,6 @@ PEWAPI void material_ResizeMaterialArray(int new_size)
 	}
 	material_a.materials=temp;
 	material_a.array_size=new_size;
-	
-	//printf("resize array\n");
 	return;
 }
 
@@ -158,13 +179,14 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	material->bm_flags = bm_flags;
 	
 	
-	glGenBuffers(1, &material->uniform_buffer);
-	glBindBuffer(GL_UNIFORM_BUFFER, material->uniform_buffer);
+	//glGenBuffers(1, &material->uniform_buffer);
+	//glBindBuffer(GL_UNIFORM_BUFFER, material->uniform_buffer);
 	//glBindBufferBase(GL_UNIFORM_BUFFER, 0, material->uniform_buffer);
-	glBufferData(GL_UNIFORM_BUFFER, material_params_uniform_buffer_size, NULL, GL_DYNAMIC_DRAW);
+	//glBufferData(GL_UNIFORM_BUFFER, material_params_uniform_buffer_size, NULL, GL_DYNAMIC_DRAW);
 	//glBufferStorage(GL_UNIFORM_BUFFER, material_params_uniform_buffer_size, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
-	
-	shader_UploadMaterialParams(material);
+	material_CacheGPUMaterial(material);
+	//material_UpdateGPUMaterial(material);
+	//shader_UploadMaterialParams(material);
 	//v = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	
  
@@ -259,6 +281,113 @@ PEWAPI int material_GetMaterialIndex(char *name)
 	return -1;
 }
 
+
+void material_UpdateGPUMaterial(material_t *material)
+{
+	void *b;
+	void *p;
+	int index;
+	if(likely(material))
+	{
+		
+		if(!(material->bm_flags & MATERIAL_Cached))
+		{
+			if(free_stack_top >= 0)
+			{
+				index = free_stack[free_stack_top--];
+			}
+			else
+			{
+				index = cached_material_count++;
+			}
+			
+			material->cache_index = index;
+			material->bm_flags |= MATERIAL_Cached;
+		}
+
+		glBindBuffer(GL_UNIFORM_BUFFER, material_cache);
+		p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+		
+		p = (char *)p + material_params_uniform_buffer_size * material->cache_index;
+		
+		((vec4_t *)p)->r = (float)material->diff_color.r / 0xff; 
+		((vec4_t *)p)->g = (float)material->diff_color.g / 0xff; 
+		((vec4_t *)p)->b = (float)material->diff_color.b / 0xff; 
+		((vec4_t *)p)->a = (float)material->diff_color.a / 0xff; 
+		
+		p = ((char *)p) + type_offsets[OFFSET_VEC4];
+		
+		*((float *)p) = (float)material->glossiness / 0xffff;
+		p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+		
+		*((float *)p) = (float)material->metallic / 0xffff;
+		p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+		
+		*((float *)p) = ((float)material->emissive / 0xffff) * MAX_MATERIAL_EMISSIVE;
+		p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+		
+		*((int *)p) = (int)material->bm_flags;
+		
+		glUnmapBuffer(GL_UNIFORM_BUFFER);
+	}
+}
+
+void material_CacheGPUMaterial(material_t *material)
+{
+	int index;
+	void *p;
+	if(free_stack_top >= 0)
+	{
+		index = free_stack[free_stack_top--];
+	}
+	else
+	{
+		index = cached_material_count++;
+	}
+	
+	glBindBuffer(GL_UNIFORM_BUFFER, material_cache);
+	p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	
+	p = (char *)p + material_params_uniform_buffer_size * index;
+	
+	((vec4_t *)p)->r = (float)material->diff_color.r / 0xff; 
+	((vec4_t *)p)->g = (float)material->diff_color.g / 0xff; 
+	((vec4_t *)p)->b = (float)material->diff_color.b / 0xff; 
+	((vec4_t *)p)->a = (float)material->diff_color.a / 0xff; 
+		
+	p = ((char *)p) + type_offsets[OFFSET_VEC4];
+		
+	*((float *)p) = (float)material->glossiness / 0xffff;
+	p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+		
+	*((float *)p) = (float)material->metallic / 0xffff;
+	p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+		
+	*((float *)p) = ((float)material->emissive / 0xffff) * MAX_MATERIAL_EMISSIVE;
+	p = ((char *)p) + type_offsets[OFFSET_FLOAT];
+		
+	*((int *)p) = (int)material->bm_flags;
+	
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	
+	material->cache_index = index;
+	material->bm_flags |= MATERIAL_Cached;
+	
+}
+
+void material_DropGPUMaterial(material_t *material)
+{
+	if(material)
+	{
+		if(material->bm_flags & MATERIAL_Cached)
+		{
+			free_stack_top++;
+			free_stack[free_stack_top] = material->cache_index;
+			material->bm_flags &= ~MATERIAL_Cached;
+		}
+	}
+}
+
 /*
 =============
 material_SetMaterialByIndexGL3A (OpenGL 3.0 or above)
@@ -278,7 +407,11 @@ static void material_SetMaterialByIndexGL3A(int material_index)
 		
 		renderer.active_material_index = material_index;
 		
-		glBindBufferBase(GL_UNIFORM_BUFFER, MATERIAL_PARAMS_BINDING, material->uniform_buffer);
+		while(glGetError() != GL_NO_ERROR);
+		//glBindBufferBase(GL_UNIFORM_BUFFER, MATERIAL_PARAMS_BINDING, material_cache);
+		glBindBufferRange(GL_UNIFORM_BUFFER, MATERIAL_PARAMS_BINDING, material_cache, material->cache_index * uniform_buffer_alignment, uniform_buffer_alignment);
+		
+		//printf("%x\n", glGetError());
 		
 		if(bm_flags&MATERIAL_Wireframe)
 		{

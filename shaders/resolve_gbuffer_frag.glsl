@@ -4,6 +4,10 @@
 
 
 
+#include "light.h"
+
+
+
 varying vec2 UV;
 varying vec3 viewRay;
 
@@ -26,7 +30,7 @@ uniform sampler2D sysTextureSampler2;
 #define LIGHT_DIRECTIONAL 4
 
 #define sysLightType int(gl_LightSource[1].spotCutoff)
-#define sysLightRadius gl_LightSource[0].diffuse.a
+//#define sysLightRadius gl_LightSource[0].diffuse.a
 #define sysUseShadows gl_LightSource[3].spotExponent
 #define sysProjectTexture gl_LightSource[4].spotExponent
 
@@ -355,8 +359,9 @@ void main()
     vec3 view_vec;
     vec4 vcolor=vec4(0.5, 0.5, 0.5, 0.0);
     //vec4 lcolor = gl_LightSource[0].diffuse;
-    vec3 light_color = gl_LightSource[0].diffuse.rgb;
-    
+    //vec3 light_color = gl_LightSource[0].diffuse.rgb;
+    //vec3 light_color = vec3(1.0);
+    vec3 light_color = sysLightParams[0].sysLightColor;
     float diff;
     float intensity=1.0;
     float spec;
@@ -386,11 +391,11 @@ void main()
 		
 		if(sysLightType == LIGHT_POINT)
 		{
-			intensity = attenuate_point(light_vec, gl_LightSource[0].diffuse.a, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = attenuate_point(light_vec, sysLightParams[0].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 		}
 		else if(sysLightType == LIGHT_SPOT)
 		{
-			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, gl_LightSource[0].diffuse.a, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[0].sysLightRadius, gl_LightSource[0].spotCosCutoff, gl_LightSource[0].spotExponent, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);

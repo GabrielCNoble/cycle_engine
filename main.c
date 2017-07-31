@@ -856,23 +856,23 @@ void open_add_to_world_menu()
 	entity_def_list *def_list = entity_GetEntityDefList();
 	
 	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
-	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
+	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, NULL, NULL);
 	gui_AddOption(dd, "Lights");
 	gui_AddOption(dd, "Defs");
 	gui_AddOption(dd, "Test");
-	wdropdown_t *lights = gui_NestleDropDown(dd, 0, "Lights", DROP_DOWN_DROPPED, 200, NULL, add_light);
+	wdropdown_t *lights = gui_NestleDropDown(dd, 0, "Lights", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, add_light);
 	
 	gui_AddOption(lights, "Point Light");
 	gui_AddOption(lights, "Spot Light");
 	
-	wdropdown_t *defs = gui_NestleDropDown(dd, 1, "Defs", DROP_DOWN_DROPPED, 200, def_list, add_def);
+	wdropdown_t *defs = gui_NestleDropDown(dd, 1, "Defs", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, def_list, add_def);
 	
 	for(i = 0; i < def_list->count; i++)
 	{
 		gui_AddOption(defs, def_list->defs[i].name);
 	}
 	
-	wdropdown_t *test = gui_NestleDropDown(dd, 2, "test0", DROP_DOWN_DROPPED, 200, NULL, NULL);
+	wdropdown_t *test = gui_NestleDropDown(dd, 2, "test0", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);
 	gui_AddOption(test, "op0");
 	gui_AddOption(test, "op1");
 	gui_AddOption(test, "op2");
@@ -882,7 +882,7 @@ void open_add_to_world_menu()
 	gui_AddOption(test, "op6");
 	gui_AddOption(test, "op7");
 	
-	wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED, 200, NULL, NULL);
+	wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);
 	gui_AddOption(test2, "op8");
 	gui_AddOption(test2, "op9");
 	gui_AddOption(test2, "op10");
@@ -903,14 +903,26 @@ void close_add_to_world_menu()
 
 void open_delete_menu()
 {
+	char *phrases[] = 
+	{
+		"DO IT!",
+		"JUST DO IT!"
+	};
+	int i;
+	
+	
 	if(delete_menu)
 	{
 		gui_DeleteWidget(delete_menu);
 	}
 	
+	srand(time(NULL));
+	
+	i = rand()%2;
+	
 	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
-	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED, 0, 0, 200, &cr, delete_fn);
-	gui_AddOption(d, "DO IT!");
+	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, &cr, delete_fn);
+	gui_AddOption(d, phrases[i]);
 }
 
 void close_delete_menu()
@@ -1304,15 +1316,16 @@ void ginit()
 	id = mat3_t_id();
 
 	
-	model_LoadModel("CubeUV2.obj", "cubeUV");
+	
 	model_LoadModel("ico_uv.obj", "ico");
-	model_LoadModel("pole.obj", "pole");
-	model_LoadModel("bus_stop.obj", "bus_stop");
+	//model_LoadModel("pole.obj", "pole");
+	//model_LoadModel("bus_stop.obj", "bus_stop");
 //	model_LoadModel("wheel.obj", "wheel");
 //	model_LoadModel("pew_plane.obj", "pew_plane");
 	model_LoadModel("BigPlane.obj", "plane");
-	model_LoadModel("Cargo_container_01.obj", "cargo");
-	model_LoadModel("Vending_Machine_2.obj", "vending_machine");
+	model_LoadModel("CubeUV2.obj", "cubeUV");
+	//model_LoadModel("Cargo_container_01.obj", "cargo");
+	//model_LoadModel("Vending_Machine_2.obj", "vending_machine");
 	//model_LoadModel("stairs.obj", "stairs");
 	//model_LoadModel("plat2.obj", "plat2");
 
@@ -1494,10 +1507,11 @@ void ginit()
 	//tif.spec_tex = (short)texture_GetTextureIndex("rock4_d");
 	tif.heig_tex = (short)texture_GetTextureIndex("rock4_h");
 	
+	material_CreateMaterial("white", 0.9, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, 0, NULL);
 	material_CreateMaterial("red", 0.5, 0.0, vec4(1.0, 0.0, 0.0, 1.0), 0.0, 0, NULL);
 	material_CreateMaterial("green", 0.5, 0.0, vec4(0.0, 1.0, 0.0, 1.0), 0.0, 0, NULL);
 	material_CreateMaterial("blue", 0.5, 0.0, vec4(0.0, 0.0, 1.0, 1.0), 0.0, 0, NULL);
-	material_CreateMaterial("white", 0.9, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, 0, NULL);
+	
 	
 	//material_CreateMaterial("green", 0.5, 0.0, vec4(0.0, 1.0, 0.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_HeightTexture, &tif);
 	
@@ -1615,16 +1629,16 @@ void ginit()
 	//entity_CreateEntityDef("pew_plane", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("pew_plane"), 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("piramid", ENTITY_DYNAMIC, ENTITY_COLLIDES, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("piramid"), 2.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("stairs", ENTITY_COLLIDES|ENTITY_STATIC_COLLISION, material_GetMaterialIndex("red"), -1, model_GetMeshPtr("stairs"), 1.0, COLLISION_SHAPE_CONVEX_HULL);
-	entity_CreateEntityDef("ico_brushed_metal", ENTITY_COLLIDES, material_GetMaterialIndex("brushed_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_painted_metal", ENTITY_COLLIDES, material_GetMaterialIndex("painted_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("ico_tufted_leather", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("ico_brushed_metal", ENTITY_COLLIDES, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("ico_painted_metal", ENTITY_COLLIDES, material_GetMaterialIndex("painted_metal"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("ico_tufted_leather", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	
-	entity_CreateEntityDef("pole", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("pole"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("bus_stop", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("bus_stop"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("pole", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("pole"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("bus_stop", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("bus_stop"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	
-	entity_CreateEntityDef("cargo", 0, material_GetMaterialIndex("cargo"), -1, model_GetMeshPtr("cargo"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("vending_machine", 0, material_GetMaterialIndex("vending_machine"), -1, model_GetMeshPtr("vending_machine"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("cargo", 0, material_GetMaterialIndex("cargo"), -1, model_GetMeshPtr("cargo"), 2.0, COLLISION_SHAPE_SPHERE);
+	//entity_CreateEntityDef("vending_machine", 0, material_GetMaterialIndex("vending_machine"), -1, model_GetMeshPtr("vending_machine"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("cube_iron_rusted", ENTITY_COLLIDES, material_GetMaterialIndex("iron_rusted"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("ico_red", ENTITY_COLLIDES, material_GetMaterialIndex("translucent1"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("ico_green", ENTITY_COLLIDES, material_GetMaterialIndex("translucent2"), -1, model_GetMeshPtr("ico"), 2.0, COLLISION_SHAPE_SPHERE);
@@ -1663,8 +1677,8 @@ void ginit()
 	//entity_SpawnEntity("plane2", def, vec3(0.0, -6.0, 100.0), &id);
 	//def = entity_GetEntityDef("stairs");
 	
-	id = mat3_t_id();
-	//def0 = entity_GetEntityDef("cargo");
+	//id = mat3_t_id();
+	//def0 = entity_GetEntityDef("cube");
 	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);
 	
 	/*def2 = entity_GetEntityDef("ico_tufted_leather");
@@ -1674,48 +1688,48 @@ void ginit()
 	entity_SpawnEntity("ico_brushed_metal", def0, vec3(6.0, 0.0, 0.0), &id);
 	
 	def1 = entity_GetEntityDef("ico_painted_metal");
-	entity_SpawnEntity("ico_painted_metal", def1, vec3(-6.0, 0.0, 0.0), &id);
+	entity_SpawnEntity("ico_painted_metal", def1, vec3(-6.0, 0.0, 0.0), &id);*/
 	
 	
 	
 	
-	for(i = 0; i < 10; i++)
+	/*for(i = 0; i < 10; i++)
 	{
-		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 0.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 0.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 0.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 0.0, -10.0 + i * 2), &id);
+		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 0.0, -10.0 + i * 2), &id);
+		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 0.0, -10.0 + i * 2), &id);
+	}*/
+	
+	/*for(i = 0; i < 50; i++)
+	{
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 2.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 2.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 2.0, -25.0 + i), &id);
 	}
 	
-	for(i = 0; i < 10; i++)
+	for(i = 0; i < 50; i++)
 	{
-		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 2.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 2.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 2.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 4.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 4.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 4.0, -25.0 + i), &id);
 	}
 	
-	for(i = 0; i < 10; i++)
+	for(i = 0; i < 50; i++)
 	{
-		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 4.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 4.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 4.0, -5.0 + i), &id);
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 6.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 6.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 6.0, -25.0 + i), &id);
 	}
 	
-	for(i = 0; i < 10; i++)
+	for(i = 0; i < 50; i++)
 	{
-		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 6.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 6.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 6.0, -5.0 + i), &id);
-	}
-	
-	for(i = 0; i < 10; i++)
-	{
-		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_painted_metal", def1, vec3(0.0, 8.0, -5.0 + i), &id);
-		entity_SpawnEntity("ico_tufted_leather", def2, vec3(-4.0, 8.0, -5.0 + i), &id);
-	}
+		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 8.0, -25.0 + i), &id);
+		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 8.0, -25.0 + i), &id);
+	}*/
 
 
-	mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
+	/*mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
 	def2 = entity_GetEntityDef("pole");*/
 	//entity_SpawnEntity("pole", def2, vec3(8.0, -8.0, 6.0), &id);
 	
@@ -1730,7 +1744,7 @@ void ginit()
 	{	
 		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 0.0), 20.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);

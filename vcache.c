@@ -40,6 +40,8 @@ void vcache_CacheMeshData(mesh_t *mesh)
 	int tangent_byte_count = 0;
 	int tex_coord_byte_count = 0;
 	int slot_index;
+	int i;
+	float *f;
 	
 	if(likely(mesh))
 	{
@@ -61,6 +63,9 @@ void vcache_CacheMeshData(mesh_t *mesh)
 			byte_count += sizeof(float) * 2 * mesh->vert_count;
 		}
 		
+		
+		//f = (float *)malloc(byte_count);
+		
 		if(stack_top < 0)
 		{
 			slot_index = vcache_count++;
@@ -79,6 +84,16 @@ void vcache_CacheMeshData(mesh_t *mesh)
 		gpu_Write(vert_cache[slot_index].handle, 0, mesh->v_data, byte_count, 0);
 		mesh->flags |= MESH_CACHED;
 		printf("mesh_t %s has been cached\n", mesh->name);
+		
+		/*gpu_Read(vert_cache[slot_index].handle, 0, f, byte_count, 0);
+		
+		
+		for(i = 0; i < mesh->vert_count; i++)
+		{
+			printf("v: [%f %f %f]\n", mesh->v_data[i*6], mesh->v_data[i*6 + 1], mesh->v_data[i*6 + 2]);
+		}*/
+		
+		
 	}
 	return;
 }

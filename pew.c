@@ -93,9 +93,9 @@ PEWAPI void pew_Init(int resolution, int mode, char *path)
 	input_Init();
 	model_Init("models\\");
 	entity_Init();
-	light_Init();
 	shader_Init("shaders\\");
 	texture_Init("textures\\");
+	light_Init();
 	material_Init("materials\\");
 	//particle_Init();
 	scenegraph_Init();

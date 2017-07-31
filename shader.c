@@ -36,7 +36,29 @@ static int material_params_uniform_offsets[MATERIAL_PARAMS_FIELDS];
 static int material_params_uniform_types[MATERIAL_PARAMS_FIELDS];
 int material_params_uniform_buffer_size;
 
-int min_uniform_block_size;																		  
+
+
+static char *offset_uniform_block = "sysOffsetQueryUniformBlock";
+
+static char *offset_uniform_fields[OFFSET_TYPE_COUNT + 1] = 
+{
+	"sysOffsets.sysMat4Field",
+	"sysOffsets.sysMat3Field",
+	"sysOffsets.sysMat2Field",
+	"sysOffsets.sysVec4Field",
+	"sysOffsets.sysVec3Field",
+	"sysOffsets.sysVec2Field",
+	"sysOffsets.sysFloatField",
+	"sysOffsets.sysIntField",
+	"sysOffsets.sysShortField",
+	"sysOffsets.sysLastField",
+};
+
+int type_offsets[OFFSET_TYPE_COUNT + 1];
+
+
+
+int uniform_buffer_alignment;																		  
 																			  																		  
 													
 													
@@ -45,15 +67,20 @@ static char *light_params_uniform_block = {"sysLightParamsUniformBlock"};
 static char *light_params_uniform_name = {"sysLightParams"};
 
 static char *light_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = {
+																		  "sysLightParams[0].sysLightProjectionMatrix",
 																		  "sysLightParams[0].sysLightOrientation",
 																		  "sysLightParams[0].sysLightPosition",
-																		  "sysLightParams[0].sysLightColor",
-																		  "sysLightParams[0].sysLightShadowMapOrigin",
 																		  "sysLightParams[0].sysLightRadius",
+																		  "sysLightParams[0].sysLightColor",
 																		  "sysLightParams[0].sysLightLinearAttenuation",
+																		  "sysLightParams[0].sysLightShadowMapOrigin",															
 																		  "sysLightParams[0].sysLightQuadraticAttenuation",
+																		  "sysLightParams[0].sysLightShadowMapSize",
+																		  "sysLightParams[0].sysZNear",
+																		  "sysLightParams[0].sysZFar",
 																		  "sysLightParams[0].sysLightType",
-																		  "sysLightParams[0].sysLightShadowMapSize"};
+																		  "sysLightParams[0].sysShadowMapSamples",
+																		  };
 																		  
 																		  
 static int light_params_uniform_offsets[LIGHT_PARAMS_FIELDS];	
@@ -159,7 +186,7 @@ static varying_t *vroot = NULL;
 static varying_t *vlast;
 
 int light_pick_shader;
-
+extern int bm_extensions;
 
 static varying_t *froot = NULL;
 static varying_t *flast;
@@ -204,11 +231,11 @@ PEWAPI void shader_Init(char *path)
 		shader_AddGlobalDefine("_GL2B_");
 	}*/
 	
-	ext_str = (char *)glGetString(GL_EXTENSIONS);
-	ext_str = strstr(ext_str, "GL_ARB_uniform_buffer_object");
+	//ext_str = (char *)glGetString(GL_EXTENSIONS);
+	//ext_str = strstr(ext_str, "GL_ARB_uniform_buffer_object");
 	
 	
-	if(ext_str)
+	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
 		shader_AddGlobalDefine("_GL3A_");
 	}
@@ -225,11 +252,18 @@ PEWAPI void shader_Init(char *path)
 		exit(-4);
 	}
 	
-
-	if(ext_str)
+	//glGetIntegerv(GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS, &i);
+	//printf("==>%d\n", i);
+	
+	//glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_alignment);
+	//printf("alignment: %d\n", uniform_buffer_alignment);
+	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
 		
-		if((i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block)) != GL_INVALID_INDEX)
+		glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_alignment);
+		
+		i = glGetUniformBlockIndex(init_shader->shader_ID, material_params_uniform_block);	
+		if(i != GL_INVALID_INDEX)
 		{			
 			glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &material_params_uniform_buffer_size);
 		}
@@ -240,21 +274,41 @@ PEWAPI void shader_Init(char *path)
 		}
 		
 		
-		if((i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block)) != GL_INVALID_INDEX)
+		i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block);
+		if(i != GL_INVALID_INDEX)
 		{
 			glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &light_params_uniform_buffer_size);
 		}
 		else
 		{
-
 			printf("init shader appears to have problems! aborting...\n");
 			exit(-5);
 		}
-	}
-	else
-	{
+		
+	//	printf("size: %d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size / 16);
+		
+		material_params_uniform_buffer_size = (material_params_uniform_buffer_size + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
+	//	light_params_uniform_buffer_size = (light_params_uniform_buffer_size / 16 + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
+		
+		//printf("size: %d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size);
+		
+		light_params_uniform_buffer_size /= 16;
 		
 	}
+	
+	glGetUniformIndices(init_shader->shader_ID, OFFSET_TYPE_COUNT + 1, (const char **)offset_uniform_fields, indexes);
+	glGetActiveUniformsiv(init_shader->shader_ID, OFFSET_TYPE_COUNT + 1, indexes, GL_UNIFORM_OFFSET, (int *)type_offsets);
+	
+	for(i = 0; i < OFFSET_TYPE_COUNT; i++)
+	{
+		type_offsets[i] = type_offsets[i + 1] - type_offsets[i];
+	}
+	
+	/*for(i = 0; i < OFFSET_TYPE_COUNT; i++)
+	{
+		printf("	-->%d\n", type_offsets[i]);
+	}*/
+	
 	
 	glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
 	glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
@@ -266,7 +320,7 @@ PEWAPI void shader_Init(char *path)
 	glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
 	
 	/*printf("offsets:\n");
-	for(i = 0; i < 8; i++)
+	for(i = 0; i < 9; i++)
 	{
 		printf("	-->%d\n", light_params_uniform_offsets[i]);
 	}*/
@@ -624,6 +678,13 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	if((i = glGetUniformBlockIndex(shader_prog, material_params_uniform_block)) != GL_INVALID_INDEX)
 	{
 		glUniformBlockBinding(shader_prog, i, MATERIAL_PARAMS_BINDING);
+		printf("shader %s has material uniform block %d\n", name, i);
+	}
+	
+	if((i = glGetUniformBlockIndex(shader_prog, light_params_uniform_block)) != GL_INVALID_INDEX)
+	{
+		glUniformBlockBinding(shader_prog, i, LIGHT_PARAMS_BINDING);
+		printf("shader %s has light uniform block %d\n", name, i);
 	}
 	
 	
@@ -637,6 +698,8 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	{
 		shader->default_uniforms[UNIFORM_Time + i] = glGetUniformLocation(shader_prog, uniforms[i]);
 	}
+	
+	glUniformBlockBinding(shader_prog, 1, LIGHT_PARAMS_BINDING);
 
 
 	shader->shader_ID=shader_prog;
@@ -658,9 +721,9 @@ PEWAPI void shader_DeleteShaderByIndex(int shader_index)
 	{
 		shader = &shader_a.shaders[shader_index];
 		
-		#ifdef PARANOID
+		/*#ifdef PARANOID
 			printf("shader %d:[%s] got deleted. ", shader_index, shader->name);
-		#endif	
+		#endif	*/
 			
 		free(shader->name);
 		free(shader->default_uniforms);
@@ -671,16 +734,16 @@ PEWAPI void shader_DeleteShaderByIndex(int shader_index)
 		{
 			shader_a.shader_count--;
 			
-			#ifdef PARANOID
+			/*#ifdef PARANOID
 				printf("%d shaders remain\n", shader_a.shader_count);
-			#endif 
+			#endif */
 		}
 		else
 		{
 			shader_a.free_stack[++shader_a.stack_top] = shader_index;
-			#ifdef PARANOID
+			/*#ifdef PARANOID
 				printf("index added to free positions stack\n");
-			#endif	
+			#endif	*/
 		}
 		
 		
@@ -758,7 +821,7 @@ PEWAPI void shader_SetShaderByIndex(int shader_index)
 	return;
 }
 
-PEWAPI void shader_UploadMaterialParams(material_t *material)
+/*PEWAPI void shader_UploadMaterialParams(material_t *material)
 {
 	void *b;
 	void *p;
@@ -797,7 +860,7 @@ PEWAPI void shader_UploadMaterialParams(material_t *material)
 		glUnmapBuffer(GL_UNIFORM_BUFFER);
 		
 	}
-}
+}*/
 
 
 /*__attribute((always_inline)) PEWAPI void shader_SetCurrentShaderUniform1i(int uniform, int value)

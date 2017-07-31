@@ -12,11 +12,11 @@ extern "C"
 {
 #endif
 
-PEWAPI void material_Init(char *path);
+void material_Init(char *path);
 
-PEWAPI void material_Finish();
+void material_Finish();
 
-PEWAPI void material_ResizeMaterialArray(int new_size);
+void material_ResizeMaterialArray(int new_size);
 
 /*PEWAPI void material_CreateMaterialFromData(material_t *material);*/
 
@@ -28,7 +28,7 @@ PEWAPI material_t *material_GetMaterialByIndex(int );
 
 PEWAPI int material_GetMaterialIndex(char *name);
 
-//PEWAPI void material_SetMaterialByIndex(int material_index);
+PEWAPI void material_UpdateGPUMaterial(material_t *material);
 
 extern PEWAPI void (*material_SetMaterialByIndex)(int material_index);
 

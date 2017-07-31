@@ -229,6 +229,9 @@ int texture_binds = 0;
 int shader_swaps = 0;
 
 
+
+int bm_extensions = 0;
+
 /*int clusters_per_row;
 int cluster_rows;
 int cluster_z_divs;
@@ -365,28 +368,43 @@ draw_Init
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
 	ext_str = (char *)glGetString(GL_EXTENSIONS);
+	
 	sub_str = strstr(ext_str, "GL_ARB_seamless_cube_map");
 	if(sub_str)
 	{
+		bm_extensions |= EXT_TEXTURE_CUBE_MAP_SEAMLESS;
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 	
-	/*sub_str = strstr(ext_str, "GL_EXT_packed_depth_stencil");
+	sub_str = strstr(ext_str, "GL_EXT_packed_depth_stencil");
 	if(sub_str)
 	{
-		printf("packed depth stencil supported!\n");
+		bm_extensions |= EXT_PACKED_DEPTH_STENCIL;
 	}
-	else
-	{
-		printf("packed depth stencil not supported!\n");
-	}*/
 	
-	/*sub_str = strstr(ext_str, "GL_EXT_transform_feedback");
+	sub_str = strstr(ext_str, "GL_EXT_transform_feedback");
 	if(sub_str)
 	{
-		glEnable(GL_TRANSFORM_FEEDBACK);
-	}*/
-
+		bm_extensions |= EXT_TRANSFORM_FEEDBACK;
+	}
+	
+	sub_str = strstr(ext_str, "GL_ARB_uniform_buffer_object");
+	if(sub_str)
+	{
+		bm_extensions |= EXT_UNIFORM_BUFFER_OBJECT;
+	}
+	
+	sub_str = strstr(ext_str, "GL_EXT_multi_draw_arrays");
+	if(sub_str)
+	{
+		bm_extensions |= EXT_MULTI_DRAW_ARRAYS;
+	}
+	
+	sub_str = strstr(ext_str, "GL_ARB_multi_draw_indirect");
+	if(sub_str)
+	{
+		bm_extensions |= EXT_MULTI_DRAW_INDIRECT;
+	}
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glCullFace(GL_CW);
@@ -1754,7 +1772,10 @@ void draw_DrawWireframe()
 	
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
-	shader_SetShaderByIndex(wireframe_shader_index);	
+	shader_SetShaderByIndex(wireframe_shader_index);
+	
+	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));	
 
 	glMatrixMode(GL_MODELVIEW);
 	c=render_q.count;
@@ -1791,10 +1812,13 @@ void draw_DrawWireframe()
 		glLoadMatrixf(&model_view_matrix.floats[0][0]);
 		
 		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
-		v_byte_count=vert_count*3*sizeof(float);
-		glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
-		glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
-		draw_DrawArrays(draw_mode, 0, vert_count);	
+		//v_byte_count=vert_count*3*sizeof(float);
+		
+		start /= sizeof(float) * 3;
+		
+		//glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+		//glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(0));
+		draw_DrawArrays(draw_mode, start, vert_count);	
 		//glDrawArrays(draw_mode, 0, vert_count);
 		
 	}
@@ -1927,6 +1951,7 @@ void draw_DrawLit()
 	unsigned int material_index;
 	//unsigned int gpu_buffer;
 	unsigned int start;
+	unsigned int q;
 	unsigned int attrib_flags;
 	int shader_index;
 	int entity_index;
@@ -2002,48 +2027,42 @@ void draw_DrawLit()
 			v_normal = shader_a.shaders[shader_index].v_normal;
 			v_tangent = shader_a.shaders[shader_index].v_tangent;
 			v_tex_coord = shader_a.shaders[shader_index].v_tcoord;
+			
+			
+			
 		}
 		
 		
-		//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_LastModelViewMatrix, &model_view_matrix.floats[0][0]);
-		//shader_SetCurrentShaderUniform1f(UNIFORM_EntityIndex, entity_index);
-		
-		//if(material_index != renderer.active_material_index)
-		//{
-		material_SetMaterialByIndex(material_index);
-		//}
-
-		
-		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
-		v_byte_count=vert_count*3*sizeof(float);
-		
-		
-		
+		v_byte_count = vert_count*3*sizeof(float);
+			
+		q = 0;
 		glEnableVertexAttribArray(v_position);
-		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)start);
-		start += v_byte_count;
+		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+		q += v_byte_count;
 		if(attrib_flags&CBATTRIBUTE_NORMAL)
 		{	
 			glEnableVertexAttribArray(v_normal);
-			glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(start));
-			start += v_byte_count;
+			glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
+			q += v_byte_count;
 		}
 		if(attrib_flags&CBATTRIBUTE_TEX_COORD)
 		{
 			if(attrib_flags&CBATTRIBUTE_TANGENT)
 			{				
 				glEnableVertexAttribArray(v_tangent);
-				glVertexAttribPointer(v_tangent, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(start));
-				start += v_byte_count;
+				glVertexAttribPointer(v_tangent, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
+				q += v_byte_count;
 			}
 			glEnableVertexAttribArray(v_tex_coord);
-			glVertexAttribPointer(v_tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(start));
+			glVertexAttribPointer(v_tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (void *)(q));
 		}
+	
+		material_SetMaterialByIndex(material_index);
+
+		start /= sizeof(float) * 3;
 		
-		//draw_mode &= ~(CBATTRIBUTE_NORMAL|CBATTRIBUTE_TANGENT|CBATTRIBUTE_TEX_COORD);
-		draw_DrawArrays(draw_mode, 0, vert_count);
-		//glDrawArrays(draw_mode, 0, vert_count);
-		
+		draw_DrawArrays(draw_mode, start, vert_count);
+
 		
 		/*e = _rdtsc();
 		q += e - s;
@@ -2829,17 +2848,21 @@ void draw_ResolveGBuffer()
 			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_INCR, GL_KEEP);
 			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_DECR, GL_KEEP);
 			
+			//glBindBufferRange(GL_UNIFORM_BUFFER, LIGHT_PARAMS_BINDING, light_cache);
+			//light_BindLightCache();
+			
+			light_BindLightCache();
 			
 			for(i = 0; i < c; i++)
 			{
 				position = &active_light_a.position_data[i];				
 				glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 				
-				v[0] = 0;
-		 		v[1] = 0;
-		 		v[2] = 0;
-		 		v[3] = position->radius;
-				glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
+				//v[0] = 0;
+		 		//v[1] = 0;
+		 		//v[2] = 0;
+		 		//v[3] = position->radius;
+				//glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
 				
 				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
 				
@@ -2939,6 +2962,8 @@ void draw_ResolveGBuffer()
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE, GL_ONE);
 			
+			//light_BindLightCache();
+			
 			for(i = 0; i < c; i++)
 			{
 				
@@ -2973,11 +2998,11 @@ void draw_ResolveGBuffer()
 				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
 		 		
 		 		
-		 		v[0] = (float)params->r / 255.0;
-		 		v[1] = (float)params->g / 255.0;
-		 		v[2] = (float)params->b / 255.0;
-		 		v[3] = position->radius;
-				glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
+		 		//v[0] = (float)params->r / 255.0;
+		 		//v[1] = (float)params->g / 255.0;
+		 		//v[2] = (float)params->b / 255.0;
+		 		//v[3] = position->radius;
+				//glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
 				
 				
 				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
@@ -3066,6 +3091,8 @@ void draw_ResolveGBuffer()
 				draw_DrawArrays(draw_mode, draw_begin, draw_count);
 				//glDrawArrays(draw_mode, draw_begin, draw_count);
 			}
+			
+			light_UnbindLightCache();
 		break;
 		
 		case RENDER_DRAWMODE_WIREFRAME:
@@ -3229,6 +3256,7 @@ void draw_DrawShadowMaps()
 	
 	attrib = shader_a.shaders[smap_shader_index].v_position;
 	glEnableVertexAttribArray(attrib);
+	glVertexAttribPointer(attrib, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
 	//shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 1);
 	//shader_SetCurrentShaderUniform1f(UNIFORM_UseShadows, 2.0);
 	
@@ -3391,7 +3419,7 @@ void draw_DrawShadowMaps()
 				v_byte_count=vert_count*sizeof(float) * 3;
 				
 				//glEnableVertexAttribArray(shader_a.shaders[smap_shader_index].v_position);
-				glVertexAttribPointer(attrib, 3, GL_FLOAT, GL_FALSE, 0, (void *)start);
+				//glVertexAttribPointer(attrib, 3, GL_FLOAT, GL_FALSE, 0, (void *)start);
 					
 				if(material_a.materials[material_index].bm_flags & MATERIAL_FrontAndBack)
 				{
@@ -3401,7 +3429,8 @@ void draw_DrawShadowMaps()
 				{
 					glEnable(GL_CULL_FACE);
 				}
-				draw_DrawArrays(draw_mode, 0, vert_count);
+				start /= sizeof(float) * 3;
+				draw_DrawArrays(draw_mode, start, vert_count);
 				//glDrawArrays(draw_mode, 0, vert_count);
 				
 				//ei = _rdtsc();
@@ -4922,7 +4951,7 @@ PEWAPI void draw_DrawWidgets()
 					dropdown = (wdropdown_t *)cswidget;
 					
 					hw = dropdown->swidget.w / 2.0;
-					hh = dropdown->swidget.h / 2.0;
+					hh = OPTION_HEIGHT / 2.0;
 					
 					
 					//glStencilFunc(GL_EQUAL, base_stencil, 0xff);
@@ -4932,8 +4961,39 @@ PEWAPI void draw_DrawWidgets()
 					
 					x0 = dropdown->swidget.x + x - hw;
 					x1 = dropdown->swidget.x + x + hw;
-					y0 = dropdown->swidget.y + y - hh;
+					
+					
+					if(!(dropdown->bm_flags & DROP_DOWN_NO_HEADER))
+					{
+						glColor3f(0.3, 0.3, 0.3);
+						
+						y0 = dropdown->swidget.y + y - hh;
+						y1 = dropdown->swidget.y + y + hh;
+					
+						glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);			
+						glRectf(x0, y0, x1, y1);
+						
+						glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+						
+						
+						if(dropdown->active_option)
+						{
+							draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->active_option->name);
+						}
+						
+						
+					}
+					else
+					{
+						y0 = dropdown->swidget.y + y + hh; 
+					}
+					
 					y1 = 0;
+					
+					
+					
 					if(dropdown->bm_flags & DROP_DOWN_DROPPED)
 					{
 						if(dropdown->option_count)
@@ -5004,7 +5064,7 @@ PEWAPI void draw_DrawWidgets()
 						glColor3f(0.4, 0.4, 0.4);
 					}
 					
-					y1 = dropdown->swidget.y + y + hh;
+					/*y1 = dropdown->swidget.y + y + hh;
 					
 					glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 					glStencilOp(GL_KEEP, GL_INCR, GL_INCR);			
@@ -5017,18 +5077,13 @@ PEWAPI void draw_DrawWidgets()
 					if(dropdown->active_option)
 					{
 						draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->active_option->name);
-					}
+					}*/
 					
 					if(dropdown->options[dropdown->cur_option].nested && dropdown->bm_flags & DROP_DOWN_DROPPED)
 					{
 						stack_top++;
 						swidget_stack[stack_top] = cswidget;
-						//pos_stack[stack_top].x = x;
-						//pos_stack[stack_top].y = y;
 						stencil_stack[stack_top] = base_stencil;
-										
-						//x += dropdown->swidget.x;
-						//y += dropdown->swidget.y;
 						cswidget = dropdown->options[dropdown->cur_option].nested;
 						goto _draw_nested_swidgets;
 					}

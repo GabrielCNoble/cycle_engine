@@ -20,6 +20,7 @@ enum MATERIAL_FLAGS
 	MATERIAL_FrontAndBack = 1<<8,
 	MATERIAL_Translucent = 1<<9,
 	MATERIAL_Emissive = 1<<10,	
+	MATERIAL_Cached = 1 << 11
 };
 
 typedef struct color4_t
@@ -40,15 +41,15 @@ typedef struct
 	short met_tex;
 }tex_info_t;
 
-/* TODO: pbm :) */
+
 typedef struct
 {
-	unsigned int uniform_buffer;					/* UBO id */
+	unsigned int cache_index;						/* index into the material gpu cache */
 	color4_t diff_color;
 	short shader_index;
-	short emissive;
-	short glossiness;
-	short metallic;
+	short emissive;									/* this could be unsigned char */
+	short glossiness;								/* this could be unsigned char */
+	short metallic;									/* this could be unsigned char */
 	short bm_flags;
 	short diff_tex;		
 	short norm_tex;
@@ -58,6 +59,7 @@ typedef struct
 	char *name;	
 			
 }material_t;	/* 32 bytes long... */
+/* alignment in this machine seems to be 256 bytes... 224 are thrown away for each GPU material... is this really better? */
 
 typedef struct
 {

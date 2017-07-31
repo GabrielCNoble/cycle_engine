@@ -9,7 +9,7 @@ varying vec2 uv;
 varying vec3 normal;
 void main()
 {
-	position = gl_ModelViewProjectionMatrix*vPosition;
+	position = gl_ModelViewProjectionMatrix * vPosition;
     gl_Position = position;
 	uv = vTexCoord;
 	normal = gl_NormalMatrix * vNormal.xyz;

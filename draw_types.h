@@ -182,7 +182,15 @@ typedef struct varying_t
 }varying_t;
 
 
-
+enum EXTENSIONS
+{
+	EXT_TEXTURE_CUBE_MAP_SEAMLESS = 1,
+	EXT_UNIFORM_BUFFER_OBJECT = 1 << 1,
+	EXT_PACKED_DEPTH_STENCIL = 1 << 2,
+	EXT_TRANSFORM_FEEDBACK = 1 << 3,
+	EXT_MULTI_DRAW_ARRAYS = 1 << 4,
+	EXT_MULTI_DRAW_INDIRECT = 1 << 5,
+};
 
 
 /*typedef struct

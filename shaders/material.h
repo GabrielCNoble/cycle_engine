@@ -11,15 +11,14 @@ struct sysMaterialFields
 
 
 #ifdef _GL2B_
-#extension ARB_explicit_uniform_location : enable
 
-uniform sysMaterialFields sysMaterialParams;
+layout(shared) uniform sysMaterialFields sysMaterialParams;
 
 	
 #else
-#extension ARB_uniform_buffer_object : enable
+#extension GL_ARB_uniform_buffer_object : enable
 
-layout(location = 0, shared) uniform sysMaterialParamsUniformBlock
+layout(shared) uniform sysMaterialParamsUniformBlock
 {
 	sysMaterialFields sysMaterialParams;
 };

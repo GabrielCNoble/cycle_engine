@@ -2343,7 +2343,9 @@ pick_record_t scenegraph_Pick()
 	
 	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
-	shader_SetShaderByIndex(wireframe_shader_index);	
+	shader_SetShaderByIndex(wireframe_shader_index);
+	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));	
 
 	glMatrixMode(GL_MODELVIEW);
 	//glPushMatrix();
@@ -2404,9 +2406,10 @@ pick_record_t scenegraph_Pick()
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 		glLoadMatrixf(&model_view_matrix.floats[0][0]);
 		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
-		glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
-		glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
-		glDrawArrays(draw_mode, 0, vert_count);
+		//glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+		//glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
+		start /= sizeof(float) * 3;
+		glDrawArrays(draw_mode, start, vert_count);
 	
 	}
 	

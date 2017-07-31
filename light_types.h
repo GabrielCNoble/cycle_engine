@@ -50,7 +50,8 @@ enum LIGHT_FLAGS
 	LIGHT_DRAW_VOLUME =							1<<7,
 	LIGHT_REFRESH_SHADOW_MAP = 					1<<8,		/* if a static light has moved (even though it absolutely shouldn't), its shadow map needs to be
 													   		refreshed */
-	LIGHT_VIEWPOINT_INSIDE_VOLUME = 			1<<9												   
+	LIGHT_VIEWPOINT_INSIDE_VOLUME = 			1<<9,
+	LIGHT_CACHED = 1 << 10,												   
 };
 
 
@@ -113,7 +114,7 @@ typedef struct
 	mat3_t local_orientation;
 	vec4_t local_position;
 	int light_index;
-	int align2;
+	int cache_index;
 	short bm_flags;
 	char bm_state;
 	char spot_co;		/* cutoff (in degrees) */
@@ -213,6 +214,24 @@ typedef struct
 	affecting_lights_t *lights;
 }affecting_lights_list;
 
+typedef struct
+{
+	vec3_t sysLightOrientation_r0;
+	float align0;
+	vec3_t sysLightOrientation_r1;
+	float align1;
+	vec3_t sysLightOrientation_r2;
+	float align2;
+	vec3_t sysLightPosition;
+	float sysLightRadius;
+	vec3_t sysLightColor;
+	float sysLightLinearAttenuation;
+	vec2_t sysLightShadowMapOrigin;
+	float sysLightQuadraticAttenuation;
+	float sysLightShadowMapSize;
+	int sysLightType;
+}gpu_lamp_t;
+
 
 typedef struct light_array
 {
@@ -226,6 +245,7 @@ typedef struct light_array
 	light_data0 *position_data;
 	light_data3 *extra_data;
 	light_data1 *params;
+	//gpu_lamp_t *gpu_data;
 	//light_t *lights;
 }light_array;
 
@@ -239,15 +259,14 @@ typedef struct
 	light_data1 *params;
 }light_ptr;
 
-
 typedef struct
 {
 	unsigned short resolution;
 	unsigned short users;
 	unsigned int id;
-	
-	
 }shared_shadow_map_t;
+
+
 
 
 

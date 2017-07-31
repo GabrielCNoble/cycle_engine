@@ -312,7 +312,6 @@ mesh_t loader_LoadWavefront(char *file_name)
 		else str_cursor++;
 	}
 	
-	
 	/* this seems to be causing crashes on gpu_Write()... */
 	vbuf_size = sizeof(float) * 3 * index_count * 2;
 	
@@ -328,34 +327,21 @@ mesh_t loader_LoadWavefront(char *file_name)
 	{
 		mesh.t_data = mesh.n_data + index_count * 3;
 		mesh.t_c_data = mesh.t_data + index_count * 3;
+		
+		
 	}
-	
 	for(i=0; i<index_count; i++)
 	{
-		mesh.v_data[i*3]=v_data[i_data[i*3]*3];
-		mesh.v_data[i*3+1]=v_data[i_data[i*3]*3+1];
-		mesh.v_data[i*3+2]=v_data[i_data[i*3]*3+2];
+		mesh.v_data[i * 3]=v_data[i_data[i * 3] * 3];
+		mesh.v_data[i * 3 + 1]=v_data[i_data[i * 3] * 3 + 1];
+		mesh.v_data[i * 3 + 2]=v_data[i_data[i * 3] * 3 + 2];
 	}
-	
-	/*mesh.i_data = (int *)calloc(index_count, sizeof(int));
-	
+
 	for(i=0; i<index_count; i++)
 	{
-		mesh.i_data[i]=i_data[i];
-	}*/
-	
-	
-	
-	
-	
-	//memcpy(mesh.v_data, v_data, sizeof(float)*3*vertex_count);
-	
-	//mesh.n_data=(float *)calloc(index_count ,sizeof(float)*3*3);
-	for(i=0; i<index_count; i++)
-	{
-		mesh.n_data[i*3]=n_data[i_data[i*3+2]*3];
-		mesh.n_data[i*3+1]=n_data[i_data[i*3+2]*3+1];
-		mesh.n_data[i*3+2]=n_data[i_data[i*3+2]*3+2];
+		mesh.n_data[i * 3]=n_data[i_data[i * 3 + 2] * 3];
+		mesh.n_data[i * 3 + 1]=n_data[i_data[i * 3 + 2] * 3 + 1];
+		mesh.n_data[i * 3 + 2]=n_data[i_data[i * 3 + 2] * 3 + 2];
 	}
 	if(t_c_count > 0)
 	{
@@ -366,13 +352,37 @@ mesh_t loader_LoadWavefront(char *file_name)
 		}
 		model_CalculateTangents(mesh.v_data, mesh.t_c_data, mesh.n_data, &mesh.t_data, index_count);
 	}
-	
+
 	chtemp = new btConvexHullShape(mesh.v_data, index_count, sizeof(float) * 3);
 	htemp = new btShapeHull(chtemp);
 	htemp->buildHull(chtemp->getMargin());
 	mesh.collision_shape = new btConvexHullShape((btScalar *)htemp->getVertexPointer(), htemp->numVertices(), sizeof(float )*4);
 	delete chtemp;
 	delete htemp;
+	
+	
+	//printf("q\n");
+	
+	
+	/*for(i=0; i<index_count; i++)
+	{
+		mesh.v_data[i*11] = v_data[i_data[i*3]*3];
+		mesh.v_data[i*11+1] = v_data[i_data[i*3]*3+1];
+		mesh.v_data[i*11+2] = v_data[i_data[i*3]*3+2];
+	}
+	
+	for(i=0; i<index_count; i++)
+	{
+		mesh.v_data[3 + i*11]=n_data[i_data[i*3+2]*3];
+		mesh.v_data[3 + i*11+1]=n_data[i_data[i*3+2]*3+1];
+		mesh.v_data[3 + i*11+2]=n_data[i_data[i*3+2]*3+2];
+	}*/
+	
+	/*for(i = 0; i < index_count; i++)
+	{
+		printf("v: [%f %f %f]    n: [%f %f %f]\n", mesh.v_data[i * 9], mesh.v_data[i * 9 + 1], mesh.v_data[i * 9 + 2],
+												   mesh.v_data[3 + i * 9], mesh.v_data[3 + i * 9 + 1], mesh.v_data[3 + i * 9 + 2]);
+	}*/
 	
 	
 	mesh.draw_mode=GL_TRIANGLES;
