@@ -591,7 +591,6 @@ void ginput(float delta_time)
 	{
 		small_bloom_radius += 1;
 		draw_SetBloomParam(BLOOM_SMALL_RADIUS, small_bloom_radius);
-		t = 1;
 	}
 		
 	if(input_GetKeyPressed(SDL_SCANCODE_4) && !t)
@@ -599,7 +598,6 @@ void ginput(float delta_time)
 		small_bloom_radius -= 1;
 		if(small_bloom_radius < 0) small_bloom_radius = 0;
 		draw_SetBloomParam(BLOOM_SMALL_RADIUS, small_bloom_radius);
-		t = 1;
 	}
 		
 		
@@ -607,7 +605,6 @@ void ginput(float delta_time)
 	{
 		medium_bloom_radius += 1;
 		draw_SetBloomParam(BLOOM_MEDIUM_RADIUS, medium_bloom_radius);
-		t = 1;
 	}
 		
 	if(input_GetKeyPressed(SDL_SCANCODE_5) && !t)
@@ -615,23 +612,23 @@ void ginput(float delta_time)
 		medium_bloom_radius -= 1;
 		if(medium_bloom_radius < 0) medium_bloom_radius = 0;
 		draw_SetBloomParam(BLOOM_MEDIUM_RADIUS, medium_bloom_radius);
-		t = 1;
 	}
 		
 		
-	if(input_GetKeyPressed(SDL_SCANCODE_9) && !t)
+	if(input_GetKeyPressed(SDL_SCANCODE_9))
+	//if(input_GetKeyStatus(SDL_SCANCODE_KP_MEMADD) & KEY_PRESSED)
 	{
 		large_bloom_radius += 1;
 		draw_SetBloomParam(BLOOM_LARGE_RADIUS, large_bloom_radius);
-		t = 1;
 	}
 		
-	if(input_GetKeyPressed(SDL_SCANCODE_6) && !t)
+	if(input_GetKeyPressed(SDL_SCANCODE_6))
+	//if(input_GetKeyStatus(SDL_SCANCODE_KP_MEMSUBTRACT) & KEY_PRESSED)
 	{
+		//printf("here\n");
 		large_bloom_radius -= 1;
 		if(large_bloom_radius < 0) large_bloom_radius = 0;
 		draw_SetBloomParam(BLOOM_LARGE_RADIUS, large_bloom_radius);
-		t = 1;
 	}
 		
 	if(input_GetKeyPressed(SDL_SCANCODE_LEFT) && !t)
@@ -1254,6 +1251,8 @@ void ginit()
 	input_RegisterKey(SDL_SCANCODE_SPACE);
 	input_RegisterKey(SDL_SCANCODE_LSHIFT);
 	input_RegisterKey(SDL_SCANCODE_DELETE);
+	input_RegisterKey(SDL_SCANCODE_KP_MEMADD);
+	input_RegisterKey(SDL_SCANCODE_KP_MEMSUBTRACT);
 	//init_3d_handle();
 	
 //	TwInit(TW_OPENGL, NULL);

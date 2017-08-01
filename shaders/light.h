@@ -11,7 +11,7 @@ uniform int sysLightIndexes[MAX_LIGHTS_PER_CALL];
 
 struct sysLightParamsFields
 {
-	vec3 sysLightColor;
+	vec4 sysLightColor;
 	float sysLightRadius;
 	float sysLightSpotCutoff;
 	float sysLightSpotCosCutoff;

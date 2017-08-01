@@ -271,6 +271,8 @@ PEWAPI void shader_Init(char *path)
 		material_params_uniform_buffer_size = (material_params_uniform_buffer_size + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 	//	light_params_uniform_buffer_size = (light_params_uniform_buffer_size / 16 + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 		
+		
+		printf("%d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size);
 		light_params_uniform_buffer_size /= 32;
 		
 	}
@@ -639,7 +641,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	}
 	else console_Print(MESSAGE_NORMAL, "shader [%s] loaded\n", name);
 	
-	shader->default_uniforms = (unsigned char *)malloc(UNIFORM_Last + 1);
+	shader->default_uniforms = (unsigned short *)malloc(sizeof(short ) * (UNIFORM_Last + 1));
 	shader->flags = flags;
 	
 	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
@@ -673,7 +675,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	shader->sysLightCount = glGetUniformLocation(shader_prog, "sysLightCount");
 	shader->sysLightIndexes = glGetUniformLocation(shader_prog, "sysLightIndexes");
 	
-	printf("%d %d\n", shader->sysLightCount, shader->sysLightIndexes);
+	//printf("%d %d\n", shader->sysLightCount, shader->sysLightIndexes);
 	
 	//printf("blufs\n");
 	//glUniformBlockBinding(shader_prog, 1, LIGHT_PARAMS_BINDING);

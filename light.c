@@ -621,7 +621,7 @@ void light_CacheGPULight(light_ptr light)
 	((vec3_t *)p)->r = (float)light.params->r / 255.0;
 	((vec3_t *)p)->g = (float)light.params->g / 255.0;
 	((vec3_t *)p)->b = (float)light.params->b / 255.0;
-	p = ((char *)p) + sizeof(float) * 3;
+	p = ((char *)p) + sizeof(float) * 4;
 	
 	*((float *)p) = light.position_data->radius;	
 	p = ((char *)p) + sizeof(float);

@@ -133,7 +133,7 @@ typedef struct
 	short flags;
 	//int v_color;
 	unsigned int shader_ID;
-	unsigned char *default_uniforms;
+	unsigned short *default_uniforms;
 	unsigned char sysLightCount;
 	unsigned char sysLightIndexes;
 	char *name;

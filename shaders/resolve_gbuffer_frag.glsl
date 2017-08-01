@@ -352,7 +352,7 @@ void main()
     //vec4 lcolor = gl_LightSource[0].diffuse;
     //vec3 light_color = gl_LightSource[0].diffuse.rgb;
     //vec3 light_color = vec3(1.0);
-    vec3 light_color = sysLightParams[sysLightIndexes[0]].sysLightColor;
+    vec3 light_color = sysLightParams[sysLightIndexes[0]].sysLightColor.rgb;
     float diff;
     float intensity=1.0;
     float spec;
