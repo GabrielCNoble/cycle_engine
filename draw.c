@@ -2834,6 +2834,9 @@ void draw_ResolveGBuffer()
 			glEnableVertexAttribArray(shader_a.shaders[stencil_lights_shader].v_position);
 			glVertexAttribPointer(shader_a.shaders[stencil_lights_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 			
+			
+			
+			
 			glEnable(GL_STENCIL_TEST);
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
@@ -2857,6 +2860,8 @@ void draw_ResolveGBuffer()
 			{
 				position = &active_light_a.position_data[i];				
 				glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
+				
+				glUniform1iv(shader_a.shaders[stencil_lights_shader].sysLightIndexes, 1, &active_light_a.position_data[i].light_index);
 				
 				//v[0] = 0;
 		 		//v[1] = 0;
@@ -2976,6 +2981,8 @@ void draw_ResolveGBuffer()
 		 		//mat4_t_compose(&light_transform, &active_light_a.position_data[i].world_orientation, active_light_a.position_data[i].world_position.vec3);
 		 		//mat4_t_mult(&model_view_matrix, &light_transform, &active_camera->world_to_camera_matrix);
 		 		//glLoadMatrixf(&model_view_matrix.floats[0][0]);
+		 		
+		 		glUniform1iv(shader_a.shaders[deferred_process_shader_index].sysLightIndexes, 1, &active_light_a.position_data[i].light_index);
 		 		
 		 		glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 		 		

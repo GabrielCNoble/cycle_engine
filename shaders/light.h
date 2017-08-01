@@ -29,7 +29,6 @@ layout (std140) uniform sysLightParamsUniformBlock
 
 #else
 
-
 layout(std140) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
 
 #endif

@@ -37,13 +37,13 @@ void main()
 	
 	if(int(gl_LightSource[1].spotExponent) == LIGHT_POINT)
 	{
-		p = vec4(gl_NormalMatrix * (p.xyz * sysLightParams[0].sysLightRadius * 1.08) + gl_LightSource[0].position.xyz, 1.0);
+		p = vec4(gl_NormalMatrix * (p.xyz * sysLightParams[sysLightIndexes[0]].sysLightRadius * 1.08) + gl_LightSource[0].position.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}
 	else if(int(gl_LightSource[1].spotExponent) == LIGHT_SPOT)
 	{
-		p.xy *= tan(((3.14159265 * sysLightParams[0].sysLightSpotCutoff)/180.0)) * sysLightParams[0].sysLightRadius * 1.15;
-		p.z *= sysLightParams[0].sysLightRadius;
+		p.xy *= tan(((3.14159265 * sysLightParams[sysLightIndexes[0]].sysLightSpotCutoff)/180.0)) * sysLightParams[sysLightIndexes[0]].sysLightRadius * 1.15;
+		p.z *= sysLightParams[sysLightIndexes[0]].sysLightRadius;
 		p = vec4(l_rot * p.xyz  + gl_LightSource[0].position.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}

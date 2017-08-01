@@ -134,6 +134,8 @@ typedef struct
 	//int v_color;
 	unsigned int shader_ID;
 	unsigned char *default_uniforms;
+	unsigned char sysLightCount;
+	unsigned char sysLightIndexes;
 	char *name;
 	
 }shader_t;

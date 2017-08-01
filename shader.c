@@ -670,14 +670,23 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 		shader->default_uniforms[UNIFORM_Time + i] = glGetUniformLocation(shader_prog, uniforms[i]);
 	}
 	
-	glUniformBlockBinding(shader_prog, 1, LIGHT_PARAMS_BINDING);
+	shader->sysLightCount = glGetUniformLocation(shader_prog, "sysLightCount");
+	shader->sysLightIndexes = glGetUniformLocation(shader_prog, "sysLightIndexes");
+	
+	printf("%d %d\n", shader->sysLightCount, shader->sysLightIndexes);
+	
+	//printf("blufs\n");
+	//glUniformBlockBinding(shader_prog, 1, LIGHT_PARAMS_BINDING);
 
 
 	shader->shader_ID=shader_prog;
 	shader->name=name;
 	
-	free(v_shader_str); 
+	free(v_shader_str);
+	//printf("nufs\n"); 
 	free(f_shader_str);
+	
+	//printf("clufs\n");
 	//fclose(vertex_shader_file);
 	//fclose(fragment_shader_file);
 
@@ -1114,7 +1123,8 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 	int j;
 	int k;
 	int c = old_len;
-	int file_len;
+	long cur;
+	long file_len;
 	char name[512];
 	char include_full_path[512];
 	char *s = *shader_str;
@@ -1164,9 +1174,18 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 		file_len++;
 	}
 	rewind(f);
-	file_len++;
+	//file_len++;
+
+	//long size;
+	
+	//cur = ftell(f);
+	//fseek(f, 0, SEEK_END);
+	//file_len = ftell(f);
+	//rewind(f);
+	//fseek(f, cur, SEEK_SET);
+	
 					
-	inc = (char *)malloc(file_len + 2);
+	inc = (char *)malloc(file_len);
 
 	index = 0;
 	while(!feof(f))
@@ -1175,7 +1194,7 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 		index++;
 	}
 
-	inc[index - 1] = '\n';
+	//inc[index - 1] = '\n';
 	inc[index] = '\0';
 					
 	fclose(f);
@@ -1200,6 +1219,8 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 		t[j + k] = s[j + i];
 	}
 	t[j + k] = '\0';
+	
+	//printf("%s\n", t);
 					
 	free(inc);
 	free(s);

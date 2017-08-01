@@ -10,18 +10,17 @@ struct sysMaterialFields
 };
 
 
-#ifdef _GL2B_
-
-layout(std140) uniform sysMaterialFields sysMaterialParams;
-
-	
-#else
+#ifdef _GL3A_
 #extension GL_ARB_uniform_buffer_object : enable
 
 layout(std140) uniform sysMaterialParamsUniformBlock
 {
 	sysMaterialFields sysMaterialParams;
 };
+
+#else
+
+layout(std140) uniform sysMaterialFields sysMaterialParams;
 
 #endif
 

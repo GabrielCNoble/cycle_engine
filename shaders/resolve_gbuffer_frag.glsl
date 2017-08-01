@@ -1,11 +1,5 @@
-#include "material.h"
-
 #include "brdf.h"
-
-
-
 #include "light.h"
-
 
 
 varying vec2 UV;
@@ -25,9 +19,6 @@ uniform sampler2D sysTextureSampler2;
 #define POINT_LIGHT_BIAS 0.0000006
 #define SPOT_LIGHT_BIAS 0.0000009
 
-#define LIGHT_POINT 1
-#define LIGHT_SPOT 2
-#define LIGHT_DIRECTIONAL 4
 
 #define sysLightType int(gl_LightSource[1].spotCutoff)
 //#define sysLightRadius gl_LightSource[0].diffuse.a
@@ -361,7 +352,7 @@ void main()
     //vec4 lcolor = gl_LightSource[0].diffuse;
     //vec3 light_color = gl_LightSource[0].diffuse.rgb;
     //vec3 light_color = vec3(1.0);
-    vec3 light_color = sysLightParams[0].sysLightColor;
+    vec3 light_color = sysLightParams[sysLightIndexes[0]].sysLightColor;
     float diff;
     float intensity=1.0;
     float spec;
@@ -391,11 +382,11 @@ void main()
 		
 		if(sysLightType == LIGHT_POINT)
 		{
-			intensity = attenuate_point(light_vec, sysLightParams[0].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = attenuate_point(light_vec, sysLightParams[sysLightIndexes[0]].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 		}
 		else if(sysLightType == LIGHT_SPOT)
 		{
-			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[0].sysLightRadius, sysLightParams[0].sysLightSpotCosCutoff, sysLightParams[0].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, sysLightParams[sysLightIndexes[0]].sysLightSpotCosCutoff, sysLightParams[sysLightIndexes[0]].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);
