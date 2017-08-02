@@ -162,6 +162,7 @@ enum WIDGET_TYPES
 	WIDGET_TAB_BAR,
 	WIDGET_DROP_DOWN,
 	WIDGET_SLIDER,
+	WIDGET_SLIDER_GROUP,
 	WIDGET_VAR,
 	WIDGET_VERTICAL_SCROLLER,
 	WIDGET_HORIZONTAL_SCROLLER
@@ -211,7 +212,8 @@ enum WIDGET_FLAGS
 	WIDGET_NO_BORDERS = 1 << 28,			/* this forces the engine to ignore when the mouse goes over headers and borders (to allow
 											   subwidgets to fit perfectly within widgets... */
 											   
-	WIDGET_DELETE = 1 << 29,										   
+	WIDGET_DELETE = 1 << 29,			
+	WIDGET_LEFT_BUTTON_DOWN = 1 << 30,							   
 												   
 												   											   								   											   
 };
@@ -283,6 +285,9 @@ enum DROP_DOWN_FLAGS
 
 #define OPTION_HEIGHT 20.0
 #define EMPTY_DROP_DOWN_HEIGHT 10.0
+
+#define SLIDER_OUTER_HEIGHT 14.0
+#define SLIDER_INNER_HEIGHT 8.0
 
 
 typedef struct
@@ -427,9 +432,20 @@ typedef struct
 	swidget_t swidget;
 	unsigned int bm_flags;
 	float pos;
+	float last_pos;
 	void *data;
 	void (*slider_callback)(swidget_t *, void *, float);
 }wslider_t;
+
+typedef struct
+{
+	swidget_t swidget;
+	int slider_count;
+	void *data;
+	void (*slider_group_callback)(swidget_t *, void *, int);
+	wslider_t *sliders;
+	wslider_t *last;
+}wslidergroup_t;
 
 typedef struct
 {
@@ -486,7 +502,9 @@ PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name, int tab_flags);
 
 PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
-PEWAPI void gui_AddSlider(widget_t *widget, char *name, short bm_flags, float pos, void *data, void (*slider_callback)(swidget_t *, void *, float));
+PEWAPI wslider_t *gui_AddSlider(widget_t *widget, char *name, short bm_flags, float x, float y, float width, float pos, void *data, void (*slider_callback)(swidget_t *, void *, float));
+
+PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count, void *data, void (*slider_group_callback)(swidget_t *, void *, int));
 
 
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);

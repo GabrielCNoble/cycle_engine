@@ -518,9 +518,153 @@ PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm
 	}
 }
 
-PEWAPI void gui_AddSlider(widget_t *widget, char *name, short bm_flags, float pos, void *data, void (*slider_callback)(swidget_t *, void *, float))
+PEWAPI wslider_t *gui_AddSlider(widget_t *widget, char *name, short bm_flags, float x, float y, float width, float pos, void *data, void (*slider_callback)(swidget_t *, void *, float))
 {
+	wslider_t *t = NULL;
+	if(widget)
+	{
+		t = (wslider_t *)malloc(sizeof(wslider_t));
+		t->swidget.name = strdup(name);
+		
+		t->swidget.x = x;
+		t->swidget.y = y;
+		t->swidget.w = width;
+		t->swidget.h = SLIDER_OUTER_HEIGHT;
+		
+		
+		t->swidget.cx = x;
+		t->swidget.cy = y;
+		t->swidget.cw = width;
+		t->swidget.ch = SLIDER_OUTER_HEIGHT;
+		
+		t->swidget.type = WIDGET_SLIDER;
+		t->swidget.bm_flags = 0;
+		t->swidget.widget_callback = NULL;
+		t->swidget.next = NULL;
+		
+		t->bm_flags = bm_flags;
+		t->data = data;
+		t->slider_callback = slider_callback;
+		t->pos = pos;		
+		t->last_pos = pos;
+
+		if(!widget->sub_widgets)
+		{
+			widget->sub_widgets = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		else
+		{
+			widget->last_added->next = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		widget->sub_widgets_count++;
+	}
 	
+	return t;
+}
+
+PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count, void *data, void (*slider_group_callback)(swidget_t *, void *, int))
+{
+	wslidergroup_t *t = NULL;
+	wslider_t *s;
+	float yc;
+	float yp;
+	int i;
+	if(widget && slider_count > 0)
+	{
+		t = (wslidergroup_t *)malloc(sizeof(wslidergroup_t));
+		t->swidget.name = strdup(name);
+		
+		t->swidget.type = WIDGET_SLIDER_GROUP;
+		t->swidget.bm_flags = 0;
+		t->swidget.widget_callback = NULL;
+		t->swidget.next = NULL;
+		
+		//t->bm_flags = bm_flags;
+		t->data = data;
+		t->slider_group_callback = slider_group_callback;
+		
+		t->swidget.x = x;
+		t->swidget.y = y;
+		t->swidget.w = width;
+		t->swidget.h = ((SLIDER_OUTER_HEIGHT + 8.0) * slider_count) / 2.0;
+		
+		t->swidget.cx = x;
+		t->swidget.cy = y;
+		t->swidget.cw = width;
+		t->swidget.ch = ((SLIDER_OUTER_HEIGHT + 8.0) * slider_count) / 2.0;
+		
+		yc = t->swidget.h;	
+		
+		s = (wslider_t *)malloc(sizeof(wslider_t));
+		s->swidget.x = 0;
+		s->swidget.y = yc;
+		s->swidget.w = width;
+		s->swidget.h = SLIDER_OUTER_HEIGHT;
+		s->swidget.cx = 0;
+		s->swidget.cy = yc;
+		s->swidget.cw = width;
+		s->swidget.ch = SLIDER_OUTER_HEIGHT;
+		s->swidget.type = WIDGET_SLIDER;
+		s->swidget.bm_flags = 0;
+		s->swidget.widget_callback = NULL;
+		s->swidget.next = NULL;
+		s->bm_flags = bm_flags;
+		s->data = NULL;
+		s->slider_callback = NULL;
+		s->pos = 1.0;		
+		s->last_pos = 1.0;
+		
+		
+		
+		t->sliders = s;
+		t->last = s;
+		t->slider_count = 0;
+		
+		for(i = 1; i < slider_count; i++)
+		{
+			yc -= SLIDER_OUTER_HEIGHT + 8.0;
+			
+			s = (wslider_t *)malloc(sizeof(wslider_t));
+			s->swidget.x = 0;
+			s->swidget.y = yc;
+			s->swidget.w = width;
+			s->swidget.h = SLIDER_OUTER_HEIGHT;
+			s->swidget.cx = 0;
+			s->swidget.cy = yc;
+			s->swidget.cw = width;
+			s->swidget.ch = SLIDER_OUTER_HEIGHT;
+			s->swidget.type = WIDGET_SLIDER;
+			s->swidget.bm_flags = 0;
+			s->swidget.widget_callback = NULL;
+			s->swidget.next = NULL;
+			
+			s->bm_flags = bm_flags;
+			s->data = (void *)i;
+			s->slider_callback = NULL;
+			s->pos = 1.0;		
+			s->last_pos = 1.0;
+			
+			t->last->swidget.next = (swidget_t *)s;
+			t->last = s;
+			
+		}
+
+		if(!widget->sub_widgets)
+		{
+			widget->sub_widgets = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		else
+		{
+			widget->last_added->next = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		widget->sub_widgets_count++;
+	}
+	
+	return t;
 }
 
 
@@ -715,6 +859,8 @@ void gui_ProcessWidgets()
 	wtabbar_t *tabbar;
 	wdropdown_t *dropdown;
 	wtab_t *tab;
+	wslider_t *slider;
+	wslidergroup_t *sslider;
 	int stack_top = -1;
 	swidget_t *swidget_stack[64];
 	vec2_t pos_stack[64];
@@ -1072,11 +1218,6 @@ void gui_ProcessWidgets()
 				{
 					rh += (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count);
 					ry -= (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count) / 2.0;
-					
-					/*if(((wdropdown_t *)cswidget)->bm_flags & DROP_DOWN_NO_HEADER)
-					{
-						ry += OPTION_HEIGHT;
-					}*/
 				}
 			}
 			
@@ -1102,10 +1243,11 @@ void gui_ProcessWidgets()
 						cswidget->bm_flags |= WIDGET_MOUSE_OVER;
 						input.bm_mouse |= MOUSE_OVER_WIDGET;
 						active_swidget = cswidget;
+						//cwidget->active_swidget = cswidget;
 						
 						if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 						{
-							cswidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+							cswidget->bm_flags |= (WIDGET_RECEIVED_LEFT_BUTTON_DOWN | WIDGET_LEFT_BUTTON_DOWN);
 							cwidget->active_swidget = cswidget;
 						}
 						else
@@ -1116,6 +1258,8 @@ void gui_ProcessWidgets()
 						if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_RELEASED)
 						{
 							cswidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_UP;
+							cswidget->bm_flags &= ~WIDGET_LEFT_BUTTON_DOWN;
+							cwidget->active_swidget = NULL;
 						}
 						else
 						{
@@ -1126,21 +1270,28 @@ void gui_ProcessWidgets()
 					}
 					else
 					{
-						cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
+						cswidget->bm_flags &= ~(WIDGET_MOUSE_OVER | WIDGET_RECEIVED_LEFT_BUTTON_UP | WIDGET_RECEIVED_LEFT_BUTTON_DOWN);
 					}
 
 				}
 				else
 				{
-					cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
+					cswidget->bm_flags &= ~(WIDGET_MOUSE_OVER | WIDGET_RECEIVED_LEFT_BUTTON_UP | WIDGET_RECEIVED_LEFT_BUTTON_DOWN);
 				}
-				
-				
 			}
 			else
 			{
-				cswidget->bm_flags &= ~WIDGET_MOUSE_OVER;
+				cswidget->bm_flags &= ~(WIDGET_MOUSE_OVER | WIDGET_RECEIVED_LEFT_BUTTON_UP | WIDGET_RECEIVED_LEFT_BUTTON_DOWN);
 			}
+			
+			if(!(cswidget->bm_flags & WIDGET_MOUSE_OVER))
+			{
+				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
+				{
+					cswidget->bm_flags &= ~WIDGET_LEFT_BUTTON_DOWN;
+				}
+			}
+			
 			
 			switch(cswidget->type)
 			{
@@ -1279,7 +1430,7 @@ void gui_ProcessWidgets()
 										
 							if(option_index >= 0 && option_index < dropdown->option_count)
 							{
-											//if()
+											
 								dropdown->options[dropdown->cur_option].bm_flags &= ~OPTION_MOUSE_OVER;
 								dropdown->cur_option = option_index;
 											
@@ -1330,15 +1481,55 @@ void gui_ProcessWidgets()
 								
 					if(dropdown->options[dropdown->cur_option].nested)
 					{
-						{
-							stack_top++;
-							swidget_stack[stack_top] = cswidget;
-							cswidget = dropdown->options[dropdown->cur_option].nested;
-							((wdropdown_t *)cswidget)->bm_flags |= DROP_DOWN_DROPPED;
-							goto _nestled_swidgets;
-						}
+						//{
+						stack_top++;
+						swidget_stack[stack_top] = cswidget;
+						cswidget = dropdown->options[dropdown->cur_option].nested;
+						((wdropdown_t *)cswidget)->bm_flags |= DROP_DOWN_DROPPED;
+						goto _nestled_swidgets;
+					//	}
 					}
 								
+				break;
+				
+				case WIDGET_SLIDER:
+					slider = (wslider_t *)cswidget;	
+					if(cswidget->bm_flags & WIDGET_LEFT_BUTTON_DOWN)
+					{
+						slider->pos = cswidget->relative_mouse_x * 0.5 + 0.5;
+						if(slider->pos < 0.0) slider->pos = 0.0;
+						else if(slider->pos > 1.0) slider->pos = 1.0;
+							
+						if(slider->pos + 0.0001 > slider->last_pos || slider->pos - 0.0001 < slider->pos)
+						{
+							if(slider->slider_callback)
+							{
+								slider->slider_callback(cswidget, slider->data, slider->pos);
+							}
+						}
+						slider->last_pos = slider->pos;
+					}
+				break;
+				
+				case WIDGET_SLIDER_GROUP:
+					sslider = (wslidergroup_t *)cswidget;
+					
+					if(sslider->slider_group_callback)
+					{
+						sslider->slider_group_callback(cswidget, NULL, 0);
+					}
+					
+					stack_top++;
+					swidget_stack[stack_top] = cswidget;
+					pos_stack[stack_top].x = x;
+					pos_stack[stack_top].y = y;
+											
+					x += sslider->swidget.x;
+					y += sslider->swidget.y;
+					cswidget = (swidget_t *)sslider->sliders;
+					goto _nestled_swidgets;
+					
+					
 				break;
 			}
 			

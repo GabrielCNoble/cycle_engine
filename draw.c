@@ -4388,6 +4388,8 @@ PEWAPI void draw_DrawWidgets()
 	wdropdown_t *dropdown;
 	wtab_t *tab;
 	wvar_t *var;
+	wslider_t *slider;
+	wslidergroup_t *slider_group;
 	
 	int i;
 	
@@ -5013,17 +5015,14 @@ PEWAPI void draw_DrawWidgets()
 									r = 0.5;
 									g = 0.5;
 									b = 0.5;
-									//glColor3f(0.5, 0.5, 0.5);
 								}
 								else
 								{
 									r = 0.4;
 									g = 0.4;
 									b = 0.4;
-									//glColor3f(0.4, 0.4, 0.4);
 								}
 								glColor3f(r, g, b);
-								//glDisable(GL_STENCIL_TEST);
 								
 								glStencilFunc(GL_EQUAL, base_stencil, 0xff);
 								glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
@@ -5100,6 +5099,58 @@ PEWAPI void draw_DrawWidgets()
 					
 					
 					
+				break;
+				
+				case WIDGET_SLIDER:
+					slider = (wslider_t *)cswidget;
+					hw = slider->swidget.w / 2.0;
+					
+					x0 = slider->swidget.x - hw;
+					x1 = slider->swidget.x + hw;
+					
+					hh = SLIDER_INNER_HEIGHT / 2.0;
+					
+					y0 = slider->swidget.y - hh;
+					y1 = slider->swidget.y + hh;
+					
+					
+					glColor3f(0.4, 0.4, 0.4);
+					glRectf(x0, y0, x1, y1);
+					
+					hh = SLIDER_OUTER_HEIGHT / 2.0;
+					
+					x0 = slider->swidget.x - hw + hw * 2.0 * slider->pos;
+					
+					y0 = slider->swidget.y - hh;
+					y1 = slider->swidget.y + hh;
+					
+					glEnable(GL_POINT_SMOOTH);
+					glPointSize(14.0);
+					
+					glBegin(GL_POINTS);
+					glColor3f(0.7, 0.7, 0.7);
+					glVertex3f(x0, slider->swidget.y, 0.0);
+					glEnd();
+					glDisable(GL_POINT_SMOOTH);
+					glPointSize(1.0);
+					//glRectf(x0 - hh, y0, x0 + hh, y1);
+					
+				break;
+				
+				case WIDGET_SLIDER_GROUP:
+					slider_group = (wslidergroup_t *) cswidget;
+					stack_top++;
+					swidget_stack[stack_top] = cswidget;
+					pos_stack[stack_top].x = x;
+					pos_stack[stack_top].y = y;
+					stencil_stack[stack_top] = base_stencil;
+						//base_stencil += 1;
+										
+					x += cswidget->x;
+					y += cswidget->y;
+					cswidget = (swidget_t *)slider_group->sliders;
+					goto _draw_nested_swidgets;
+				
 				break;
 			}
 			

@@ -1228,6 +1228,46 @@ void dropdown_fn(swidget_t *sub_widget, void *data, int option_index)
 	}
 }
 
+void slider_fn(swidget_t *sub_widget, void *data, int i)
+{
+	wslidergroup_t *slider_group = (wslidergroup_t *) sub_widget;
+	wslider_t *slider;
+	float r;
+	if(cr.type == PICK_LIGHT)
+	{
+		if(cr.index >= 0)
+		{
+			
+			if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+			{
+				slider = slider_group->sliders;
+				slider->pos = (float)l.params->r / 255.0;
+				slider = (wslider_t *)slider->swidget.next;
+			
+				slider->pos = (float)l.params->g / 255.0;
+				slider = (wslider_t *)slider->swidget.next;
+			
+				slider->pos = (float)l.params->b / 255.0;
+			}
+			else
+			{
+				slider = slider_group->sliders;
+				l.params->r = 255 * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				l.params->g = 255 * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				l.params->b = 255 * slider->pos;
+				
+				light_UpdateGPULight(l);
+			}
+			
+			
+		}
+	}
+}
+
 void ginit()
 {
 	material_t ma;
@@ -1438,8 +1478,10 @@ void ginit()
 	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
 	
 	
-	/*widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, 0, renderer.height / 2.0 - 130, 900, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
-	wdropdown_t *dd = gui_AddDropDown(ppp, "render_mode", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
+	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, 0, 0, 400, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	//gui_AddSlider(ppp, "slider", 0, 0, 0, 400, 0.5, NULL, slider_fn);
+	gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 400, 3, NULL, slider_fn);
+	/*wdropdown_t *dd = gui_AddDropDown(ppp, "render_mode", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
 	gui_AddOption(dd, "op0");
 	gui_AddOption(dd, "op1");
 	gui_AddOption(dd, "op2");
