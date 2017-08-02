@@ -564,14 +564,14 @@ PEWAPI wslider_t *gui_AddSlider(widget_t *widget, char *name, short bm_flags, fl
 	return t;
 }
 
-PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count, void *data, void (*slider_group_callback)(swidget_t *, void *, int))
+PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count_hint, void *data, void (*slider_group_callback)(swidget_t *, void *, int))
 {
 	wslidergroup_t *t = NULL;
 	wslider_t *s;
 	float yc;
 	float yp;
 	int i;
-	if(widget && slider_count > 0)
+	if(widget)
 	{
 		t = (wslidergroup_t *)malloc(sizeof(wslidergroup_t));
 		t->swidget.name = strdup(name);
@@ -588,68 +588,25 @@ PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm
 		t->swidget.x = x;
 		t->swidget.y = y;
 		t->swidget.w = width;
-		t->swidget.h = ((SLIDER_OUTER_HEIGHT + 8.0) * slider_count) / 2.0;
+		t->swidget.h = SLIDER_INNER_HEIGHT;
 		
 		t->swidget.cx = x;
 		t->swidget.cy = y;
 		t->swidget.cw = width;
-		t->swidget.ch = ((SLIDER_OUTER_HEIGHT + 8.0) * slider_count) / 2.0;
+		t->swidget.ch = SLIDER_INNER_HEIGHT;
 		
-		yc = t->swidget.h;	
-		
-		s = (wslider_t *)malloc(sizeof(wslider_t));
-		s->swidget.x = 0;
-		s->swidget.y = yc;
-		s->swidget.w = width;
-		s->swidget.h = SLIDER_OUTER_HEIGHT;
-		s->swidget.cx = 0;
-		s->swidget.cy = yc;
-		s->swidget.cw = width;
-		s->swidget.ch = SLIDER_OUTER_HEIGHT;
-		s->swidget.type = WIDGET_SLIDER;
-		s->swidget.bm_flags = 0;
-		s->swidget.widget_callback = NULL;
-		s->swidget.next = NULL;
-		s->bm_flags = bm_flags;
-		s->data = NULL;
-		s->slider_callback = NULL;
-		s->pos = 1.0;		
-		s->last_pos = 1.0;
-		
-		
-		
-		t->sliders = s;
-		t->last = s;
-		t->slider_count = 0;
-		
-		for(i = 1; i < slider_count; i++)
+		if(slider_count_hint > 0)
 		{
-			yc -= SLIDER_OUTER_HEIGHT + 8.0;
-			
-			s = (wslider_t *)malloc(sizeof(wslider_t));
-			s->swidget.x = 0;
-			s->swidget.y = yc;
-			s->swidget.w = width;
-			s->swidget.h = SLIDER_OUTER_HEIGHT;
-			s->swidget.cx = 0;
-			s->swidget.cy = yc;
-			s->swidget.cw = width;
-			s->swidget.ch = SLIDER_OUTER_HEIGHT;
-			s->swidget.type = WIDGET_SLIDER;
-			s->swidget.bm_flags = 0;
-			s->swidget.widget_callback = NULL;
-			s->swidget.next = NULL;
-			
-			s->bm_flags = bm_flags;
-			s->data = (void *)i;
-			s->slider_callback = NULL;
-			s->pos = 1.0;		
-			s->last_pos = 1.0;
-			
-			t->last->swidget.next = (swidget_t *)s;
-			t->last = s;
-			
+			t->sliders = (wslider_t *)malloc(sizeof(wslider_t ) * slider_count_hint);
+			t->max_sliders = slider_count_hint;
 		}
+		else
+		{
+			t->sliders = NULL;
+			t->max_sliders = 0;
+		}
+		
+		t->slider_count = 0;
 
 		if(!widget->sub_widgets)
 		{
@@ -667,6 +624,87 @@ PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm
 	return t;
 }
 
+PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float))
+{
+	wslider_t *t = NULL;
+	int i;
+	float ys;
+	float yc;
+	if(slider_group)
+	{
+		if(slider_group->slider_count >= slider_group->max_sliders)
+		{
+			t = (wslider_t *)malloc(sizeof(wslider_t ) * (slider_group->max_sliders + 4));
+			memcpy(t, slider_group->sliders, sizeof(wslider_t *) * slider_group->max_sliders);
+			free(slider_group->sliders);
+			slider_group->sliders = t;
+			
+			for(i = 0; i < slider_group->slider_count - 1; i++)
+			{
+				slider_group->sliders[i].swidget.next = &slider_group->sliders[i + 1].swidget;
+			}
+			slider_group->max_sliders += 4;
+		}
+		
+		
+		//t = (wslider_t *)malloc(sizeof(wslider_t));
+		
+		t = &slider_group->sliders[slider_group->slider_count];
+		t->swidget.name = strdup(name);
+		
+		t->swidget.x = 0;
+		t->swidget.w = slider_group->swidget.w;
+		t->swidget.h = SLIDER_OUTER_HEIGHT;
+		
+		t->swidget.cx = 0;
+		t->swidget.cw = slider_group->swidget.w;
+		t->swidget.ch = SLIDER_OUTER_HEIGHT;
+		
+		
+		
+		t->swidget.type = WIDGET_SLIDER;
+		t->swidget.bm_flags = 0;
+		t->swidget.widget_callback = NULL;
+		t->swidget.next = NULL;
+		
+		t->bm_flags = bm_flags;
+		t->data = data;
+		t->slider_callback = slider_callback;
+		t->pos = pos;		
+		t->last_pos = pos;
+		
+		slider_group->sliders[slider_group->slider_count] = *t;
+		
+		if(slider_group->slider_count > 0)
+		{
+			slider_group->sliders[slider_group->slider_count - 1].swidget.next = (swidget_t *)t;
+		}
+		slider_group->slider_count++;
+		
+		slider_group->swidget.h = ((SLIDER_OUTER_HEIGHT + 8.0) * slider_group->slider_count) / 2.0;
+		slider_group->swidget.ch = slider_group->swidget.h;
+		
+		ys = SLIDER_OUTER_HEIGHT + 8.0;
+		
+		if(slider_group->slider_count == 1)
+		{
+			yc = 0;
+		}
+		else
+		{
+			yc = slider_group->swidget.h;	
+		}
+		
+		for(i = 0; i < slider_group->slider_count; i++)
+		{
+			slider_group->sliders[i].swidget.y = yc;
+			yc -= ys;
+		}
+		
+	}
+	
+	return t;
+}
 
 PEWAPI void gui_DeleteWidgetByName(char *name)
 {
@@ -679,6 +717,8 @@ PEWAPI void gui_DeleteWidget(widget_t *widget)
 	swidget_t *w;
 	swidget_t *p;
 	wtab_t *tab; 
+	wslider_t *slider;
+	wslidergroup_t *slidergroup;
 	int i;
  	int stack_top = -1;
 	swidget_t *stack[64];
@@ -712,6 +752,7 @@ PEWAPI void gui_DeleteWidget(widget_t *widget)
 						}
 					}
 				}
+				free(w->name);
 				
 				p = w->next;
 				free(w->name);
@@ -734,13 +775,40 @@ PEWAPI void gui_DeleteWidget(widget_t *widget)
 						goto _recursive_delete;
 					}
 				}
+				free(w->name);
+				w->name = NULL;
 				free(((wdropdown_t *)w)->options);
 			case WIDGET_BUTTON:
 			case WIDGET_VAR:
+			case WIDGET_SLIDER:
+				
+				p = w->next;
+				
+				if(w->name)
+				{
+					free(w->name);
+				}
+				
+				free(w);
+				w = p;
+			break;
+			
+			case WIDGET_SLIDER_GROUP:
+				slidergroup = (wslidergroup_t *)w;
+				slider = slidergroup->sliders;
+				
 				p = w->next;
 				free(w->name);
 				free(w);
 				w = p;
+				
+				if(slider)
+				{
+					stack_top++;
+					stack[stack_top] = w;
+					w = (swidget_t *)slider;
+					goto _recursive_delete;
+				}
 			break;
 			
 			default:
@@ -1211,6 +1279,7 @@ void gui_ProcessWidgets()
 			
 			ry = cswidget->y;
 			rh = cswidget->h;
+			rw = cswidget->w;
 			
 			if(cswidget->type == WIDGET_DROP_DOWN)
 			{				
@@ -1220,11 +1289,15 @@ void gui_ProcessWidgets()
 					ry -= (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count) / 2.0;
 				}
 			}
+			else if(cswidget->type == WIDGET_SLIDER)
+			{
+				rw += SLIDER_OUTER_HEIGHT / 2.0;
+			}
 			
 			
 			//printf(" %f  %f\n", ry, rh);
 			
-			cswidget->relative_mouse_x = (((cswidget->x + x) * x_scale - input.normalized_mouse_x) * -2.0) / (cswidget->w * x_scale);
+			cswidget->relative_mouse_x = (((cswidget->x + x) * x_scale - input.normalized_mouse_x) * -2.0) / (rw * x_scale);
 			cswidget->relative_mouse_y = (((ry + y) * y_scale - input.normalized_mouse_y) * -2.0) / (rh * y_scale);
 			
 			//printf("%s  %f %f\n", cswidget->name, cswidget->relative_mouse_x, cswidget->relative_mouse_y);
@@ -1514,20 +1587,25 @@ void gui_ProcessWidgets()
 				case WIDGET_SLIDER_GROUP:
 					sslider = (wslidergroup_t *)cswidget;
 					
-					if(sslider->slider_group_callback)
+					if(sslider->sliders && sslider->slider_count)
 					{
-						sslider->slider_group_callback(cswidget, NULL, 0);
+						if(sslider->slider_group_callback)
+						{
+							sslider->slider_group_callback(cswidget, NULL, 0);
+						}
+						
+						stack_top++;
+						swidget_stack[stack_top] = cswidget;
+						pos_stack[stack_top].x = x;
+						pos_stack[stack_top].y = y;
+												
+						x += sslider->swidget.x;
+						y += sslider->swidget.y;
+						cswidget = (swidget_t *)sslider->sliders;
+						goto _nestled_swidgets;
 					}
 					
-					stack_top++;
-					swidget_stack[stack_top] = cswidget;
-					pos_stack[stack_top].x = x;
-					pos_stack[stack_top].y = y;
-											
-					x += sslider->swidget.x;
-					y += sslider->swidget.y;
-					cswidget = (swidget_t *)sslider->sliders;
-					goto _nestled_swidgets;
+					
 					
 					
 				break;

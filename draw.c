@@ -5105,13 +5105,13 @@ PEWAPI void draw_DrawWidgets()
 					slider = (wslider_t *)cswidget;
 					hw = slider->swidget.w / 2.0;
 					
-					x0 = slider->swidget.x - hw;
-					x1 = slider->swidget.x + hw;
+					x0 = slider->swidget.x + x - hw;
+					x1 = slider->swidget.x + x + hw;
 					
 					hh = SLIDER_INNER_HEIGHT / 2.0;
 					
-					y0 = slider->swidget.y - hh;
-					y1 = slider->swidget.y + hh;
+					y0 = slider->swidget.y + y - hh;
+					y1 = slider->swidget.y + y + hh;
 					
 					
 					glColor3f(0.4, 0.4, 0.4);
@@ -5119,17 +5119,17 @@ PEWAPI void draw_DrawWidgets()
 					
 					hh = SLIDER_OUTER_HEIGHT / 2.0;
 					
-					x0 = slider->swidget.x - hw + hw * 2.0 * slider->pos;
+					x0 = slider->swidget.x + x - hw + hw * 2.0 * slider->pos;
 					
-					y0 = slider->swidget.y - hh;
-					y1 = slider->swidget.y + hh;
+					//y0 = slider->swidget.y - hh;
+					//y1 = slider->swidget.y + hh;
 					
 					glEnable(GL_POINT_SMOOTH);
 					glPointSize(14.0);
 					
 					glBegin(GL_POINTS);
 					glColor3f(0.7, 0.7, 0.7);
-					glVertex3f(x0, slider->swidget.y, 0.0);
+					glVertex3f(x0, slider->swidget.y + y, 0.0);
 					glEnd();
 					glDisable(GL_POINT_SMOOTH);
 					glPointSize(1.0);
@@ -5139,17 +5139,23 @@ PEWAPI void draw_DrawWidgets()
 				
 				case WIDGET_SLIDER_GROUP:
 					slider_group = (wslidergroup_t *) cswidget;
-					stack_top++;
-					swidget_stack[stack_top] = cswidget;
-					pos_stack[stack_top].x = x;
-					pos_stack[stack_top].y = y;
-					stencil_stack[stack_top] = base_stencil;
-						//base_stencil += 1;
-										
-					x += cswidget->x;
-					y += cswidget->y;
-					cswidget = (swidget_t *)slider_group->sliders;
-					goto _draw_nested_swidgets;
+					
+					if(slider_group->sliders && slider_group->slider_count)
+					{
+						stack_top++;
+						swidget_stack[stack_top] = cswidget;
+						pos_stack[stack_top].x = x;
+						pos_stack[stack_top].y = y;
+						stencil_stack[stack_top] = base_stencil;
+							//base_stencil += 1;
+											
+						x += cswidget->x;
+						y += cswidget->y;
+						cswidget = (swidget_t *)slider_group->sliders;
+						goto _draw_nested_swidgets;
+					}
+					
+					
 				
 				break;
 			}

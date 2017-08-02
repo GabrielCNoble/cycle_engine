@@ -489,6 +489,8 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 		printf("vertex shader [%s] has problematic preprocessor directives!\n", vertex_shader_name);
 		return -1;
 	}
+	
+	//printf("%s\n", v_shader_str);
 	//printf("flags is %d\n", flags);
 	if(flags & SHADER_CAPTURE_VERTEX)
 	{
@@ -1148,7 +1150,9 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 		  s[i] != '\0' &&
 		  s[i] != '"')
 	{
-		name[index++] = s[i++];
+		name[index] = s[i];
+		index++;
+		i++;
 	}
 	name[index] = '\0';
 					
@@ -1169,35 +1173,40 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 		return 1;
 	}
 					
-	file_len = 0;
-	while(!feof(f))
-	{
-		fgetc(f);
-		file_len++;
-	}
-	rewind(f);
+//	file_len = 0;
+//	while(!feof(f))
+//	{
+	//	fgetc(f);
+	//	file_len++;
+	//}
+	//rewind(f);
+	//file_len = (file_len + 3)
 	//file_len++;
 
 	//long size;
 	
 	//cur = ftell(f);
-	//fseek(f, 0, SEEK_END);
-	//file_len = ftell(f);
-	//rewind(f);
+	fseek(f, 0, SEEK_END);
+	file_len = ftell(f);
+	rewind(f);
+	
+	file_len = (file_len + 3) & (~3);
 	//fseek(f, cur, SEEK_SET);
 	
-					
-	inc = (char *)malloc(file_len);
-
-	index = 0;
+	/* this will come back to bite me in the ass... */				
+	inc = (char *)calloc(10000, 1);
+	fread(inc, 1, file_len, f);
+	inc[file_len] = '\0';
+	//printf("%s\n", inc);
+	/*index = 0;
 	while(!feof(f))
 	{
 		inc[index] = fgetc(f);
 		index++;
-	}
+	}*/
 
 	//inc[index - 1] = '\n';
-	inc[index] = '\0';
+	//inc[index] = '\0';
 					
 	fclose(f);
 					
@@ -1210,7 +1219,7 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 	}
 	k = j;
 
-	for(j = 0; j < file_len - 1; j++)
+	for(j = 0; j < file_len && inc[j] != '\0'; j++)
 	{
 		t[j + k] = inc[j];
 	}

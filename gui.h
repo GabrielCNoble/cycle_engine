@@ -441,10 +441,10 @@ typedef struct
 {
 	swidget_t swidget;
 	int slider_count;
+	int max_sliders;
 	void *data;
 	void (*slider_group_callback)(swidget_t *, void *, int);
 	wslider_t *sliders;
-	wslider_t *last;
 }wslidergroup_t;
 
 typedef struct
@@ -504,9 +504,9 @@ PEWAPI void gui_AddVarToTab(wtabbar_t *tabbar, int tab_index, char *name, int bm
 
 PEWAPI wslider_t *gui_AddSlider(widget_t *widget, char *name, short bm_flags, float x, float y, float width, float pos, void *data, void (*slider_callback)(swidget_t *, void *, float));
 
-PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count, void *data, void (*slider_group_callback)(swidget_t *, void *, int));
+PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count_hint, void *data, void (*slider_group_callback)(swidget_t *, void *, int));
 
-
+PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float));
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
 PEWAPI void gui_DeleteWidgetByName(char *name);

@@ -1,8 +1,7 @@
-attribute vec4 vPosition;
-
+#include "test.h"
 
 
 void main()
 {
-    gl_Position = vPosition;
+    gl_Position = vec4(1.0);
 }
