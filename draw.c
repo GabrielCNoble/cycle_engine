@@ -1976,6 +1976,17 @@ void draw_DrawLit()
 	
 	c=render_q.count;	
 	
+	
+	shader_SetShaderByIndex(lit_shader_index);	
+	shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
+	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, geometry_buffer.width);
+	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, geometry_buffer.height);
+	v_position = shader_a.shaders[lit_shader_index].v_position;
+	v_normal = shader_a.shaders[lit_shader_index].v_normal;
+	v_tangent = shader_a.shaders[lit_shader_index].v_tangent;
+	v_tex_coord = shader_a.shaders[lit_shader_index].v_tcoord;
+	
+	
 	#define SAMPLES 60
 	
 	//draw_SortRenderQueue(&render_q, 0, c-1);	
@@ -2015,9 +2026,9 @@ void draw_DrawLit()
 		glLoadMatrixf(&cb.model_view_matrix.floats[0][0]);	
 		
 		/* this could be cached inside the command buffer... */
-		shader_index = material_a.materials[material_index].shader_index;
+		//shader_index = material_a.materials[material_index].shader_index;
 		
-		if(shader_index != renderer.active_shader_index) 
+		/*if(shader_index != renderer.active_shader_index) 
 		{
 			shader_SetShaderByIndex(shader_index);	
 			shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
@@ -2027,10 +2038,7 @@ void draw_DrawLit()
 			v_normal = shader_a.shaders[shader_index].v_normal;
 			v_tangent = shader_a.shaders[shader_index].v_tangent;
 			v_tex_coord = shader_a.shaders[shader_index].v_tcoord;
-			
-			
-			
-		}
+		}*/
 		
 		
 		v_byte_count = vert_count*3*sizeof(float);
@@ -2105,6 +2113,11 @@ void draw_DrawEmissive()
 	int shader_index;
 	int entity_index;
 	
+	short v_position;
+	short v_normal;
+	short v_tangent;
+	short v_tex_coord;
+	
 	int i;
 	int c;
 	
@@ -2121,6 +2134,12 @@ void draw_DrawEmissive()
 	c=e_render_q.count;	
 	
 	framebuffer_BindFramebuffer(&left_buffer);	
+	
+	shader_SetShaderByIndex(flat_shader_index);	
+	v_position = shader_a.shaders[flat_shader_index].v_position;
+	v_normal = shader_a.shaders[flat_shader_index].v_normal;
+	v_tangent = shader_a.shaders[flat_shader_index].v_tangent;
+	v_tex_coord = shader_a.shaders[flat_shader_index].v_tcoord;
 
 	for(i=0; i<c; i++)
 	{	
@@ -2150,46 +2169,45 @@ void draw_DrawEmissive()
 		
 		glLoadMatrixf(&model_view_matrix.floats[0][0]);
 		
-		shader_index = material_a.materials[material_index].shader_index;
+		//shader_index = material_a.materials[material_index].shader_index;
 		
-		if(shader_index != renderer.active_shader_index) 
+		/*if(shader_index != renderer.active_shader_index) 
 		{
 			shader_SetShaderByIndex(shader_index);	
 			//shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
 			//shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, geometry_buffer.width);
 			//shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, geometry_buffer.height);
 			
-		}
+		}*/
 		
 		material_SetMaterialByIndex(material_index);
 		v_byte_count=vert_count*3*sizeof(float);
-		
-		
-		
-		glEnableVertexAttribArray(shader_a.shaders[shader_index].v_position);
-		glVertexAttribPointer(shader_a.shaders[shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)start);
-		
+			
+		q = 0;
+		glEnableVertexAttribArray(v_position);
+		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+		q += v_byte_count;
 		if(attrib_flags&CBATTRIBUTE_NORMAL)
-		{
-			n_byte_count=v_byte_count;
-			glEnableVertexAttribArray(shader_a.shaders[shader_index].v_normal);
-			glVertexAttribPointer(shader_a.shaders[shader_index].v_normal, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count + start));
-		}
-		if(attrib_flags&CBATTRIBUTE_TANGENT)
-		{
-			t_byte_count=v_byte_count;
-			glEnableVertexAttribArray(shader_a.shaders[shader_index].v_tangent);
-			glVertexAttribPointer(shader_a.shaders[shader_index].v_tangent, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count+n_byte_count + start));
+		{	
+			glEnableVertexAttribArray(v_normal);
+			glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
+			q += v_byte_count;
 		}
 		if(attrib_flags&CBATTRIBUTE_TEX_COORD)
 		{
-			t_c_byte_count=vert_count*2*sizeof(float);
-			glEnableVertexAttribArray(shader_a.shaders[shader_index].v_tcoord);
-			glVertexAttribPointer(shader_a.shaders[shader_index].v_tcoord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count + n_byte_count + t_byte_count + start));
+			if(attrib_flags&CBATTRIBUTE_TANGENT)
+			{				
+				glEnableVertexAttribArray(v_tangent);
+				glVertexAttribPointer(v_tangent, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
+				q += v_byte_count;
+			}
+			glEnableVertexAttribArray(v_tex_coord);
+			glVertexAttribPointer(v_tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (void *)(q));
 		}
 		
 		glDrawArrays(draw_mode, 0, vert_count);
 	}
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	return;

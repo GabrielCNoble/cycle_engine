@@ -215,7 +215,7 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 		material->met_tex = ti->met_tex;
 	}
 	
-	if(bm_flags & MATERIAL_Wireframe)
+	/*if(bm_flags & MATERIAL_Wireframe)
 	{
 		material->shader_index = shader_GetShaderIndex("wireframe");
 	}
@@ -230,7 +230,7 @@ PEWAPI void material_CreateMaterial(char *name, float glossiness, float metallic
 	else
 	{
 		material->shader_index = shader_GetShaderIndex("lit");
-	}
+	}*/
 	
 	
 	if(material_a.material_count>=material_a.array_size)
