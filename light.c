@@ -418,6 +418,31 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 }
 
 
+PEWAPI void light_UpdateLightFrustum(light_ptr light)
+{
+	float frustum_angle;
+	float radius;
+	if(light.position_data->bm_flags & LIGHT_GENERATE_SHADOWS)
+	{
+		if(light.position_data->bm_flags & LIGHT_POINT)
+		{
+			frustum_angle = 45.0;
+		}
+		else
+		{
+			frustum_angle = (float)light.position_data->spot_co;
+		}
+		
+		radius = light.position_data->radius;
+		CreatePerspectiveMatrix(&light.extra_data->light_projection_matrix, DegToRad(frustum_angle), 1.0, LIGHT_ZNEAR, radius / LIGHT_ZNEAR, &light.extra_data->generated_frustum);
+		
+		light.shadow_data->znear = light.extra_data->generated_frustum.znear;
+		light.shadow_data->zfar = light.extra_data->generated_frustum.zfar;
+		light.extra_data->generated_frustum.zfar *= LIGHT_ZNEAR;
+	}
+	
+}
+
 
 PEWAPI void light_DestroyLight(light_ptr light)
 {

@@ -382,11 +382,11 @@ void main()
 		
 		if(sysLightType == LIGHT_POINT)
 		{
-			intensity = attenuate_point(light_vec, sysLightParams[sysLightIndexes[0]].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndexes[0]].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 		}
 		else if(sysLightType == LIGHT_SPOT)
 		{
-			intensity = attenuate_spot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, sysLightParams[sysLightIndexes[0]].sysLightSpotCosCutoff, sysLightParams[sysLightIndexes[0]].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = sysAttenuateSpot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, sysLightParams[sysLightIndexes[0]].sysLightSpotCosCutoff, sysLightParams[sysLightIndexes[0]].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);

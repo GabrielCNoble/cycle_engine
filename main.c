@@ -1248,6 +1248,20 @@ void slider_fn(swidget_t *sub_widget, void *data, int i)
 				slider = (wslider_t *)slider->swidget.next;
 			
 				slider->pos = (float)l.params->b / 255.0;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				slider->pos = (float)l.params->spot_e / 255.0;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				if(l.position_data->bm_flags & LIGHT_SPOT)
+				{
+					slider->pos = (float)l.position_data->spot_co / 90.0;
+				}
+				else
+				{
+					slider->pos = (float)l.position_data->radius / 100.0;
+				}
+				
 			}
 			else
 			{
@@ -1259,6 +1273,23 @@ void slider_fn(swidget_t *sub_widget, void *data, int i)
 				slider = (wslider_t *)slider->swidget.next;
 				
 				l.params->b = 255 * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				l.params->spot_e = 255 * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				if(l.position_data->bm_flags & LIGHT_SPOT)
+				{
+					l.position_data->spot_co = slider->pos * 90;
+				}
+				else
+				{
+					l.position_data->radius = slider->pos * 100;
+				}
+				
+				
+				
+				light_UpdateLightFrustum(l);
 				
 				light_UpdateGPULight(l);
 			}
@@ -1478,12 +1509,13 @@ void ginit()
 	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
 	
 	
-	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2.0 - 80, 0, 100, 100, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
-	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 3, NULL, slider_fn);
+	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2.0 - 80, 0, 100, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 5, NULL, slider_fn);
 	gui_AddSliderToGroup(z, "slider1", 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "slider2", 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "slider3", 0.0, 0, NULL, NULL);
-	
+	gui_AddSliderToGroup(z, "slider4", 0.0, 0, NULL, NULL);
+	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);
 	/*wdropdown_t *dd = gui_AddDropDown(ppp, "render_mode", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
 	gui_AddOption(dd, "op0");
 	gui_AddOption(dd, "op1");

@@ -449,6 +449,12 @@ typedef struct
 
 typedef struct
 {
+	swidget_t swidget;
+	void (*viewport_callback)(swidget_t *, int);
+}wviewport_t;
+
+typedef struct
+{
 	//wbase_t base;
 	float min;						/* relative minimum normalized position the scroller can go */
 	float cur;						/* current relative normalized position the scroller is*/

@@ -775,20 +775,15 @@ PEWAPI void gui_DeleteWidget(widget_t *widget)
 						goto _recursive_delete;
 					}
 				}
-				free(w->name);
-				w->name = NULL;
+				//free(w->name);
+				//w->name = NULL;
 				free(((wdropdown_t *)w)->options);
 			case WIDGET_BUTTON:
 			case WIDGET_VAR:
 			case WIDGET_SLIDER:
 				
 				p = w->next;
-				
-				if(w->name)
-				{
-					free(w->name);
-				}
-				
+				free(w->name);
 				free(w);
 				w = p;
 			break;
