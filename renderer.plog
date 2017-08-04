@@ -1,0 +1,20 @@
+##########################
+
+frames: 2393
+
+avarage fill gbuffer time: 2.866293
+avarage process gbuffer time: 2.928015
+avarage generate shadow map time: 1.366171
+avarage gui time: 0.767162
+##########################
+
+##########################
+
+frames: 1051
+
+avarage fill gbuffer time: 3.336232
+avarage process gbuffer time: 0.592361
+avarage generate shadow map time: 0.371040
+avarage gui time: 0.605786
+##########################
+

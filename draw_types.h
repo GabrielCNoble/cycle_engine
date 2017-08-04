@@ -146,7 +146,7 @@ typedef struct
 	int active_camera_index;
 	int active_shader_index;
 	int active_material_index;
-	int frame_count;
+	unsigned int frame_count;
 	int render_mode;
 	int renderer_flags;
 	float time;

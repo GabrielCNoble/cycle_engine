@@ -309,6 +309,8 @@ PEWAPI void entity_SpawnEntityByIndex(int cdata_index, vec3_t position, mat3_t *
 
 PEWAPI int entity_GetEntityArraySize();
 
+PEWAPI int entity_GetEntityCount();
+
 PEWAPI entity_ptr entity_GetEntityByIndex(int entity_index);
 
 PEWAPI entity_ptr entity_GetEntity(char *name);

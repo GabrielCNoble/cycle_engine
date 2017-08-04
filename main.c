@@ -95,6 +95,8 @@ pick_record_t *selected_objects;
 
 extern float fill_gbuffer_time;
 extern float process_gbuffer_time;
+extern float generate_shadow_map_time;
+extern float gui_time;
 
 
 void resize_selection_list()
@@ -1536,9 +1538,11 @@ void ginit()
 	gui_AddSliderToGroup(z, "light_b", 0.0, 255.0, 0.0, 0, NULL, NULL);
 	
 	
-	ppp = gui_CreateWidget("timers", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, -renderer.width / 2.0 + 150, 0, 300, 50, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
-	gui_AddVar(ppp, "gbuffer fill", 0, 0, VAR_FLOAT, 0.0, 10.0, 300.0, 20.0, &fill_gbuffer_time);
-	gui_AddVar(ppp, "gbuffer process", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &process_gbuffer_time);
+	ppp = gui_CreateWidget("timers", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, -renderer.width / 2.0 + 150, 0, 300, 80, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	gui_AddVar(ppp, "gbuffer fill", 0, 0, VAR_FLOAT, 0.0, 30.0, 300.0, 20.0, &fill_gbuffer_time);
+	gui_AddVar(ppp, "gbuffer process", 0, 0, VAR_FLOAT, 0.0, 10.0, 300.0, 20.0, &process_gbuffer_time);
+	gui_AddVar(ppp, "shadow map generation", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &generate_shadow_map_time);
+	gui_AddVar(ppp, "gui", 0, 0, VAR_FLOAT, 0.0, -30.0, 300.0, 20.0, &gui_time);
 	
 	
 	//gui_AddSliderToGroup(z, "parm", 0.0, 1.0, 0.0, 0, NULL, NULL);

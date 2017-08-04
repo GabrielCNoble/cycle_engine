@@ -21,8 +21,6 @@
 
 #include <stdarg.h>
 
-float fill_gbuffer_time;
-float process_gbuffer_time;
 
 //extern unsigned int _512_extra_map;
 //extern unsigned int extra_framebuffer;
@@ -67,11 +65,10 @@ int resolutions[7][2]=
 
 extern float color_conversion_lookup_table[256];
 
-//float circle_v[144];
-
-//float cone_v[54];
-
-//void (*draw_DrawFrameFunc)();
+extern float fill_gbuffer_time;
+extern float process_gbuffer_time;
+extern float generate_shadow_map_time;
+extern float gui_time;
 
 mat4_t widget_projection_matrix;
 
@@ -810,6 +807,8 @@ draw_Init
 	draw_debug_Init();
 	draw_profile_Init();
 	
+	draw_profile_StartCollectionOfRendererStatistics();
+	
 	/*int b[32] = {123};
 	int q = gpu_Alloc(128);
 	
@@ -834,8 +833,11 @@ void draw_Finish()
 {
 	int i;
 	
+	
+	draw_profile_StopCollectionOfRendererStatistics();
+	
 	draw_debug_Finish();
-	//draw_profile_Finish();
+	draw_profile_Finish();
 	
 	SDL_DestroyWindow(renderer.window);
 	SDL_GL_DeleteContext(renderer.context);
@@ -851,6 +853,7 @@ void draw_Finish()
 	
 	free(e_render_q.base);
 	free(e_render_q.entity_indexes);
+
 
 	return;
 }
@@ -1796,7 +1799,13 @@ void draw_DrawWireframe()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDisable(GL_CULL_FACE);
 	
-	draw_profile_StartTimer();
+	//draw_profile_StartTimer();
+	
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_FILL);
+	
+	#endif
 	
 	for(i=0; i<c; i++)
 	{
@@ -1839,7 +1848,14 @@ void draw_DrawWireframe()
 		
 	}
 	
-	fill_gbuffer_time = draw_profile_StopTimer();
+	//fill_gbuffer_time = draw_profile_StopTimer();
+	
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StopCollectionOfStageStatistics();
+	
+	#endif
+	
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	draw_ResetRenderQueue();
@@ -2010,7 +2026,12 @@ void draw_DrawLit()
 	#define SAMPLES 60
 	
 	//draw_SortRenderQueue(&render_q, 0, c-1);	
-	draw_profile_StartTimer();
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_FILL);
+	
+	#endif
+	
 	for(i=0; i<c; i++)
 	{
 		//s = _rdtsc();
@@ -2107,7 +2128,11 @@ void draw_DrawLit()
 		
 	}
 	
-	fill_gbuffer_time = draw_profile_StopTimer();
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StopCollectionOfStageStatistics();
+	
+	#endif
 	//printf("ms: %f		\r", draw_profile_StopTimer());
 	
 	
@@ -2867,7 +2892,11 @@ void draw_ResolveGBuffer()
 
 		case RENDER_DRAWMODE_LIT:
 		
-			draw_profile_StartTimer();
+			#ifdef PROFILE_RENDERER
+	
+			draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_PROCESS);
+			
+			#endif
 		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
 		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
 			
@@ -3145,20 +3174,32 @@ void draw_ResolveGBuffer()
 			
 			light_UnbindLightCache();
 			
-			process_gbuffer_time = draw_profile_StopTimer();
+			#ifdef PROFILE_RENDERER
+	
+			draw_profile_StopCollectionOfStageStatistics();
+			
+			#endif
 		break;
 		
 		case RENDER_DRAWMODE_WIREFRAME:
 		case RENDER_DRAWMODE_FLAT:			
 			
-			draw_profile_StartTimer();
+			#ifdef PROFILE_RENDERER
+	
+			draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_PROCESS);
+			
+			#endif
 		
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
 			glDrawBuffer(GL_COLOR_ATTACHMENT0);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 			glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, left_buffer.width, left_buffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 			
-			process_gbuffer_time = draw_profile_StopTimer();
+			#ifdef PROFILE_RENDERER
+	
+			draw_profile_StopCollectionOfStageStatistics();
+			
+			#endif
 		break;
 		
 		/*case RENDER_DRAWMODE_FLAT:
@@ -3342,6 +3383,12 @@ void draw_DrawShadowMaps()
 		"movl %0, %%esi\n" : : "m" (shadow_q.command_buffers) : "esi"
 	);
 	
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StartCollectionOfStageStatistics(STAGE_SHADOW_MAP_GENERATION);
+	
+	#endif
+	
 	for(m=0; m<n; m++)
 	{
 		
@@ -3501,6 +3548,12 @@ void draw_DrawShadowMaps()
 		
 		//e = _rdtsc();
 	}
+	
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StopCollectionOfStageStatistics();
+	
+	#endif
 	
 	glCullFace(GL_BACK);
 	glDisable(GL_POLYGON_OFFSET_FILL);
@@ -4522,6 +4575,12 @@ PEWAPI void draw_DrawWidgets()
 	SDL_Surface *s;
 	//glEnable(GL_BLEND);
 	
+	#ifdef PROFILE_RENDERER
+	
+	draw_profile_StartCollectionOfStageStatistics(STAGE_GUI);
+	
+	#endif
+	
 	if(widget_count > 1)
 	{
 		cwidget = widgets->next->next;
@@ -5312,7 +5371,11 @@ PEWAPI void draw_DrawWidgets()
 	
 	
 	
+	#ifdef PROFILE_RENDERER
 	
+	draw_profile_StopCollectionOfStageStatistics();
+	
+	#endif
 	
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);

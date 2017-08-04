@@ -713,6 +713,11 @@ PEWAPI int entity_GetEntityArraySize()
 	return entity_a.array_size;
 }
 
+PEWAPI int entity_GetEntityCount()
+{
+	return entity_a.entity_count;
+}
+
 PEWAPI entity_ptr entity_GetEntityByIndex(int entity_index)
 {
 	entity_ptr rtrn = {NULL, NULL, NULL, NULL};
