@@ -93,6 +93,10 @@ int record_count;
 pick_record_t *selected_objects;
 
 
+extern float fill_gbuffer_time;
+extern float process_gbuffer_time;
+
+
 void resize_selection_list()
 {
 	pick_record_t *p = (pick_record_t *)malloc(sizeof(pick_record_t) * (selection_list.max_selected + 8));
@@ -852,7 +856,7 @@ void open_add_to_world_menu()
 	
 	entity_def_list *def_list = entity_GetEntityDefList();
 	
-	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
 	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, NULL, NULL);
 	gui_AddOption(dd, "Lights");
 	gui_AddOption(dd, "Defs");
@@ -1241,16 +1245,16 @@ void slider_fn(swidget_t *sub_widget, void *data, int i)
 			if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 			{
 				slider = slider_group->sliders;
-				slider->pos = (float)l.params->r / 255.0;
+				slider->pos = (float)l.params->r / slider->max;
 				slider = (wslider_t *)slider->swidget.next;
 			
-				slider->pos = (float)l.params->g / 255.0;
+				slider->pos = (float)l.params->g / slider->max;
 				slider = (wslider_t *)slider->swidget.next;
 			
-				slider->pos = (float)l.params->b / 255.0;
+				slider->pos = (float)l.params->b / slider->max;
 				slider = (wslider_t *)slider->swidget.next;
 				
-				slider->pos = (float)l.params->spot_e / 255.0;
+				/*slider->pos = (float)l.params->spot_e / 255.0;
 				slider = (wslider_t *)slider->swidget.next;
 				
 				if(l.position_data->bm_flags & LIGHT_SPOT)
@@ -1260,22 +1264,22 @@ void slider_fn(swidget_t *sub_widget, void *data, int i)
 				else
 				{
 					slider->pos = (float)l.position_data->radius / 100.0;
-				}
+				}*/
 				
 			}
 			else
 			{
 				slider = slider_group->sliders;
-				l.params->r = 255 * slider->pos;
+				l.params->r = slider->max * slider->pos;
 				slider = (wslider_t *)slider->swidget.next;
 				
-				l.params->g = 255 * slider->pos;
+				l.params->g = slider->max * slider->pos;
 				slider = (wslider_t *)slider->swidget.next;
 				
-				l.params->b = 255 * slider->pos;
+				l.params->b = slider->max * slider->pos;
 				slider = (wslider_t *)slider->swidget.next;
 				
-				l.params->spot_e = 255 * slider->pos;
+				/*l.params->spot_e = 255 * slider->pos;
 				slider = (wslider_t *)slider->swidget.next;
 				
 				if(l.position_data->bm_flags & LIGHT_SPOT)
@@ -1285,7 +1289,7 @@ void slider_fn(swidget_t *sub_widget, void *data, int i)
 				else
 				{
 					l.position_data->radius = slider->pos * 100;
-				}
+				}*/
 				
 				
 				
@@ -1509,20 +1513,37 @@ void ginit()
 	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
 	
 	
-	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2.0 - 80, 0, 100, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	/*widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2.0 - 80, 0, 100, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
 	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 5, NULL, slider_fn);
 	gui_AddSliderToGroup(z, "slider1", 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "slider2", 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "slider3", 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "slider4", 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);
-	/*wdropdown_t *dd = gui_AddDropDown(ppp, "render_mode", DROP_DOWN_DROPPED, 0, 0, 200, NULL, NULL);
-	gui_AddOption(dd, "op0");
-	gui_AddOption(dd, "op1");
-	gui_AddOption(dd, "op2");
-	gui_AddOption(dd, "op3");
+	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);*/
 	
-	wdropdown_t *qq = gui_NestleDropDown(dd, 0, "nestled test", DROP_DOWN_DROPPED, 200, NULL, NULL);
+	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	wdropdown_t *dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, NULL);
+	gui_AddOption(dd, "...");
+	gui_AddOption(dd, "...");
+	gui_AddOption(dd, "...");
+	gui_AddOption(dd, "Exit");
+	
+	
+	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 3, NULL, slider_fn);
+	gui_AddSliderToGroup(z, "light_r", 0.0, 255.0, 0.0, 0, NULL, NULL);
+	gui_AddSliderToGroup(z, "light_g", 0.0, 255.0, 0.0, 0, NULL, NULL);
+	gui_AddSliderToGroup(z, "light_b", 0.0, 255.0, 0.0, 0, NULL, NULL);
+	
+	
+	ppp = gui_CreateWidget("timers", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, -renderer.width / 2.0 + 150, 0, 300, 50, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	gui_AddVar(ppp, "gbuffer fill", 0, 0, VAR_FLOAT, 0.0, 10.0, 300.0, 20.0, &fill_gbuffer_time);
+	gui_AddVar(ppp, "gbuffer process", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &process_gbuffer_time);
+	
+	
+	//gui_AddSliderToGroup(z, "parm", 0.0, 1.0, 0.0, 0, NULL, NULL);
+	//gui_AddSliderToGroup(z, "spot_angle", 0.0, 100.0, 1.0, 0, NULL, NULL);
+	/*wdropdown_t *qq = gui_NestleDropDown(dd, 0, "nestled test", DROP_DOWN_DROPPED, 200, NULL, NULL);
 	gui_AddOption(qq, "op4");
 	gui_AddOption(qq, "op5");
 	gui_AddOption(qq, "op6");
@@ -1754,7 +1775,7 @@ void ginit()
 	//def = entity_GetEntityDef("stairs");
 	
 	//id = mat3_t_id();
-	//def0 = entity_GetEntityDef("cube");
+	def0 = entity_GetEntityDef("cube");
 	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);
 	
 	/*def2 = entity_GetEntityDef("ico_tufted_leather");
@@ -1776,7 +1797,7 @@ void ginit()
 		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 0.0, -10.0 + i * 2), &id);
 	}*/
 	
-	/*for(i = 0; i < 50; i++)
+	for(i = 0; i < 50; i++)
 	{
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 2.0, -25.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 2.0, -25.0 + i), &id);
@@ -1802,7 +1823,7 @@ void ginit()
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -25.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 8.0, -25.0 + i), &id);
 		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 8.0, -25.0 + i), &id);
-	}*/
+	}
 
 
 	/*mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);

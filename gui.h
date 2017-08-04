@@ -196,8 +196,8 @@ enum WIDGET_FLAGS
 	WIDGET_HIGHTLIGHT_BORDERS = 1<<22,			/* whether the borders of the widget should be highlighted when the mouse 
 												   hovers over it */
 												   
-	WIDGET_CLICK_TO_FOCUS = 1<<23,				/* whether the user needs to click to focus the widget or just 
-												   hover the mouse over it... */
+	WIDGET_IGNORE_MOUSE = 1<<23,				/* wheter this widget should block any mouse action upon the world when
+												   the cursor is within its limits... */
 												   
 	WIDGET_KEEP_RELATIVE_Y_POSITION = 1<<24,		/* wheter the subwidget should keep its relative position within the widget or not.
 												   The relative position depends on the dimensions of the widget. If the subwidget
@@ -278,6 +278,7 @@ enum DROP_DOWN_FLAGS
 {
 	DROP_DOWN_DROPPED = 1,
 	DROP_DOWN_NO_HEADER = 1 << 1,
+	DROP_DOWN_TITLE = 1 << 2,
 };
 #define WIDGET_NO_TEXTURE -1
 #define WIDGET_BORDER_PIXEL_WIDTH 8
@@ -286,8 +287,12 @@ enum DROP_DOWN_FLAGS
 #define OPTION_HEIGHT 20.0
 #define EMPTY_DROP_DOWN_HEIGHT 10.0
 
-#define SLIDER_OUTER_HEIGHT 14.0
+#define SLIDER_OUTER_HEIGHT 16.0
 #define SLIDER_INNER_HEIGHT 8.0
+#define SLIDER_NAME_X0 -100.0
+#define SLIDER_NAME_X1 -10.0
+#define SLIDER_VALUE_X0 10.0
+#define SLIDER_VALUE_X1 80.0
 
 
 typedef struct
@@ -432,6 +437,8 @@ typedef struct
 	swidget_t swidget;
 	unsigned int bm_flags;
 	float pos;
+	float max;
+	float min;
 	float last_pos;
 	void *data;
 	void (*slider_callback)(swidget_t *, void *, float);
@@ -512,7 +519,7 @@ PEWAPI wslider_t *gui_AddSlider(widget_t *widget, char *name, short bm_flags, fl
 
 PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count_hint, void *data, void (*slider_group_callback)(swidget_t *, void *, int));
 
-PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float));
+PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, float max, float min, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float));
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
 PEWAPI void gui_DeleteWidgetByName(char *name);

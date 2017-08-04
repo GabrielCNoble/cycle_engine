@@ -21,7 +21,8 @@
 
 #include <stdarg.h>
 
-
+float fill_gbuffer_time;
+float process_gbuffer_time;
 
 //extern unsigned int _512_extra_map;
 //extern unsigned int extra_framebuffer;
@@ -807,7 +808,7 @@ draw_Init
 	CreateOrthographicMatrix(&widget_projection_matrix, -renderer.width * 0.5, renderer.width * 0.5, renderer.height * 0.5, -renderer.height * 0.5, -1.5, 1.5, NULL);
 	
 	draw_debug_Init();
-	//draw_profile_Init();
+	draw_profile_Init();
 	
 	/*int b[32] = {123};
 	int q = gpu_Alloc(128);
@@ -1104,15 +1105,24 @@ draw_DrawFrame
 void draw_DrawFrame()
 {
 	int i;
+	
+	//draw_profile_BeginTimer();
+	
 	//while(glGetError() != GL_NO_ERROR);
+	//draw_profile_BeginTimer();
 	for(i=0; i<frame_func_count; i++)
 	{
 		frame_funcs[i]();
 	}
+	//printf("%f\n", draw_profile_EndTimer());
 	//printf("%x\n", glGetError());
+	
 	draw_DrawWidgets();
 	
 	if(unlikely(console.bm_status&CONSOLE_VISIBLE)) draw_DrawConsole();
+	
+	//printf("%llu\n", draw_profile_EndTimer());
+	
 	return;
 }
 
@@ -1770,6 +1780,9 @@ void draw_DrawWireframe()
 	mat4_t model_view_matrix;
 	//if(likely(cb))
 	
+	
+	
+	
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	shader_SetShaderByIndex(wireframe_shader_index);
@@ -1782,6 +1795,9 @@ void draw_DrawWireframe()
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDisable(GL_CULL_FACE);
+	
+	draw_profile_StartTimer();
+	
 	for(i=0; i<c; i++)
 	{
 
@@ -1823,8 +1839,12 @@ void draw_DrawWireframe()
 		
 	}
 	
+	fill_gbuffer_time = draw_profile_StopTimer();
+	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	draw_ResetRenderQueue();
+	
+	
 	
 	return;
 }
@@ -1990,6 +2010,7 @@ void draw_DrawLit()
 	#define SAMPLES 60
 	
 	//draw_SortRenderQueue(&render_q, 0, c-1);	
+	draw_profile_StartTimer();
 	for(i=0; i<c; i++)
 	{
 		//s = _rdtsc();
@@ -2086,6 +2107,9 @@ void draw_DrawLit()
 		
 	}
 	
+	fill_gbuffer_time = draw_profile_StopTimer();
+	//printf("ms: %f		\r", draw_profile_StopTimer());
+	
 	
 	//printf("frame %d with %d cbs\n", renderer.frame_count, c);
 	
@@ -2103,6 +2127,7 @@ void draw_DrawEmissive()
 	int b_byte_count = 0;
 	int t_c_byte_count=0;
 	int offset=0;
+	int q;
 	camera_t *active_camera = camera_GetActiveCamera();
 	unsigned int draw_mode;
 	unsigned int vert_count;
@@ -2842,6 +2867,7 @@ void draw_ResolveGBuffer()
 
 		case RENDER_DRAWMODE_LIT:
 		
+			draw_profile_StartTimer();
 		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
 		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
 			
@@ -3118,14 +3144,21 @@ void draw_ResolveGBuffer()
 			}
 			
 			light_UnbindLightCache();
+			
+			process_gbuffer_time = draw_profile_StopTimer();
 		break;
 		
 		case RENDER_DRAWMODE_WIREFRAME:
 		case RENDER_DRAWMODE_FLAT:			
+			
+			draw_profile_StartTimer();
+		
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
 			glDrawBuffer(GL_COLOR_ATTACHMENT0);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 			glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, left_buffer.width, left_buffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			
+			process_gbuffer_time = draw_profile_StopTimer();
 		break;
 		
 		/*case RENDER_DRAWMODE_FLAT:
@@ -4417,6 +4450,7 @@ PEWAPI void draw_DrawWidgets()
 	vec3_t *v3tvar;
 	mat3_t *m3tvar;
 	char *strvar;
+	float *fvar;
 	vec3_t v;
 	
 	int stack_top = -1;
@@ -4890,6 +4924,32 @@ PEWAPI void draw_DrawWidgets()
 							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 + 1, 500, vec3(1.0, 1.0, 1.0), "%s:    %s", var->swidget.name, strvar);
 						break;
+						
+						case VAR_FLOAT:
+							glColor3f(0.4, 0.4, 0.4);
+							glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+							glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+							glRectf(var->swidget.x + x - hw, var->swidget.y + y - hh, var->swidget.x + x + hw, var->swidget.y + y + hh);
+							/*glBegin(GL_QUADS);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y + hh, -0.5);
+							glVertex3f(var->swidget.x + x - hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y - hh, -0.5);
+							glVertex3f(var->swidget.x + x + hw, var->swidget.y + y + hh, -0.5);
+							glEnd();*/
+							
+							
+							fvar = (float *)var->var;
+							
+							/*if(var->var_flags & VAR_ADDR)
+							{
+								fvar = (float *)*fvar;
+							}*/
+							
+							glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+							
+							draw_DrawString(ui_font, 16, (var->swidget.x + x - hw) + renderer.screen_width * 0.5 + 1,  (var->swidget.y + y + hh) + renderer.screen_height * 0.5 - 1, 500, vec3(1.0, 1.0, 1.0), "%s: %.4f", var->swidget.name, *fvar);
+						break;
 					}
 					
 				break;
@@ -5005,8 +5065,11 @@ PEWAPI void draw_DrawWidgets()
 						glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						
-						
-						if(dropdown->active_option)
+						if(dropdown->bm_flags & DROP_DOWN_TITLE)
+						{
+							draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->swidget.name);
+						}
+						else if(dropdown->active_option)
 						{
 							draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->active_option->name);
 						}
@@ -5122,28 +5185,63 @@ PEWAPI void draw_DrawWidgets()
 				case WIDGET_SLIDER:
 					slider = (wslider_t *)cswidget;
 					hw = slider->swidget.w / 2.0;
+					hh = SLIDER_OUTER_HEIGHT / 2.0;
 					
 					x0 = slider->swidget.x + x - hw;
 					x1 = slider->swidget.x + x + hw;
-					
-					hh = SLIDER_INNER_HEIGHT / 2.0;
-					
 					y0 = slider->swidget.y + y - hh;
 					y1 = slider->swidget.y + y + hh;
 					
+					glStencilFunc(GL_EQUAL, base_stencil, 0xff);
+					glStencilOp(GL_KEEP, GL_INCR, GL_INCR);		
 					
-					glColor3f(0.4, 0.4, 0.4);
+					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+					
+					
+					glRectf(x0 + SLIDER_NAME_X0, y0, x1 + SLIDER_VALUE_X1, y1);
+					
+					glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+					glStencilOp(GL_KEEP, GL_DECR, GL_DECR);
 					glRectf(x0, y0, x1, y1);
 					
-					hh = SLIDER_OUTER_HEIGHT / 2.0;
+					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+					
+					glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					draw_DrawString(ui_font, 16, x1 + SLIDER_VALUE_X0 + renderer.screen_width * 0.5,  y1 + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "%.2f", slider->pos * slider->max);
+					draw_DrawString(ui_font, 16, x0 + SLIDER_NAME_X0 + renderer.screen_width * 0.5,  y1 + renderer.screen_height * 0.5, 500, vec3(1.0, 1.0, 1.0), "%s", slider->swidget.name);
+					
+					
+					glColor3f(0.4, 0.4, 0.4);
+					glStencilFunc(GL_ALWAYS, base_stencil, 0xff);
+					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					glRectf(x0 + SLIDER_NAME_X0, y0, x1 + SLIDER_VALUE_X1, y1);
+					
+					glRectf(x0 + SLIDER_NAME_X0, y0, x0 + SLIDER_NAME_X1, y1);
+					glRectf(x1 + SLIDER_VALUE_X0, y0, x1 + SLIDER_VALUE_X1, y1);
+					
+					hh = SLIDER_INNER_HEIGHT / 2.0;
+					y0 = slider->swidget.y + y - hh;
+					y1 = slider->swidget.y + y + hh;
+					
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					glRectf(x0, y0, x1, y1);
+					
+					
+					
+					//hh = SLIDER_OUTER_HEIGHT / 2.0;
 					
 					x0 = slider->swidget.x + x - hw + hw * 2.0 * slider->pos;
 					
 					//y0 = slider->swidget.y - hh;
 					//y1 = slider->swidget.y + hh;
 					
+					glStencilFunc(GL_ALWAYS, base_stencil + 1, 0xff);
+					
 					glEnable(GL_POINT_SMOOTH);
-					glPointSize(14.0);
+					glPointSize(SLIDER_OUTER_HEIGHT);
 					
 					glBegin(GL_POINTS);
 					glColor3f(0.7, 0.7, 0.7);
@@ -5151,6 +5249,10 @@ PEWAPI void draw_DrawWidgets()
 					glEnd();
 					glDisable(GL_POINT_SMOOTH);
 					glPointSize(1.0);
+					
+					
+					
+					
 					//glRectf(x0 - hh, y0, x0 + hh, y1);
 					
 				break;

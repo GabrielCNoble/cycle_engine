@@ -624,7 +624,7 @@ PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm
 	return t;
 }
 
-PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float))
+PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, float max, float min, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float))
 {
 	wslider_t *t = NULL;
 	int i;
@@ -672,6 +672,8 @@ PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name,
 		t->slider_callback = slider_callback;
 		t->pos = pos;		
 		t->last_pos = pos;
+		t->max = max;
+		t->min = min;
 		
 		slider_group->sliders[slider_group->slider_count] = *t;
 		
@@ -1005,6 +1007,12 @@ void gui_ProcessWidgets()
 				rel_iy = ph * (cwidget->relative_mouse_y * 0.5 + 0.5);
 				
 				cwidget->bm_flags |= WIDGET_MOUSE_OVER;
+				
+				if(!(cwidget->bm_flags & WIDGET_IGNORE_MOUSE))
+				{
+					input.bm_mouse |= MOUSE_OVER_WIDGET;
+				}
+				
 				//input.bm_mouse |= MOUSE_OVER_WIDGET;
 				
 				mouse_over_widgets++;

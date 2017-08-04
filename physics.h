@@ -234,6 +234,8 @@ PEWAPI int physics_CreateGeneralCollider(short bm_flags, int entity_index, float
 
 PEWAPI void physics_DestroyCollider(general_collider_t *collider);
 
+PEWAPI void physics_DestroyColliderByIndex(int collider_index);
+
 PEWAPI void physics_CreateConstraint(int a_collider, int b_collider, short type, vec3_t a_pivot, vec3_t b_pivot, vec3_t a_axis, vec3_t b_axis, float upper_limit, float lower_limit);
 
 PEWAPI void physics_DeleteConstraint(constraint_t *constraint);

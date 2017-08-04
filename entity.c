@@ -803,6 +803,11 @@ PEWAPI void entity_DestroyEntity(entity_ptr entity)
 			gpu_Free(entity.draw_data->handle);
 			armature_list.armatures[entity.draw_data->armature_index].mesh = NULL;
 		}
+		
+		if(entity.position_data->collider_index >= 0)
+		{
+			physics_DestroyColliderByIndex(entity.position_data->collider_index);
+		}
 
 		scenegraph_RemoveNode(entity.extra_data->assigned_node, 0);
 	}

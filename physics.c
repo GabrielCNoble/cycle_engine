@@ -362,6 +362,25 @@ PEWAPI void physics_DestroyCollider(general_collider_t *collider)
 	}
 }
 
+PEWAPI void physics_DestroyColliderByIndex(int collider_index)
+{
+	general_collider_t *collider;
+	if(collider_index >= 0 && collider_index < collider_a.count)
+	{
+		collider = &collider_a.colliders[collider_index];
+		
+		physics_world->removeRigidBody(collider->base.rigid_body);
+		delete(collider->base.rigid_body);
+		
+		if(collider->base.type == COLLIDER_CHARACTER_CONTROLLER)
+		{
+			
+		}
+		collider_a.free_positions_stack[++collider_a.stack_top] = collider_index;
+		collider->base.collider_index = -1;
+	}
+}
+
 PEWAPI void physics_CreateConstraint(int a_collider, int b_collider, short type, vec3_t a_pivot, vec3_t b_pivot, vec3_t a_axis, vec3_t b_axis, float upper_limit, float lower_limit)
 {
 	constraint_t *temp;
