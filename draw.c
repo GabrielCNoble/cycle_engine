@@ -443,7 +443,7 @@ draw_Init
 	glGenFramebuffers(1, &shadow_buffer.id);
 	
 	
-	geometry_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 4, GL_RGBA16F, GL_RGBA16F, GL_R16F, GL_RGB16F);
+	geometry_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 4, GL_RGBA16F, GL_RGBA, GL_R16F, GL_RGB16F);
 	transparency_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 3, GL_RGBA16F, GL_RGBA16F, GL_RGBA16F);
 	left_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 1, GL_RGBA16F);
 	right_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);

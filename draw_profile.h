@@ -2,7 +2,7 @@
 #define DRAW_PROFILE_H
 
 
-#define PROFILE_RENDERER
+//#define PROFILE_RENDERER
 
 enum STAGE_PROFILING
 {
