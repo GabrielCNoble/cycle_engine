@@ -1889,7 +1889,7 @@ void draw_DrawFlat()
 	//if(likely(cb))
 	
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	shader_SetShaderByIndex(flat_shader_index);	
 	//shader_SetCurrentShaderUniform1i(UNIFORM_RenderMode, RENDER_DRAWMODE_FLAT);
 	
@@ -1901,64 +1901,44 @@ void draw_DrawFlat()
 	for(i=0; i<c; i++)
 	{
 			
-		model_view_matrix=render_q.command_buffers[i].model_view_matrix;
+			//s = _rdtsc();
 		
-		//gpu_buffer=*(unsigned int *)&model_view_matrix.floats[0][3];
-		start = *(unsigned int *)&model_view_matrix.floats[0][3];
-		//start *= sizeof(vec3_t);
-		model_view_matrix.floats[0][3]=0.0;
+		/* could get rid of this copy... */
+		memcpy(&cb.model_view_matrix.floats[0][0], &render_q.command_buffers[i].model_view_matrix, sizeof(mat4_t));
 		
-		vert_count=*(unsigned int *)&model_view_matrix.floats[1][3];
-		//vert_count *= 3;
-		model_view_matrix.floats[1][3]=0.0;
+
+		start = cb.start;
+		cb.model_view_matrix.floats[0][3] = 0.0;
 		
-		//material_index=*(unsigned int *)&model_view_matrix.floats[2][3];
-		model_view_matrix.floats[2][3]=0.0;
+		vert_count = cb.vert_count;
+		cb.model_view_matrix.floats[1][3] = 0.0;
 		
-		draw_mode=*(unsigned int *)&model_view_matrix.floats[3][3];
-		model_view_matrix.floats[3][3]=1.0;
+		entity_index = cb.entity_index;
+		cb.model_view_matrix.floats[2][3] = 0.0;
 		
-		model_view_matrix.floats[2][2] = model_view_matrix.floats[0][0] * model_view_matrix.floats[1][1] - 
-										 model_view_matrix.floats[0][1] * model_view_matrix.floats[1][0];
-		
-		material_index = draw_mode & 0x0000ffff;
-		draw_mode = (draw_mode >> 16);
+		draw_mode = cb.draw_flags;
+		material_index = cb.material_index;
+		cb.model_view_matrix.floats[3][3] = 1.0;
+
 		attrib_flags = draw_mode & 0x00000f00;
 		draw_mode &= 0x0000000f;
+										 								 
+		cb.model_view_matrix.floats[2][2] = cb.model_view_matrix.floats[0][0] * cb.model_view_matrix.floats[1][1] - 
+										    cb.model_view_matrix.floats[0][1] * cb.model_view_matrix.floats[1][0];
 		
-		
-		
+		glLoadMatrixf(&cb.model_view_matrix.floats[0][0]);	
+			
+		v_byte_count = vert_count*3*sizeof(float);
+			
+		q = 0;
+		glEnableVertexAttribArray(v_position);
+		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+	
 		material_SetMaterialByIndex(material_index);
+
+		start /= sizeof(float) * 3;
 		
-		
-		
-		
-		glLoadMatrixf(&model_view_matrix.floats[0][0]);
-		
-		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
-		v_byte_count=vert_count*3*sizeof(float);
-		glEnableVertexAttribArray(shader_a.shaders[flat_shader_index].v_position);
-		glVertexAttribPointer(shader_a.shaders[flat_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
-		
-		if(attrib_flags&CBATTRIBUTE_NORMAL)
-		{
-			n_byte_count=v_byte_count;
-			glEnableVertexAttribArray(shader_a.shaders[flat_shader_index].v_normal);
-			glVertexAttribPointer(shader_a.shaders[flat_shader_index].v_normal, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count + start));
-		}
-		if(attrib_flags&CBATTRIBUTE_TANGENT)
-		{
-			t_byte_count=v_byte_count;
-			glEnableVertexAttribArray(shader_a.shaders[flat_shader_index].v_tangent);
-			glVertexAttribPointer(shader_a.shaders[flat_shader_index].v_tangent, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count+n_byte_count + start));
-		}
-		if(attrib_flags&CBATTRIBUTE_TEX_COORD)
-		{
-			t_c_byte_count=vert_count*2*sizeof(float);
-			glEnableVertexAttribArray(shader_a.shaders[flat_shader_index].v_tcoord);
-			glVertexAttribPointer(shader_a.shaders[flat_shader_index].v_tcoord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)(v_byte_count + n_byte_count + t_byte_count + start));
-		}
-		draw_DrawArrays(draw_mode, 0, vert_count);	
+		draw_DrawArrays(draw_mode, start, vert_count);
 		//glDrawArrays(draw_mode, 0, vert_count);
 	}
 	
@@ -2055,34 +2035,12 @@ void draw_DrawLit()
 
 		attrib_flags = draw_mode & 0x00000f00;
 		draw_mode &= 0x0000000f;
-		
-		/*model_view_matrix.floats[2][0] = model_view_matrix.floats[0][1] * model_view_matrix.floats[1][2] - 
-										 model_view_matrix.floats[0][2] * model_view_matrix.floats[1][1];
-										 
-		model_view_matrix.floats[2][1] = model_view_matrix.floats[0][2] * model_view_matrix.floats[1][0] - 
-										 model_view_matrix.floats[0][0] * model_view_matrix.floats[1][2];*/
 										 								 
 		cb.model_view_matrix.floats[2][2] = cb.model_view_matrix.floats[0][0] * cb.model_view_matrix.floats[1][1] - 
 										    cb.model_view_matrix.floats[0][1] * cb.model_view_matrix.floats[1][0];
 		
 		glLoadMatrixf(&cb.model_view_matrix.floats[0][0]);	
-		
-		/* this could be cached inside the command buffer... */
-		//shader_index = material_a.materials[material_index].shader_index;
-		
-		/*if(shader_index != renderer.active_shader_index) 
-		{
-			shader_SetShaderByIndex(shader_index);	
-			shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
-			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, geometry_buffer.width);
-			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, geometry_buffer.height);
-			v_position = shader_a.shaders[shader_index].v_position;
-			v_normal = shader_a.shaders[shader_index].v_normal;
-			v_tangent = shader_a.shaders[shader_index].v_tangent;
-			v_tex_coord = shader_a.shaders[shader_index].v_tcoord;
-		}*/
-		
-		
+			
 		v_byte_count = vert_count*3*sizeof(float);
 			
 		q = 0;

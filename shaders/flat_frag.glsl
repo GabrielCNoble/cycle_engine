@@ -3,17 +3,7 @@ varying vec3 bi_tangent;
 varying vec3 normal;
 varying vec2 UV;
 
-uniform int mFlagShadeless;
-uniform int mFlagDiffuseTexture;
-uniform int mFlagNormalTexture;
-uniform int mFlagHeightTexture;
-uniform int mFlagSpecularTexture;
-
-#define MATERIAL_Shadeless 1
-#define MATERIAL_DiffuseTexture 4
-#define MATERIAL_NormalTexture 8
-#define MATERIAL_HeightTexture 16
-#define MATERIAL_SpecularTexture 32
+#include "material.h"
 
 
 
@@ -21,13 +11,14 @@ void main()
 {
     vec4 diffv;
     
-    if(mFlagDiffuseTexture == MATERIAL_DiffuseTexture)
+    if(sysMaterialParams.sysMaterialFlags & MATERIAL_DiffuseTexture)
 	{
 		diffv = vec4(texture2D(sysTextureSampler0, UV));
 	}
 	else
 	{
-		diffv = gl_FrontMaterial.diffuse;
+		//diffv = gl_FrontMaterial.diffuse;
+		diffv = sysMaterialParams.sysMaterialBaseColor;
 	}
     
     gl_FragData[0] = diffv;
