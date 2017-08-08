@@ -56,6 +56,8 @@ PEWAPI void draw_GetScreenResolution(int *width, int *height);
 
 inline void draw_ResizeRenderQueue(render_queue *r_queue, int new_size);
 
+inline void draw_ResizeBrushRenderQueue(int new_size);
+
 inline void draw_ResetRenderQueue();
 
 inline void draw_ResetShadowQueue();
@@ -79,6 +81,8 @@ void draw_FillShadowCommandBuffer(command_buffer_t *scb, mat4_t *matrix, int ver
 void draw_DispatchCommandBuffer(render_queue *rqueue, int entity_index, int material_index, int affecting_lights_index, int draw_flags, int start, int vert_count, mat4_t *model_view_matrix);
 
 int draw_DispatchShadowCommandBuffer(command_buffer_t *cb);
+
+inline int draw_DispatchBrushCommandBuffer(int start, int count, short material_index);
 
 int draw_FillAndDispatchShadowCommandBuffer(int vert_count, short material_index, int start, int draw_mode, mat4_t *matrix);
 

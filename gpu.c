@@ -43,6 +43,10 @@ unsigned int bound_array_buffer;
 unsigned int bound_index_buffer;
 /*...*/
 
+/* internal use only... */
+void gpu_Defrag();
+void gpu_Sort(int left, int right);
+
 
 void gpu_Init()
 {
@@ -177,7 +181,7 @@ PEWAPI int gpu_Alloc(int size)
 	if(likely(size > 0))
 	{
 		/* round the size up to the closest multiple of the minimum allowed allocation... */
-		//size += sizeof(vec3_t);
+		
 		size = (size + GPU_MIN_ALLOC - 1) & (~(GPU_MIN_ALLOC - 1));
 		
 		//printf("size is %d\n", size);
@@ -190,16 +194,16 @@ PEWAPI int gpu_Alloc(int size)
 				
 				if(alloc_list.free_stack_top > -1)
 				{
-					f = alloc_list.free_stack[alloc_list.free_stack_top--];
+					h = alloc_list.free_stack[alloc_list.free_stack_top--];
 				}
 				else
 				{
-					f = alloc_list.cursor++;
+					h = alloc_list.cursor++;
 				}
-				h = f;
+				//h = f;
 				
-				alloc_list.list[f].size = size;
-				alloc_list.list[f].start = free_list.list[i].start;
+				alloc_list.list[h].size = size;
+				alloc_list.list[h].start = free_list.list[i].start;
 				
 				if(free_list.list[i].size > size)
 				{
@@ -237,6 +241,11 @@ PEWAPI int gpu_Alloc(int size)
 		}
 	}
 	return h;
+}
+
+PEWAPI int gpu_Realloc(int handle, int size)
+{
+	return handle;
 }
 
 PEWAPI void gpu_Free(int handle)

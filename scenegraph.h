@@ -42,30 +42,19 @@ extern "C"
 
 void scenegraph_Init();
 
-
 void scenegraph_Finish();
 
+void scenegraph_ProcessScenegraph();
 
 void scenegraph_FreeGraph(node_t *node);
 
-
 PEWAPI void scenegraph_PurgeAllNodes();
-
-
-static void scenegraph_PurgeNode(node_t *node);
 
 /* Adds a node to the graph. The added node is a child of the root node. */
 node_t *scenegraph_AddNode(int type, int index, short sub_index, char *name);
 
 /* remove a node from the graph. */
 void scenegraph_RemoveNode(node_t *node, int b_recursive);
-
-/* extend the list inside a node. */
-static void scenegraph_ExtendNodeChildrenList(node_t **node);
-
-/* recompact the list of children of a node. Necessary after 
-deleting one of the node's children. */
-static void scenegraph_RecompactNodeChildrenList(node_t *node);
 
 /* set the child node's parent node */
 PEWAPI void scenegraph_SetParent(node_t *node, node_t *parent, int b_keep_transform);
@@ -76,32 +65,7 @@ PEWAPI void scenegraph_RemoveParent(node_t *node, int b_keep_transform);
 /* set the parent node's child node*/
 PEWAPI void scenegraph_SetChild(node_t *node, node_t *child);
 
-/* process nodes in scenegraph */
-void scenegraph_ProcessScenegraph();
-/* process a node recursively. */
-static void scenegraph_ProcessNode(node_t *node, mat4_t *model_view_matrix);
-/* process all nodes interactively */
-static void scenegraph_ProcessNodes();
 
-static void scenegraph_GetAffectedScreenTiles();
-
-static void scenegraph_CullLights();
-
-static void scenegraph_CullGeometry();
-
-static void scenegraph_CullStaticGeometry();
-
-static void scenegraph_FillShadowQueue();
-
-static void scenegraph_DispatchGeometry();
-
-static void scenegraph_GetAffectingLights();
-
-static void scenegraph_UpdateVertexCache();
-
-static void scenegraph_UpdateColliders();
-
-static void scenegraph_GroupPerHint();
 
 
 PEWAPI void scenegraph_PrintChildsNames(node_t *node);

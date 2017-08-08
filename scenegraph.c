@@ -15,6 +15,7 @@
 #include "gpu.h"
 #include "armature.h"
 #include "input.h"
+#include "brush.h"
 #include <intrin.h>
 
 
@@ -28,9 +29,11 @@ extern render_queue t_render_q;
 extern render_queue e_render_q;
 extern entity_array entity_a;
 extern entity_array static_entity_a;
+extern brush_list_t brush_list;
+extern brush_render_queue_t brush_render_queue;
 extern camera_array camera_a;
 extern collider_array collider_a;
-extern active_particle_system_array active_particle_system_a;
+//extern active_particle_system_array active_particle_system_a;
 extern light_array light_a;
 extern light_array active_light_a;
 extern affecting_lights_list affecting_lights;
@@ -107,10 +110,58 @@ int b_static_visible;
 int static_start;
 dispatch_indexes_list dispatch_list;
 
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+static void scenegraph_PurgeNode(node_t *node);
+
+static void scenegraph_ProcessNode(node_t *node, mat4_t *model_view_matrix);
+
+static void scenegraph_ProcessNodes();
+
+static void scenegraph_GetAffectedScreenTiles();
+
+static void scenegraph_CullLights();
+
+static void scenegraph_CullGeometry();
+
+static void scenegraph_CullBrushes();
+
+static void scenegraph_CullStaticGeometry();
+
+static void scenegraph_FillShadowQueue();
+
+static void scenegraph_DispatchGeometry();
+
+static void scenegraph_GetAffectingLights();
+
+static void scenegraph_UpdateVertexCache();
+
+static void scenegraph_UpdateColliders();
+
+static void scenegraph_GroupPerHint();
+
+/* extend the list inside a node. */
+static void scenegraph_ExtendNodeChildrenList(node_t **node);
+
+/* recompact the list of children of a node. Necessary after 
+deleting one of the node's children. */
+static void scenegraph_RecompactNodeChildrenList(node_t *node);
+
+
+
+
 
 /*
 =============
@@ -728,6 +779,7 @@ void scenegraph_ProcessScenegraph()
 	
 	scenegraph_ProcessNode(scenegraph.root, &root_transform);
 	//camera_ResetWorldToCameraMatrix();
+	scenegraph_CullBrushes();
 	scenegraph_CullGeometry();
 	scenegraph_CullLights();
 	scenegraph_DispatchGeometry();
@@ -1537,6 +1589,19 @@ static void scenegraph_CullGeometry()
 		goto _do_static_entities;
 	}*/
 	
+}
+
+static void scenegraph_CullBrushes()
+{
+	int i;
+	int c = brush_list.count;
+	
+	brush_render_queue.command_buffer_count = 0;
+	
+	for(i = 0; i < c; i++)
+	{
+		draw_DispatchBrushCommandBuffer(brush_list.draw_data[i].start / (sizeof(float) * 6), brush_list.draw_data[i].vert_count, 0);
+	}
 }
 
 static void scenegraph_CullStaticGeometry()

@@ -77,6 +77,7 @@ render_queue render_q;
 render_queue t_render_q;				/* for transparent objects */
 render_queue e_render_q;				/* emissive objects */
 render_queue shadow_q;
+brush_render_queue_t brush_render_queue;
 //extern shadow_queue shadow_q;
 //extern gelem_array gelem_a;
 extern entity_array entity_a;
@@ -427,6 +428,10 @@ draw_Init
 	shadow_q.count=0;
 	draw_ResizeRenderQueue(&shadow_q, 16);
 	
+	brush_render_queue.command_buffer_count = 0;
+	brush_render_queue.max_command_buffer = 16;
+	brush_render_queue.count = (int *)malloc(sizeof(int) * brush_render_queue.max_command_buffer);
+	brush_render_queue.start = (int *)malloc(sizeof(int) * brush_render_queue.max_command_buffer);
 
 	
 	//screen_quad_buffer=gpu_CreateGPUBuffer(sizeof(float)*3*4, GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW);
@@ -1769,6 +1774,8 @@ void draw_DrawWireframe()
 	int t_c_byte_count=0;
 	int offset=0;
 	
+	camera_t *active_camera = camera_GetActiveCamera();
+	
 	unsigned int draw_mode;
 	unsigned int vert_count;
 	unsigned int material_index;
@@ -1776,28 +1783,58 @@ void draw_DrawWireframe()
 	unsigned int start;
 	unsigned int attrib_flags;
 	
-	float wcolor[3]={0.0, 0.6, 0.0};
+	int v_position;
+	
+	float wcolor[3];
 	int i;
 	int c;
 	//float *gpu_buffer;
 	mat4_t model_view_matrix;
+	mat4_t view_projection_matrix;
 	//if(likely(cb))
 	
 	
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDisable(GL_CULL_FACE);
 	
 	
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	shader_SetShaderByIndex(wireframe_shader_index);
+	
+	v_position = shader_a.shaders[wireframe_shader_index].v_position;
+	
+	
+	wcolor[0] = 0.05;
+	wcolor[1] = 0.2;
+	wcolor[2] = 1.0;
+	
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+	
+	glMatrixMode(GL_MODELVIEW);
+		
+	
+	if(brush_render_queue.command_buffer_count)
+	{	
+		glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
+		glEnableVertexAttribArray(v_position);
+		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)0);
+		glMultiDrawArrays(GL_TRIANGLES, brush_render_queue.start, brush_render_queue.count, brush_render_queue.command_buffer_count);
+	}
+	
+	
+	wcolor[0] = 0.0;
+	wcolor[1] = 1.0;
+	wcolor[2] = 0.0;
+	
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+	
 	
 	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
 	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));	
 
-	glMatrixMode(GL_MODELVIEW);
+	//glMatrixMode(GL_MODELVIEW);
 	c=render_q.count;
-	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDisable(GL_CULL_FACE);
+
 	
 	//draw_profile_StartTimer();
 	
@@ -1873,13 +1910,14 @@ void draw_DrawFlat()
 	int b_byte_count = 0;
 	int t_c_byte_count=0;
 	int offset=0;
-	
+	command_buffer_t cb;
 	unsigned int draw_mode;
 	unsigned int vert_count;
 	unsigned int material_index;
 	unsigned int gpu_buffer;
 	unsigned int start;
 	unsigned int attrib_flags;
+	int v_position;
 	
 	float wcolor[3]={0.0, 0.6, 0.0};
 	int i;
@@ -1891,6 +1929,7 @@ void draw_DrawFlat()
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	shader_SetShaderByIndex(flat_shader_index);	
+	v_position = shader_a.shaders[flat_shader_index].v_position;
 	//shader_SetCurrentShaderUniform1i(UNIFORM_RenderMode, RENDER_DRAWMODE_FLAT);
 	
 	glMatrixMode(GL_MODELVIEW);
@@ -1913,7 +1952,7 @@ void draw_DrawFlat()
 		vert_count = cb.vert_count;
 		cb.model_view_matrix.floats[1][3] = 0.0;
 		
-		entity_index = cb.entity_index;
+		//entity_index = cb.entity_index;
 		cb.model_view_matrix.floats[2][3] = 0.0;
 		
 		draw_mode = cb.draw_flags;
@@ -1930,7 +1969,7 @@ void draw_DrawFlat()
 			
 		v_byte_count = vert_count*3*sizeof(float);
 			
-		q = 0;
+		//q = 0;
 		glEnableVertexAttribArray(v_position);
 		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
 	
@@ -1967,6 +2006,7 @@ void draw_DrawLit()
 	unsigned int material_index;
 	//unsigned int gpu_buffer;
 	unsigned int start;
+	unsigned int count;
 	unsigned int q;
 	unsigned int attrib_flags;
 	int shader_index;
@@ -1983,6 +2023,7 @@ void draw_DrawLit()
 	//framebuffer_BindFramebuffer(&right_buffer);
 	
 	command_buffer_t cb;
+	mat4_t view_projection_matrix;
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -1990,7 +2031,9 @@ void draw_DrawLit()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	
-	c=render_q.count;	
+	
+	mat4_t_mult(&view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
+	
 	
 	
 	shader_SetShaderByIndex(lit_shader_index);	
@@ -2002,10 +2045,20 @@ void draw_DrawLit()
 	v_tangent = shader_a.shaders[lit_shader_index].v_tangent;
 	v_tex_coord = shader_a.shaders[lit_shader_index].v_tcoord;
 	
+	if(brush_render_queue.command_buffer_count)
+	{	
+		glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
+		glEnableVertexAttribArray(v_position);
+		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)0);
+		glEnableVertexAttribArray(v_normal);
+		glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(sizeof(float) * 3));
+		glMultiDrawArrays(GL_TRIANGLES, brush_render_queue.start, brush_render_queue.count, brush_render_queue.command_buffer_count);
+	}
 	
-	#define SAMPLES 60
+		
+	c=render_q.count;	
 	
-	//draw_SortRenderQueue(&render_q, 0, c-1);	
+		
 	#ifdef PROFILE_RENDERER
 	
 	draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_FILL);

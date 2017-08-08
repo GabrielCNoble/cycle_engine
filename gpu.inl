@@ -80,6 +80,14 @@ PEWAPI int gpu_GetAllocStart(int handle)
 	}
 }
 
+PEWAPI int gpu_GetAllocSize(int handle)
+{
+	if(handle >= 0)
+	{
+		return alloc_list.list[handle].size;
+	}
+}
+
 
 
 #endif 

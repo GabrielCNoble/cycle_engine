@@ -112,7 +112,7 @@ typedef struct
 	short bm_flags;
 	short collider_index;
 	short entity_index;
-	short affecting_lights_index;
+	//short affecting_lights_index;
 	//char align[8];
 }entity_position_t;
 

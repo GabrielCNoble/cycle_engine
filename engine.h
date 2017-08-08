@@ -26,5 +26,6 @@
 #include "armature.h"
 #include "log.h"
 #include "vcache.h"
+#include "brush.h"
 
 #endif

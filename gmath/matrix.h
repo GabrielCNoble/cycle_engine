@@ -25,11 +25,11 @@ PEWAPI void mat4_t_rotate(mat4_t *mat, vec3_t axis, float angle, int b_set);
 
 PEWAPI void mat3_t_rotate(mat3_t *mat, vec3_t axis, float angle, int b_set);
 
-PEWAPI void mat3_t_scale_x(mat3_t *mat, float scale);
+//PEWAPI void mat3_t_scale_x(mat3_t *mat, float scale);
 
-PEWAPI void mat3_t_scale_y(mat3_t *mat, float scale);
+//PEWAPI void mat3_t_scale_y(mat3_t *mat, float scale);
 
-PEWAPI void mat3_t_scale_z(mat3_t *mat, float scale);
+//PEWAPI void mat3_t_scale_z(mat3_t *mat, float scale);
 
 PEWAPI void mat2_t_rotate(mat2_t *mat, float angle, int b_set);
 

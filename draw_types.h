@@ -119,6 +119,14 @@ typedef union
 
 typedef struct
 {
+	int command_buffer_count;
+	int max_command_buffer;
+	int *count;
+	int *start;
+}brush_render_queue_t;
+
+typedef struct
+{
 	mat4_t model_view_matrix;
 	mat4_t last_model_view_matrix;
 }command_buffer_128_t;

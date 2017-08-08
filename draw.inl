@@ -10,6 +10,7 @@ extern void (*draw_DrawFrameFunc)();
 extern render_queue render_q;
 extern render_queue t_render_q;
 extern render_queue shadow_q;
+extern brush_render_queue_t brush_render_queue;
 
 extern int draw_calls;
 extern int texture_binds;
@@ -57,6 +58,39 @@ PEWAPI void draw_ResizeRenderQueue(render_queue *r_queue, int new_size)
 	r_queue->queue_size = new_size;
 	
 	return;
+}
+
+inline void draw_ResizeBrushRenderQueue(int new_size)
+{
+	int *a = (int *)malloc(sizeof(int) * new_size);
+	int *b = (int *)malloc(sizeof(int) * new_size);
+	
+	memcpy(a, brush_render_queue.count, sizeof(int) * brush_render_queue.max_command_buffer);
+	memcpy(b, brush_render_queue.start, sizeof(int) * brush_render_queue.max_command_buffer);
+	
+	free(brush_render_queue.count);
+	free(brush_render_queue.start);
+	
+	brush_render_queue.count = a;
+	brush_render_queue.start = b;
+	
+	brush_render_queue.max_command_buffer = new_size;
+}
+
+inline int draw_DispatchBrushCommandBuffer(int start, int count, short material_index)
+{
+	int index = brush_render_queue.command_buffer_count;
+	
+	if(index >= brush_render_queue.max_command_buffer)
+	{
+		draw_ResizeBrushRenderQueue(index + 16);
+	}
+	
+	brush_render_queue.count[index] = count;
+	brush_render_queue.start[index] = start;
+	
+	brush_render_queue.command_buffer_count++;
+	
 }
 
 void draw_DrawArrays(GLenum mode, GLint first, GLsizei count)

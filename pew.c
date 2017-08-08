@@ -92,6 +92,7 @@ PEWAPI void pew_Init(int resolution, int mode, char *path)
 	text_Init("fonts\\");
 	input_Init();
 	model_Init("models\\");
+	brush_Init();
 	entity_Init();
 	shader_Init("shaders\\");
 	texture_Init("textures\\");
@@ -139,6 +140,7 @@ PEWAPI void pew_Finish()
 	light_Finish();
 	entity_Finish();
 	model_Finish();
+	brush_Finish();
 	input_Finish();
 	text_Finish();
 	sound_Finish();

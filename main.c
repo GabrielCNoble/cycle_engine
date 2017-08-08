@@ -11,6 +11,7 @@
 #include "framebuffer.h"
 #include "camera.h"
 #include "texture.h"
+#include "brush.h"
 
 extern entity_array entity_a;
 extern input_cache input;
@@ -1801,7 +1802,7 @@ void ginit()
 		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 0.0, -10.0 + i * 2), &id);
 	}*/
 	
-	for(i = 0; i < 50; i++)
+	/*for(i = 0; i < 50; i++)
 	{
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 2.0, -25.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 2.0, -25.0 + i), &id);
@@ -1827,7 +1828,7 @@ void ginit()
 		entity_SpawnEntity("ico_brushed_metal", def0, vec3(4.0, 8.0, -25.0 + i), &id);
 		entity_SpawnEntity("ico_painted_metal", def0, vec3(0.0, 8.0, -25.0 + i), &id);
 		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 8.0, -25.0 + i), &id);
-	}
+	}*/
 
 
 	/*mat3_t_rotate(&id, vec3(0.0, 1.0, 0.0), 0.5, 1);
@@ -1843,9 +1844,9 @@ void ginit()
 	
 	for(i=0; i<1; i++)
 	{	
-		mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+		//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 0.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 6.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 30.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
@@ -1857,6 +1858,12 @@ void ginit()
 		//light_CreatePointLight("lightwow3", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreatePointLight("lightwow4", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
+	
+	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,2.0), BRUSH_CUBE, 0);
+	
+	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+	brush_CreateBrush("brush2", vec3(0.0, 0.0, 0.0), &id, vec3(10.0, 0.1 ,10.0), BRUSH_CUBE, 0);
 	
 	//lptr = light_GetLight("spot");
 	//eptr = entity_GetEntity("pole");

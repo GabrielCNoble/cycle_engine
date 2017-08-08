@@ -30,13 +30,14 @@ typedef struct
 }gpu_heap_list_t;
 
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void gpu_Init();
 
 void gpu_Finish();
-
-
-
-
 
 PEWAPI gpu_buffer_t gpu_CreateGPUBuffer(int size, int type, int hint);
 
@@ -52,12 +53,14 @@ PEWAPI void gpu_DeleteGPUBuffer(gpu_buffer_t *buffer);
 
 PEWAPI int gpu_Alloc(int size);
 
+PEWAPI int gpu_Realloc(int handle, int size);
+
 PEWAPI void gpu_Free(int handle);
 
+PEWAPI inline int gpu_GetAllocStart(int handle);
 
-void gpu_Defrag();
+PEWAPI inline int gpu_GetAllocSize(int handle);
 
-void gpu_Sort(int left, int right);
 
 
 /* those are intended for high density data transfers, so if you want to transfer a single byte with it, 
@@ -76,22 +79,20 @@ PEWAPI inline void *gpu_MapBuffer(int target, int access);
 
 PEWAPI inline void gpu_UnmapBuffer(int target);
 
-PEWAPI inline int gpu_GetAllocStart(int handle);
 
 
 
-
-//PEWAPI void gpu_StartVCache(int cache_size);
-
-//PEWAPI void gpu_EndVCache();
-
-//PEWAPI void gpu_SortVCache(int left, int right);
-
-//PEWAPI void gpu_AddVCacheSlot(int mdata_id, int vert_count, unsigned int start);
-
-//PEWAPI void gpu_EvictVCacheSlot(int slot_id);
 
 #include "gpu.inl"
 
+#ifdef __cplusplus
+}
+#endif
+
+
 
 #endif /* GPU_H */
+
+
+
+
