@@ -2413,11 +2413,8 @@ pick_record_t scenegraph_Pick()
 	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));	
 
 	glMatrixMode(GL_MODELVIEW);
-	//glPushMatrix();
 	c = render_q.count;
 	
-	
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	
@@ -2432,12 +2429,9 @@ pick_record_t scenegraph_Pick()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 	
-	//printf("%d\n", c);
 	*(int *)&wcolor[1] = PICK_ENTITY;
 	for(i=0; i < c; i++)
 	{
-
-		//MatrixCopy4(&model_view_matrix, &render_q.command_buffers[i].model_view_matrix);
 		memcpy(&model_view_matrix.floats[0][0], &render_q.command_buffers[i].model_view_matrix.floats[0][0], sizeof(mat4_t));
 		start = *(unsigned int *)&model_view_matrix.floats[0][3];
 		model_view_matrix.floats[0][3]=0.0;
@@ -2463,20 +2457,37 @@ pick_record_t scenegraph_Pick()
 		draw_mode &= 0x0000000f;
 		
 		*(int *)&wcolor[0] = (entity_index + 1);
-		//wcolor[0] = (entity_index + 1);
-		//wcolor[1] = 1.0;
 		wcolor[2] = 0.0;
 		wcolor[3] = 0.0;
 		
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 		glLoadMatrixf(&model_view_matrix.floats[0][0]);
-		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
-		//glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
-		//glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(start));
 		start /= sizeof(float) * 3;
 		glDrawArrays(draw_mode, start, vert_count);
-	
 	}
+	
+	
+	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(0));
+	
+	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
+	
+	*(int *)&wcolor[1] = PICK_BMODEL;
+	c = brush_list.count;
+	//c = brush_render_queue.command_buffer_count;
+	for(i = 0; i < c; i++)
+	{
+		*(int *)&wcolor[0] = (i + 1);
+		wcolor[2] = 0.0;
+		wcolor[3] = 0.0;
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
+		start = brush_list.draw_data[i].start / (sizeof(float) * 6);
+		glDrawArrays(GL_TRIANGLES, start, brush_list.draw_data[i].vert_count);
+		
+	}
+	
+	
+	
 	
 	c = light_a.light_count;
 	
@@ -2516,6 +2527,12 @@ pick_record_t scenegraph_Pick()
 	glPointSize(1.0);
 	glDisable(GL_POINT_SMOOTH);
 	
+	
+	
+	
+	
+	
+	
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, picking_buffer.id);
 	
 	//printf("%d %d\n", mouse_x, mouse_y);
@@ -2525,21 +2542,6 @@ pick_record_t scenegraph_Pick()
 	//printf("%d %d %d\n", *(int *)&pixel[0], *(int *)&pixel[1], *(int *)&pixel[2]);
 	r.index = *(int *)&pixel[0] - 1;
 	r.type = *(int *)&pixel[1];
-	
-	/*switch(*(int *)&pixel[1])
-	{
-		case 1:
-			r.type = PICK_ENTITY;
-		break;
-		
-		case 2:
-			r.type = PICK_LIGHT;
-		break;
-	}*/
-	
-	//entity_index = pixel[0];
-	//entity_index--;
-
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glLineWidth(1.0);

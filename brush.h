@@ -39,7 +39,7 @@ typedef struct
 {
 	bmodel_data0_t *position_data;
 	bmodel_data1_t *draw_data;
-}bmodel_ptr_t;
+}bmodel_ptr;
 
 
 typedef struct
@@ -50,23 +50,32 @@ typedef struct
 	bmodel_data1_t *draw_data;
 }brush_list_t;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 void brush_Init();
 
 void brush_Finish();
 
-void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index);
+PEWAPI void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index);
 
-void brush_UpdateBrush(bmodel_ptr_t brush);
+void brush_UpdateBrush(bmodel_ptr brush);
 
-void brush_DeleteBrush(bmodel_ptr_t brush);
+PEWAPI void brush_DeleteBrush(bmodel_ptr brush);
 
 void brush_ResizeBrushList(int new_size);
 
-void brush_TranslateBrush(bmodel_ptr_t brush, vec3_t direction);
+PEWAPI void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction);
 
-void brush_RotateBrush(bmodel_ptr_t brush, vec3_t axis, float amount);
+PEWAPI void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount);
 
+PEWAPI bmodel_ptr brush_GetBrushByIndex(int index);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 

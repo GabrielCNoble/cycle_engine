@@ -405,6 +405,12 @@ draw_Init
 		bm_extensions |= EXT_MULTI_DRAW_INDIRECT;
 	}
 	
+	sub_str = strstr(ext_str, "GL_ARB_shader_draw_parameters");
+	if(sub_str)
+	{
+		bm_extensions |= EXT_SHADER_DRAW_PARAMETERS;
+	}
+	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glCullFace(GL_CW);
 	
@@ -2032,7 +2038,7 @@ void draw_DrawLit()
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	
 	
-	mat4_t_mult(&view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
+	//mat4_t_mult(&view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
 	
 	
 	

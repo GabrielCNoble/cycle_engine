@@ -1,102 +1,100 @@
 #include "brush.h"
 #include "gpu.h"
+#include "macros.h"
 #include <stdlib.h>
 
 
 static float cube_bmodel_verts[] = 
 {
-	-1.0f,-1.0f,-1.0f, 
-    -1.0f,-1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f, 
-     1.0f, 1.0f,-1.0f, 
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
+	-1.0, 1.0, 1.0,
+	-1.0,-1.0, 1.0,
+	 1.0,-1.0, 1.0,
+	 1.0,-1.0, 1.0,
+	 1.0, 1.0, 1.0,
+	-1.0, 1.0, 1.0,
+	
+	 1.0, 1.0, 1.0,
+	 1.0,-1.0, 1.0,
+	 1.0,-1.0,-1.0,
+	 1.0,-1.0,-1.0,
+	 1.0, 1.0,-1.0,
+	 1.0, 1.0, 1.0,
 	 
-     1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-     1.0f,-1.0f,-1.0f,
-     1.0f, 1.0f,-1.0f,
-     1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-     1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    
-    -1.0f, 1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-     1.0f,-1.0f, 1.0f,
-     1.0f, 1.0f, 1.0f,
-     1.0f,-1.0f,-1.0f,
-     1.0f, 1.0f,-1.0f,
-     
-     1.0f,-1.0f,-1.0f,
-     1.0f, 1.0f, 1.0f,
-     1.0f,-1.0f, 1.0f,
-     1.0f, 1.0f, 1.0f,
-     1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    
-     1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-     1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-     1.0f,-1.0f, 1.0f  
+	 1.0, 1.0,-1.0,
+	 1.0,-1.0,-1.0,
+	-1.0,-1.0,-1.0,
+	-1.0,-1.0,-1.0,
+	-1.0, 1.0,-1.0,
+	 1.0, 1.0,-1.0,
+	 
+	-1.0, 1.0,-1.0,
+	-1.0,-1.0,-1.0,
+	-1.0,-1.0, 1.0,
+	-1.0,-1.0, 1.0,
+	-1.0, 1.0, 1.0,
+	-1.0, 1.0,-1.0,
+	
+	-1.0, 1.0,-1.0,
+	-1.0, 1.0, 1.0,
+	 1.0, 1.0, 1.0,
+	 1.0, 1.0, 1.0,
+	 1.0, 1.0,-1.0,
+	-1.0, 1.0,-1.0,
+	
+	-1.0,-1.0, 1.0,
+	-1.0,-1.0,-1.0,
+	 1.0,-1.0,-1.0,
+	 1.0,-1.0,-1.0,
+	 1.0,-1.0, 1.0,
+	-1.0,-1.0, 1.0,         
+	  
 };
 
 
 static float cube_bmodel_normals[] = 
 {
-   -1.0, 0.0, 0.0,
-   -1.0, 0.0, 0.0,
-	-1.0, 0.0, 0.0,
-	-1.0, 0.0, 0.0,
-	-1.0, 0.0, 0.0,
-	-1.0, 0.0, 0.0,
-	
-	
-   -1.0, 0.0, 0.0,
-   -1.0, 0.0, 0.0,
-   -1.0, 0.0, 0.0,
-   -1.0, 0.0, 0.0,
-   -1.0, 0.0, 0.0,
-   -1.0, 0.0, 0.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
    
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
    
-    0.0, 0.0,-1.0,
-    0.0, 0.0,-1.0,
-    0.0, 0.0,-1.0,
-    0.0, 0.0,-1.0,
-    0.0, 0.0,-1.0,
-    0.0, 0.0,-1.0,
-    
-    
-    1.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    
-    
-    0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0,
-    
-    
-    0.0,-1.0, 0.0,
-    0.0,-1.0, 0.0,
-    0.0,-1.0, 0.0,
-    0.0,-1.0, 0.0,
-    0.0,-1.0, 0.0,
-    0.0,-1.0, 0.0,
+   0.0, 0.0,-1.0,
+   0.0, 0.0,-1.0,
+   0.0, 0.0,-1.0,
+   0.0, 0.0,-1.0,
+   0.0, 0.0,-1.0,
+   0.0, 0.0,-1.0,
+   
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   
+   0.0,-1.0, 0.0,
+   0.0,-1.0, 0.0,
+   0.0,-1.0, 0.0,
+   0.0,-1.0, 0.0,
+   0.0,-1.0, 0.0,
+   0.0,-1.0, 0.0,
+   
 };
 
 static int cube_bmodel_size = sizeof(float) * 6 * 36;
@@ -107,6 +105,11 @@ static int cube_bmodel_vcount = 36;
 
 brush_list_t brush_list;
 brush_list_t visible_brush_list;	/* updated every frame... */
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 void brush_Init()
 {
@@ -215,7 +218,7 @@ void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t 
 	
 }
 
-void brush_UpdateBrush(bmodel_ptr_t brush)
+void brush_UpdateBrush(bmodel_ptr brush)
 {
 	int last_vert_count = gpu_GetAllocSize(brush.draw_data->handle) / (sizeof(float) * 6);
 	int size = brush.draw_data->vert_count * 6 * sizeof(float);
@@ -229,7 +232,7 @@ void brush_UpdateBrush(bmodel_ptr_t brush)
 	
 }
 
-void brush_DeleteBrush(bmodel_ptr_t brush)
+void brush_DeleteBrush(bmodel_ptr brush)
 {
 	
 }
@@ -249,17 +252,44 @@ void brush_ResizeBrushList(int new_size)
 	brush_list.draw_data = d1;
 }
 
-void brush_TranslateBrush(bmodel_ptr_t brush, vec3_t direction)
+void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction)
+{
+	int i;
+	int c = brush.draw_data->vert_count;
+	
+	for(i = 0; i < c; i++)
+	{
+		brush.draw_data->verts[i * 6] += direction.x;
+		brush.draw_data->verts[i * 6 + 1] += direction.y;
+		brush.draw_data->verts[i * 6 + 2] += direction.z;
+	}
+	
+	brush.position_data->position.x += direction.x;
+	brush.position_data->position.y += direction.y;
+	brush.position_data->position.z += direction.z;
+	
+	brush_UpdateBrush(brush);
+}
+
+void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount)
 {
 	
 }
 
-void brush_RotateBrush(bmodel_ptr_t brush, vec3_t axis, float amount)
+PEWAPI bmodel_ptr brush_GetBrushByIndex(int index)
 {
-	
+	bmodel_ptr b = {NULL, NULL};
+	if(index >= 0 && index < brush_list.count)
+	{
+		b.position_data = &brush_list.position_data[index];
+		b.draw_data = &brush_list.draw_data[index];
+	}
+	return b;
 }
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 

@@ -16,6 +16,7 @@
 extern entity_array entity_a;
 extern input_cache input;
 extern light_array light_a;
+extern brush_list_t brush_list;
 
 int l_count;
 
@@ -75,6 +76,7 @@ entity_ptr detected = {NULL, NULL, NULL, NULL};
 
 light_ptr l = {NULL, NULL, NULL, NULL};
 entity_ptr e = {NULL, NULL, NULL, NULL};
+bmodel_ptr b = {NULL, NULL};
 
 char *editor_state = "editing";
 
@@ -307,7 +309,17 @@ void gmain(float delta_time)
 							
 							cr = r;
 							
-						goto _add_selection;	
+						goto _add_selection;
+						
+						case PICK_BMODEL:
+							b = brush_GetBrushByIndex(r.index);
+							selected_position = &b.position_data->position;
+							selected_orientation = &b.position_data->orientation;
+							selected_name = b.position_data->name;
+							
+							cr = r;
+						
+						goto _add_selection;
 						
 						case 0xffffffff:
 							_add_selection:
@@ -426,9 +438,16 @@ void gmain(float delta_time)
 						{
 							entity_TranslateEntity(e, v, f, 0);
 						}
-						else
+						else if(cr.type == PICK_LIGHT)
 						{
 							light_TranslateLight(l, v, f, 0);
+						}
+						else
+						{
+							v.x *= f;
+							v.y *= f;
+							v.z *= f;
+							brush_TranslateBrush(b, v);
 						}
 						
 					break;
@@ -515,6 +534,10 @@ void gmain(float delta_time)
 			if(cr.type == PICK_ENTITY)
 			{
 				draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.3, 1.0), 4.0, 0);
+			}
+			else if(cr.type == PICK_BMODEL)
+			{
+				draw_debug_DrawBrushOutline(b);
 			}
 			
 			//handle_3d_pos = selected.position_data->world_position;
@@ -1306,6 +1329,16 @@ void slider_fn(swidget_t *sub_widget, void *data, int i)
 	}
 }
 
+void menu_fn(swidget_t *swidget, void *data, int option)
+{
+	switch(option)
+	{
+		case 0:
+			physics_UpdateStaticWorld();
+		break;
+	}
+}
+
 void ginit()
 {
 	material_t ma;
@@ -1525,8 +1558,8 @@ void ginit()
 	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);*/
 	
 	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
-	wdropdown_t *dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, NULL);
-	gui_AddOption(dd, "...");
+	wdropdown_t *dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, menu_fn);
+	gui_AddOption(dd, "Update static world");
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "Exit");
@@ -1862,8 +1895,10 @@ void ginit()
 	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,2.0), BRUSH_CUBE, 0);
 	
-	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
-	brush_CreateBrush("brush2", vec3(0.0, 0.0, 0.0), &id, vec3(10.0, 0.1 ,10.0), BRUSH_CUBE, 0);
+	brush_CreateBrush("brush2", vec3(5.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);
+	
+	
+	//physics_UpdateStaticMeshes();
 	
 	//lptr = light_GetLight("spot");
 	//eptr = entity_GetEntity("pole");

@@ -662,30 +662,62 @@ void draw_debug_Draw()
 				glDisable(GL_POLYGON_OFFSET_LINE);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				glDisable(GL_STENCIL_TEST);
-				
-				
-				//glEnable(GL_POLYGON_OFFSET_FILL);
-				//glPolygonOffset(0.99, -5000.0);
-				//glEnable(GL_BLEND);
-				//glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
-				//glBegin(GL_TRIANGLES);
-				//glColor4f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15], 0.2);
-				//for(j = 0; j < l;)
-				//{	
-				//	glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-				//	j++;
-					
-				//	glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-				//	j++;
-					
-				//	glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
-				//	j++;
-				//}
-				//glEnd();
-				//glDisable(GL_POLYGON_OFFSET_FILL);
 				glEnable(GL_CULL_FACE);
 				glLineWidth(1.0);
 				glPopMatrix();
+			break;
+			
+			case DRAW_BRUSH_OUTLINE:
+				
+				verts = *(float **)&draw_cmds[i].data[0];
+				l = *(int *)&draw_cmds[i].data[1];
+				
+				glEnable(GL_STENCIL_TEST);
+				glClearStencil(0);
+				glClear(GL_STENCIL_BUFFER_BIT);
+				
+				glStencilFunc(GL_ALWAYS, 0x1, 0xff);
+				glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+				
+				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+				glDepthMask(GL_FALSE);
+				glBegin(GL_TRIANGLES);
+				for(j = 0; j < l;)
+				{
+					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					j++;
+					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					j++;
+					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					j++;
+				}
+				glEnd();
+				
+				
+				glStencilFunc(GL_NOTEQUAL, 0x1, 0xff);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+				
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+				glDepthMask(GL_TRUE);
+				
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(6.0);
+				glBegin(GL_TRIANGLES);
+				glColor3f(0.1, 0.3, 1.0);
+				for(j = 0; j < l;)
+				{
+					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					j++;
+					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					j++;
+					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					j++;
+				}
+				glEnd();
+				glLineWidth(1.0);
+				glDisable(GL_STENCIL_TEST);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				
 			break;
 		}
 	}
@@ -1272,6 +1304,22 @@ PEWAPI void draw_debug_DrawOutline(vec3_t position, mat3_t *orientation, mesh_t 
 		//float_buffer[used_floats++] = position.z;
 		
 		
+	}
+}
+
+PEWAPI void draw_debug_DrawBrushOutline(bmodel_ptr brush)
+{
+	debug_draw_t d;
+	int i;
+	if(debug_flags)
+	{
+		d.data = &float_buffer[used_floats];
+		d.count = 1;
+		d.type = DRAW_BRUSH_OUTLINE;
+	
+		*(float **)&float_buffer[used_floats++] = brush.draw_data->verts;
+		*(int *)&float_buffer[used_floats++] = brush.draw_data->vert_count;
+		draw_cmds[draw_cmd_count++] = d;
 	}
 }
 

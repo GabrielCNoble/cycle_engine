@@ -67,6 +67,7 @@ typedef struct
 {
 	int type;
 	int index;
+	int face;
 }pick_record_t;
 
 

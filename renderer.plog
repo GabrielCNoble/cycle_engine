@@ -18,3 +18,13 @@ avarage generate shadow map time: 0.371040
 avarage gui time: 0.605786
 ##########################
 
+##########################
+
+frames: 3504
+
+avarage fill gbuffer time: 0.000000
+avarage process gbuffer time: 0.000000
+avarage generate shadow map time: 0.000000
+avarage gui time: 0.000000
+##########################
+

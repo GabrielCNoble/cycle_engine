@@ -4,6 +4,7 @@
 #include "conf.h"
 #include "vector.h"
 #include "entity.h"
+#include "brush.h"
 
 #define DRAW_SCREEN_QUAD_BEGIN 0
 #define DRAW_SCREEN_QUAD_COUNT 4
@@ -41,6 +42,7 @@ enum DRAW_TYPE
 	DRAW_MESH,								
 	DRAW_FRUSTUM,
 	DRAW_OUTLINE, 					/* useful for drawing object outline... */
+	DRAW_BRUSH_OUTLINE,
 	DRAW_TRANSLATION_HANDLE,
 	DRAW_ROTATION_HANDLE
 };
@@ -80,6 +82,8 @@ PEWAPI void draw_debug_DrawPointHomogeneous(vec3_t position, vec3_t color, float
 PEWAPI void draw_debug_DrawFrustum(vec3_t origin, mat3_t *orientation, frustum_t *frustum);
 
 PEWAPI void draw_debug_DrawOutline(vec3_t position, mat3_t *orientation, mesh_t *mesh, vec3_t color, float line_thickness, int b_xray);
+
+PEWAPI void draw_debug_DrawBrushOutline(bmodel_ptr brush);
 
 //PEWAPI void draw_debug_Draw2DPoint(vec2_t position, vec3_t color, float point_size);
 

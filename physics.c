@@ -3,10 +3,13 @@
 #include "camera.h"
 #include "gmath/vector.h"
 #include "pew.h"
+#include "brush.h"
 
 #include "BulletCollision\NarrowPhaseCollision\btPersistentManifold.h"
-#include "BulletCollision/NarrowPhaseCollision/btRaycastCallback.h"
+#include "BulletCollision\NarrowPhaseCollision\btRaycastCallback.h"
 #include "BulletCollision\CollisionDispatch\btCollisionObject.h"
+#include "BulletCollision\CollisionShapes\btTriangleMesh.h"
+#include "BulletCollision\CollisionShapes\btBvhTriangleMeshShape.h"
 
 
 #define GRAVITY -0.042
@@ -28,12 +31,15 @@ static constraint_t *root;
 static constraint_t *last;
 static int deletions = 0;
 extern entity_array entity_a;
+extern brush_list_t brush_list;
 
 btDefaultCollisionConfiguration *collision_configuration;
 btCollisionDispatcher *narrow_phase;
 btBroadphaseInterface *broad_phase;
 btSequentialImpulseConstraintSolver *constraint_solver;
 btDiscreteDynamicsWorld *physics_world;
+
+btCollisionObject *static_world = NULL;
 
 
 #ifdef __cplusplus
@@ -157,6 +163,52 @@ void physics_DefragColliderArray()
 	}
 }
 
+
+void physics_UpdateStaticWorld()
+{
+	
+	int i;
+	int c = brush_list.count;
+	int j;
+	int k;
+	
+	btTriangleMesh *triangle_mesh;
+	btBvhTriangleMeshShape *shape;
+	if(static_world)
+	{
+		physics_world->removeCollisionObject(static_world);
+		delete static_world;
+	}
+	
+	triangle_mesh = new btTriangleMesh;
+	
+	
+	
+	for(i = 0; i < c; i++)
+	{
+		k = brush_list.draw_data->vert_count;
+		
+		for(j = 0; j < k;)
+		{
+			triangle_mesh->addTriangle(btVector3(brush_list.draw_data->verts[j * 6], 	   brush_list.draw_data->verts[j * 6 + 1], 		 brush_list.draw_data->verts[j * 6 + 2]),
+			      					   btVector3(brush_list.draw_data->verts[(j + 1) * 6], brush_list.draw_data->verts[(j + 1) * 6 + 1], brush_list.draw_data->verts[(j + 1) * 6 + 2]),
+									   btVector3(brush_list.draw_data->verts[(j + 2) * 6], brush_list.draw_data->verts[(j + 2) * 6 + 1], brush_list.draw_data->verts[(j + 2) * 6 + 2]));
+			j += 3;						  
+		}
+		
+	}
+	
+	shape = new btBvhTriangleMeshShape(triangle_mesh, true, true);
+	
+	
+	static_world = new btCollisionObject();
+	static_world->setCollisionShape(shape);
+	
+	physics_world->addCollisionObject(static_world);
+	
+	
+	
+}
 
 /*
 =============

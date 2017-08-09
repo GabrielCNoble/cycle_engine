@@ -226,6 +226,8 @@ void physics_ResizeColliderArray(int new_size);
 
 void physics_DefragColliderArray();
 
+void physics_UpdateStaticWorld();
+
 PEWAPI int physics_CreateCollider(char *name, short type, short collision_shape, short bm_flags, int entity_index, float ground_height, float step_height, float height, float width, float mass, float gravity, float jump_force, mesh_t *collision_shape_mesh, vec3_t position, mat3_t *orientation, void (*collision_callback)(int entity_a_index , int entity_b_index));
 
 PEWAPI int physics_CreateCharacterController(short bm_flags, int entity_index, float height, float width, float step_height, float gravity, float jump_force, vec3_t position, void (*collision_callback)(int entity_a_index , int entity_b_index));
@@ -261,6 +263,8 @@ PEWAPI void physics_Move(character_controller_t *controller, vec3_t direction);
 PEWAPI void physics_Crouch(character_controller_t *controller);
 
 PEWAPI void physics_Yaw(character_controller_t *controller, float yaw);
+
+
 
 
 
