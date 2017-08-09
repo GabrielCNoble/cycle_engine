@@ -304,6 +304,8 @@ void draw_debug_Draw()
 	vec3_t fc;
 	vec3_t nc;
 	
+	framebuffer_t *framebuffer;
+	
 	framebuffer_BindFramebuffer(&backbuffer);
 	
 	glUseProgram(0);
@@ -703,7 +705,7 @@ void draw_debug_Draw()
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				glLineWidth(6.0);
 				glBegin(GL_TRIANGLES);
-				glColor3f(0.1, 0.3, 1.0);
+				glColor3f(draw_cmds[i].data[2], draw_cmds[i].data[3], draw_cmds[i].data[4]);
 				for(j = 0; j < l;)
 				{
 					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
@@ -718,6 +720,14 @@ void draw_debug_Draw()
 				glDisable(GL_STENCIL_TEST);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				
+			break;
+			
+			case DRAW_BLIT_FRAMEBUFFER:
+				framebuffer = *(framebuffer_t **)&draw_cmds[i].data[0];
+				i = *(int *)&draw_cmds[i].data[1];
+				j = *(int *)&draw_cmds[i].data[2];
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer->id);
+				glBlitFramebuffer(0, 0, framebuffer->width, framebuffer->height, i, j, framebuffer->width, framebuffer->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 			break;
 		}
 	}
@@ -1307,7 +1317,7 @@ PEWAPI void draw_debug_DrawOutline(vec3_t position, mat3_t *orientation, mesh_t 
 	}
 }
 
-PEWAPI void draw_debug_DrawBrushOutline(bmodel_ptr brush)
+PEWAPI void draw_debug_DrawBrushOutline(bmodel_ptr brush, vec3_t color)
 {
 	debug_draw_t d;
 	int i;
@@ -1319,8 +1329,38 @@ PEWAPI void draw_debug_DrawBrushOutline(bmodel_ptr brush)
 	
 		*(float **)&float_buffer[used_floats++] = brush.draw_data->verts;
 		*(int *)&float_buffer[used_floats++] = brush.draw_data->vert_count;
+		float_buffer[used_floats++] = color.r;
+		float_buffer[used_floats++] = color.g;
+		float_buffer[used_floats++] = color.b;
+		
 		draw_cmds[draw_cmd_count++] = d;
 	}
+}
+
+PEWAPI void draw_debug_BlitFramebuffer(framebuffer_t *framebuffer, int offset_x, int offset_y)
+{
+	//glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer->id);
+	//glBlitFramebuffer(0, 0, framebuffer->width, framebuffer->height, offset_x, offset_y, framebuffer->width, framebuffer->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	
+	debug_draw_t d;
+	int i;
+	if(debug_flags)
+	{
+		d.data = &float_buffer[used_floats];
+		d.count = 1;
+		d.type = DRAW_BLIT_FRAMEBUFFER;
+	
+		*(framebuffer_t **)&float_buffer[used_floats++] = framebuffer;
+		*(int *)&float_buffer[used_floats++] = offset_x;
+		*(int *)&float_buffer[used_floats++] = offset_y;
+		draw_cmds[draw_cmd_count++] = d;
+	}
+	
+}
+
+PEWAPI void draw_debug_Draw3DHandle(int mode, vec3_t position, mat3_t *orientation)
+{
+	
 }
 
 PEWAPI void draw_debug_Draw2DPoint(vec2_t position, vec3_t color, float point_size)

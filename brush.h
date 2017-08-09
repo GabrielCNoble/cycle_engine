@@ -20,6 +20,7 @@ typedef struct
 	mat3_t orientation;
 	vec3_t position;
 	vec3_t scale; 
+	int brush_index;
 	char *name;
 }bmodel_data0_t;
 
@@ -59,7 +60,9 @@ void brush_Init();
 
 void brush_Finish();
 
-PEWAPI void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index);
+PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index);
+
+PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name);
 
 void brush_UpdateBrush(bmodel_ptr brush);
 

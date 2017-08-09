@@ -23,6 +23,8 @@ int l_count;
 int rotation_handle_divs = 64;
 float *rotation_handle;
 
+framebuffer_t handle_framebuffer;
+
 
 enum HANDLE_3D_FLAGS
 {
@@ -151,6 +153,40 @@ void drop_selection(pick_record_t *pick)
 	}
 }
 
+void copy_selection()
+{
+	int i;
+	int index;
+	int c = selection_list.selected_count;
+	bmodel_ptr b;
+	for(i = 0; i < c; i++)
+	{
+		switch(selection_list.selected[i].type)
+		{
+			case PICK_BMODEL:
+				b = brush_GetBrushByIndex(selection_list.selected[i].index);
+				index = brush_CopyBrush(b, "new_brush");
+				selection_list.selected[i].index = index;	
+			break;
+		}
+	}
+	
+	/*switch(cr.type)
+	{
+		case PICK_BMODEL:
+			b = brush_GetBrushByIndex(cr.index);
+			index = brush_CopyBrush(b, "new_brush");
+			cr.index = index;
+			b = brush_GetBrushByIndex(index);
+			selected_position = &b.position_data->position;
+			selected_orientation = &b.position_data->orientation;
+			selected_name = b.position_data->name;
+			
+		break;
+	}*/
+	
+}
+
 void clear_selection_list()
 {
 	selection_list.selected_count = 0;
@@ -191,6 +227,7 @@ void delete_fn(swidget_t *swidget, void *data, int i)
 	//selection_list *s = (selection_list *)data;
 	entity_ptr eptr;
 	light_ptr lptr;
+	bmodel_ptr bptr;
 	int k;
 	
 	for(k = 0; k < selection_list.selected_count; k++)
@@ -205,6 +242,11 @@ void delete_fn(swidget_t *swidget, void *data, int i)
 			case PICK_LIGHT:
 				lptr = light_GetLightByIndex(selection_list.selected[k].index);
 				light_DestroyLight(lptr);
+			break;
+			
+			case PICK_BMODEL:
+				bptr = brush_GetBrushByIndex(selection_list.selected[k].index);
+				brush_DeleteBrush(bptr);
 			break;
 		}
 	}
@@ -243,6 +285,17 @@ void add_def(swidget_t *swidget, void *data, int i)
 	entity_SpawnEntity("_spawn_", &def0, vec3(0.0, 0.0, 0.0), &id);
 }
 
+void add_brush(swidget_t *swidget, void *data, int i)
+{
+	mat3_t id = mat3_t_id();
+	switch(i)
+	{
+		case 0:
+			brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);
+		break;
+	}
+}
+
 
 
 void gmain(float delta_time)
@@ -266,6 +319,8 @@ void gmain(float delta_time)
 	float delta_x;
 	float delta_y;
 	
+	bmodel_ptr bt;
+	
 	if(s != PEW_PLAYING)
 	{
 		editor_state = "editing";
@@ -274,6 +329,13 @@ void gmain(float delta_time)
 		{
 			open_add_to_world_menu();
 			close_delete_menu();
+		}
+		else if(input_GetKeyStatus(SDL_SCANCODE_D) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
+		{
+			close_delete_menu();
+			close_add_to_world_menu();
+			
+			copy_selection();
 		}
 		else if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 		{
@@ -417,6 +479,7 @@ void gmain(float delta_time)
 				switch(handle_3d_mode)
 				{
 					case HANDLE_3D_TRANSLATION:
+					case HANDLE_3D_SCALE:
 						if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
 						{
 							v = vec3(1.0, 0.0, 0.0);
@@ -445,25 +508,36 @@ void gmain(float delta_time)
 								f *= snap_offset / fabs(f);
 							}
 							
-							if(cr.type == PICK_ENTITY)
+							if(handle_3d_mode == HANDLE_3D_TRANSLATION)
 							{
-								entity_TranslateEntity(e, v, f, 0);
-							}
-							else if(cr.type == PICK_LIGHT)
-							{
-								light_TranslateLight(l, v, f, 0);
+								if(cr.type == PICK_ENTITY)
+								{
+									entity_TranslateEntity(e, v, f, 0);
+								}
+								else if(cr.type == PICK_LIGHT)
+								{
+									light_TranslateLight(l, v, f, 0);
+								}
+								else
+								{
+									v.x *= f;
+									v.y *= f;
+									v.z *= f;
+									brush_TranslateBrush(b, v);
+								}
 							}
 							else
 							{
-								v.x *= f;
-								v.y *= f;
-								v.z *= f;
-								brush_TranslateBrush(b, v);
-								//brush_ScaleBrush(b, v, f);
+								if(cr.type == PICK_BMODEL)
+								{
+									brush_ScaleBrush(b, v, f);
+									grab_offset_x = mouse_x - screen_x;
+									grab_offset_y = mouse_y - screen_y;
+								}
 							}
+							
+							
 						}
-						
-						
 						
 					break;
 					
@@ -476,19 +550,6 @@ void gmain(float delta_time)
 								
 						cur_grab_offset_x /= f;
 						cur_grab_offset_y /= f;
-						
-						/*f = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
-						f *= f;
-						if(f >= 0.9999999)
-						{
-							f = asin(0.0);
-						}
-						else
-						{
-							f = asin(sqrt(1.0 - f));
-						}*/
-						
-						//printf("[%f %f]    [%f %f]\n", cur_grab_offset_x, cur_grab_offset_y, last_grab_offset_x, last_grab_offset_y);
 								
 						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x);
 						switch(handle_3d_bm)
@@ -527,6 +588,29 @@ void gmain(float delta_time)
 						last_grab_offset_y = cur_grab_offset_y;
 						
 					break;
+					
+					/*case HANDLE_3D_SCALE:
+						if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
+						{
+							v = vec3(1.0, 0.0, 0.0);
+						}
+						if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
+						{
+							v = vec3(0.0, 1.0, 0.0);
+						}
+						if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
+						{
+							v = vec3(0.0, 0.0, 1.0);
+						}
+						
+						p = vec4(v.x, v.y, v.z, 0.0);
+						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
+						
+						f = sqrt(p.x * p.x + p.y * p.y);
+						p.x /= f;
+						p.y /= f;
+						f = p.x * delta_x + p.y * delta_y;
+					break;*/
 				}
 			}
 			else
@@ -547,6 +631,11 @@ void gmain(float delta_time)
 					case PICK_ENTITY:
 						draw_debug_DrawOutline(entity_a.position_data[index].world_position, &entity_a.position_data[index].world_orientation, entity_a.draw_data[index].mesh, vec3(0.5, 0.25, 0.0), 4.0, 0);
 					break;
+					
+					case PICK_BMODEL:
+						bt = brush_GetBrushByIndex(index);
+						draw_debug_DrawBrushOutline(bt, vec3(0.0, 0.0, 0.5));
+					break;
 				}
 			}
 			
@@ -556,7 +645,7 @@ void gmain(float delta_time)
 			}
 			else if(cr.type == PICK_BMODEL)
 			{
-				draw_debug_DrawBrushOutline(b);
+				draw_debug_DrawBrushOutline(b, vec3(0.1, 0.3, 1.0));
 			}
 			
 			//handle_3d_pos = selected.position_data->world_position;
@@ -905,7 +994,7 @@ void open_add_to_world_menu()
 	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, NULL, NULL);
 	gui_AddOption(dd, "Lights");
 	gui_AddOption(dd, "Defs");
-	gui_AddOption(dd, "Test");
+	gui_AddOption(dd, "Brush");
 	wdropdown_t *lights = gui_NestleDropDown(dd, 0, "Lights", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, add_light);
 	
 	gui_AddOption(lights, "Point Light");
@@ -918,23 +1007,17 @@ void open_add_to_world_menu()
 		gui_AddOption(defs, def_list->defs[i].name);
 	}
 	
-	wdropdown_t *test = gui_NestleDropDown(dd, 2, "test0", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);
-	gui_AddOption(test, "op0");
-	gui_AddOption(test, "op1");
-	gui_AddOption(test, "op2");
-	gui_AddOption(test, "op3");
-	gui_AddOption(test, "op4");
-	gui_AddOption(test, "op5");
-	gui_AddOption(test, "op6");
-	gui_AddOption(test, "op7");
+	wdropdown_t *test = gui_NestleDropDown(dd, 2, "Brush", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, add_brush);
+	gui_AddOption(test, "Cube");
+
 	
-	wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);
+	/*wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);
 	gui_AddOption(test2, "op8");
 	gui_AddOption(test2, "op9");
 	gui_AddOption(test2, "op10");
 	gui_AddOption(test2, "op11");
 	gui_AddOption(test2, "op12");
-	gui_AddOption(test2, "op13");
+	gui_AddOption(test2, "op13");*/
 }
 
 void close_add_to_world_menu()
@@ -982,6 +1065,11 @@ void close_delete_menu()
 
 void draw_3d_handle(int mode)
 {
+	
+	
+	//framebuffer_BindFramebuffer(&handle_framebuffer);
+	//glClear(GL_COLOR_BUFFER_BIT);
+	//draw_debug_BlitFramebuffer(&handle_framebuffer, 0, 0);
 	
 	switch(mode)
 	{
@@ -1044,6 +1132,7 @@ void check_3d_handle(int mode)
 	switch(mode)
 	{
 		case HANDLE_3D_TRANSLATION:
+		case HANDLE_3D_SCALE:
 			glLineWidth(16.0);
 			glPointSize(16.0);	
 			glEnable(GL_POINT_SMOOTH);
@@ -1146,6 +1235,8 @@ void init_3d_handle()
 	float step = (2.0 * 3.14159265) / (float) rotation_handle_divs;
 	
 	rotation_handle = (float *)malloc(sizeof(float) * 3 * 3 * rotation_handle_divs);
+	
+	handle_framebuffer = framebuffer_CreateFramebuffer(32, 32, GL_DEPTH_COMPONENT, 1, GL_RGBA);
 	
 	angle = 0.0;
 	for(i = 0; i < rotation_handle_divs; i++)
@@ -1423,6 +1514,7 @@ void ginit()
 	
 	
 	input_RegisterKey(SDL_SCANCODE_A);
+	input_RegisterKey(SDL_SCANCODE_D);
 	input_RegisterKey(SDL_SCANCODE_SPACE);
 	input_RegisterKey(SDL_SCANCODE_LSHIFT);
 	input_RegisterKey(SDL_SCANCODE_DELETE);
@@ -1967,10 +2059,10 @@ void ginit()
 		//light_CreatePointLight("lightwow4", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
 	
-	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+/*	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,2.0), BRUSH_CUBE, 0);
 	
-	brush_CreateBrush("brush2", vec3(5.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);
+	brush_CreateBrush("brush2", vec3(5.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);*/
 	
 	
 	//physics_UpdateStaticMeshes();

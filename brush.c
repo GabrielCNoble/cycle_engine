@@ -125,6 +125,7 @@ void brush_Finish()
 	for(i = 0; i < brush_list.count; i++)
 	{
 		free(brush_list.position_data[i].name);
+		free(brush_list.draw_data->verts);
 		gpu_Free(brush_list.draw_data->handle);
 	}
 	free(brush_list.position_data);
@@ -132,7 +133,7 @@ void brush_Finish()
 }
 
 
-void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index)
+PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index)
 {
 	bmodel_data0_t *position_data;
 	bmodel_data1_t *draw_data;
@@ -170,6 +171,7 @@ void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t 
 	position_data->name = strdup(name);
 	position_data->position = position;
 	position_data->scale = scale;
+	position_data->brush_index = index;
 	memcpy(&position_data->orientation, orientation, sizeof(mat3_t));
 	 
 	
@@ -216,6 +218,68 @@ void brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t 
 	
 	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
 	
+	return index;
+	
+}
+
+PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name)
+{
+	bmodel_data0_t *position_data;
+	bmodel_data1_t *draw_data;
+	float *vertex_src;
+	float *normal_src;
+	
+	vec3_t v;
+	vec3_t p;
+	
+	int i;
+	int size;
+	int vert_count;
+	int index = brush_list.count++;
+	
+	if(index >= brush_list.max_brushes)
+	{
+		brush_ResizeBrushList(brush_list.max_brushes + 16);
+	}
+	
+	
+	position_data = &brush_list.position_data[index];
+	draw_data = &brush_list.draw_data[index];
+	
+	position_data->name = strdup(name);
+	position_data->position = brush.position_data->position;
+	position_data->scale = brush.position_data->scale;
+	position_data->brush_index = index;
+	memcpy(&position_data->orientation, &brush.position_data->orientation, sizeof(mat3_t));
+	 
+	size = brush.draw_data->vert_count * 6 * sizeof(float); 
+	
+	vert_count = brush.draw_data->vert_count;
+	
+	draw_data->verts = (float *)malloc(size);
+	draw_data->vert_count = vert_count; 
+	draw_data->type = brush.draw_data->type;
+	draw_data->material_index = brush.draw_data->material_index;
+	
+	
+	
+	for(i = 0; i < vert_count; i++)
+	{
+		draw_data->verts[i * 6] = brush.draw_data->verts[i * 6];
+		draw_data->verts[i * 6 + 1] = brush.draw_data->verts[i * 6 + 1];
+		draw_data->verts[i * 6 + 2] = brush.draw_data->verts[i * 6 + 2];
+		
+		draw_data->verts[3 + i * 6] = brush.draw_data->verts[3 + i * 6];
+		draw_data->verts[3 + i * 6 + 1] = brush.draw_data->verts[3 + i * 6 + 1];
+		draw_data->verts[3 + i * 6 + 2] = brush.draw_data->verts[3 + i * 6 + 2];
+	}	
+	
+	draw_data->handle = gpu_Alloc(size);
+	draw_data->start = gpu_GetAllocStart(draw_data->handle);
+	
+	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
+	
+	return index;
 }
 
 void brush_UpdateBrush(bmodel_ptr brush)
@@ -234,7 +298,25 @@ void brush_UpdateBrush(bmodel_ptr brush)
 
 void brush_DeleteBrush(bmodel_ptr brush)
 {
-	
+	int index;
+	int last;
+	if(brush.position_data)
+	{
+		free(brush.position_data->name);
+		free(brush.draw_data->verts);
+		gpu_Free(brush.draw_data->handle);
+		
+		index = brush.position_data->brush_index;
+		last = brush_list.count - 1;
+		
+		if(index < last)
+		{	
+			brush_list.position_data[index] = brush_list.position_data[last];
+			brush_list.draw_data[index] = brush_list.draw_data[last];
+			brush_list.position_data[index].brush_index = index;
+		}
+		brush_list.count--;
+	}
 }
 
 void brush_ResizeBrushList(int new_size)
@@ -350,11 +432,13 @@ PEWAPI void brush_ScaleBrush(bmodel_ptr brush, vec3_t axis, float amount)
 	vec3_t prev_scale;
 	vec3_t new_scale;
 	vec3_t translation;
+	vec3_t v;
+	vec3_t p;
+	
+	mat3_t inverse_rotation;
 
 	
-	prev_scale.x = brush.position_data->scale.x;
-	prev_scale.y = brush.position_data->scale.y;
-	prev_scale.z = brush.position_data->scale.z;
+	prev_scale = brush.position_data->scale;
 	
 	translation.x = brush.position_data->position.x;
 	translation.y = brush.position_data->position.y;
@@ -365,14 +449,33 @@ PEWAPI void brush_ScaleBrush(bmodel_ptr brush, vec3_t axis, float amount)
 	brush.position_data->scale.z += axis.z * amount;
 	
 	
-	prev_scale = MultiplyVector3(&brush.position_data->orientation, prev_scale);
-	new_scale = MultiplyVector3(&brush.position_data->orientation, brush.position_data->scale);
+	//prev_scale = MultiplyVector3(&brush.position_data->orientation, prev_scale);
+	//new_scale = MultiplyVector3(&brush.position_data->orientation, brush.position_data->scale);
+	
+	memcpy(&inverse_rotation.floats[0][0], &brush.position_data->orientation.floats[0][0], sizeof(mat3_t));
+	
+	mat3_t_transpose(&inverse_rotation);
+	
+	new_scale = brush.position_data->scale;
 	
 	for(i = 0; i < c; i++)
 	{
-		brush.draw_data->verts[i * 6] = (((brush.draw_data->verts[i * 6] - translation.x) / prev_scale.x) * new_scale.x) + translation.x;
-		brush.draw_data->verts[i * 6 + 1] = (((brush.draw_data->verts[i * 6 + 1] - translation.y) / prev_scale.y) * new_scale.y) + translation.y;
-		brush.draw_data->verts[i * 6 + 2] = (((brush.draw_data->verts[i * 6 + 2] - translation.z) / prev_scale.z) * new_scale.z) + translation.z;
+		
+		v.x = brush.draw_data->verts[i * 6] - translation.x;
+		v.y = brush.draw_data->verts[i * 6 + 1] - translation.y;
+		v.z = brush.draw_data->verts[i * 6 + 2] - translation.z;
+		
+		v = MultiplyVector3(&inverse_rotation, v);
+		
+		v.x *= (new_scale.x / prev_scale.x);
+		v.y *= (new_scale.y / prev_scale.y);
+		v.z *= (new_scale.z / prev_scale.z);
+		
+		v = MultiplyVector3(&brush.position_data->orientation, v);
+		
+		brush.draw_data->verts[i * 6] = v.x  + translation.x;
+		brush.draw_data->verts[i * 6 + 1] = v.y + translation.y;
+		brush.draw_data->verts[i * 6 + 2] = v.z + translation.z;
 	}
 	
 	brush_UpdateBrush(brush);

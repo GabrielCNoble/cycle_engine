@@ -15,6 +15,8 @@ void add_selection(pick_record_t *pick);
 
 void drop_selection(pick_record_t *pick);
 
+void copy_selection();
+
 void clear_selection_list();
 
 void create_option_dropdown();
