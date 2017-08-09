@@ -71,6 +71,8 @@ float last_grab_offset_y = 0.0;
 float cur_grab_offset_x = 0.0;
 float cur_grab_offset_y = 0.0;
 
+float snap_offset = 0.5;
+
 entity_ptr selected = {NULL, NULL, NULL, NULL};
 entity_ptr detected = {NULL, NULL, NULL, NULL};
 
@@ -410,6 +412,8 @@ void gmain(float delta_time)
 				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
 				delta_y = (mouse_y - screen_y - grab_offset_y) * p.z * 2.0;
 				
+				
+				
 				switch(handle_3d_mode)
 				{
 					case HANDLE_3D_TRANSLATION:
@@ -434,21 +438,32 @@ void gmain(float delta_time)
 						p.y /= f;
 						f = p.x * delta_x + p.y * delta_y;
 						
-						if(cr.type == PICK_ENTITY)
+						if(fabs(f) >= snap_offset)
 						{
-							entity_TranslateEntity(e, v, f, 0);
+							if(snap_offset > 0.0)
+							{
+								f *= snap_offset / fabs(f);
+							}
+							
+							if(cr.type == PICK_ENTITY)
+							{
+								entity_TranslateEntity(e, v, f, 0);
+							}
+							else if(cr.type == PICK_LIGHT)
+							{
+								light_TranslateLight(l, v, f, 0);
+							}
+							else
+							{
+								v.x *= f;
+								v.y *= f;
+								v.z *= f;
+								brush_TranslateBrush(b, v);
+								//brush_ScaleBrush(b, v, f);
+							}
 						}
-						else if(cr.type == PICK_LIGHT)
-						{
-							light_TranslateLight(l, v, f, 0);
-						}
-						else
-						{
-							v.x *= f;
-							v.y *= f;
-							v.z *= f;
-							brush_TranslateBrush(b, v);
-						}
+						
+						
 						
 					break;
 					
@@ -499,9 +514,13 @@ void gmain(float delta_time)
 						{
 							entity_RotateEntity(e, v, -f * 0.5, 0);
 						}
-						else
+						else if(cr.type == PICK_LIGHT)
 						{
 							light_RotateLight(l, v, -f * 0.5, 0);
+						}
+						else
+						{
+							brush_RotateBrush(b, v, -f * 0.5);
 						}
 						
 						last_grab_offset_x = cur_grab_offset_x;
@@ -526,14 +545,14 @@ void gmain(float delta_time)
 				switch(selection_list.selected[i].type)
 				{
 					case PICK_ENTITY:
-						draw_debug_DrawOutline(entity_a.position_data[index].world_position, &entity_a.position_data[index].world_orientation, entity_a.draw_data[index].mesh, vec3(0.4, 0.15, 0.4), 4.0, 0);
+						draw_debug_DrawOutline(entity_a.position_data[index].world_position, &entity_a.position_data[index].world_orientation, entity_a.draw_data[index].mesh, vec3(0.5, 0.25, 0.0), 4.0, 0);
 					break;
 				}
 			}
 			
 			if(cr.type == PICK_ENTITY)
 			{
-				draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.3, 1.0), 4.0, 0);
+				draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.5, 0.0), 4.0, 0);
 			}
 			else if(cr.type == PICK_BMODEL)
 			{
@@ -966,8 +985,14 @@ void draw_3d_handle(int mode)
 	
 	switch(mode)
 	{
+		
+		case HANDLE_3D_SCALE:
+			draw_debug_DrawPoint(add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 12.0, 0);
+			draw_debug_DrawPoint(add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 12.0, 0);
+			draw_debug_DrawPoint(add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 12.0, 0);
+		
 		case HANDLE_3D_TRANSLATION:
-			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 1, 0, 1);
+			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(1.0, 0.0, 0.0)), vec3(1.0, 0.0, 0.0), 4.0, 1, 0, 0);
 			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 1.0, 0.0)), vec3(0.0, 1.0, 0.0), 4.0, 1, 0, 0);
 			draw_debug_DrawLine(handle_3d_pos, add3(handle_3d_pos, vec3(0.0, 0.0, 1.0)), vec3(0.0, 0.0, 1.0), 4.0, 1, 0, 0);
 			//draw_debug_DrawPoint(handle_3d_pos, vec3(1.0, 1.0, 1.0), 16.0, 0);
@@ -1220,6 +1245,7 @@ void set_handle_mode(swidget_t *sub_widget, void *data)
 	{
 		case HANDLE_3D_ROTATION:
 		case HANDLE_3D_TRANSLATION:
+		case HANDLE_3D_SCALE:
 			handle_3d_mode = mode;
 		break;
 	}
@@ -1235,6 +1261,10 @@ void tabbar_fn(swidget_t *sub_widget, void *data, int tab_index)
 		
 		case 1:
 			handle_3d_mode = HANDLE_3D_ROTATION;
+		break;
+		
+		case 2:
+			handle_3d_mode = HANDLE_3D_SCALE;
 		break;
 	}
 	//printf("tab %d is active\n", tab_index);
@@ -1336,6 +1366,40 @@ void menu_fn(swidget_t *swidget, void *data, int option)
 		case 0:
 			physics_UpdateStaticWorld();
 		break;
+	}
+}
+
+void snapping_fn(swidget_t *swidget, void *data, int option)
+{
+	switch(option)
+	{
+		case 0:
+			snap_offset = 2.0;
+		break;
+		
+		case 1:
+			snap_offset = 1.0;
+		break;
+		
+		case 2:
+			snap_offset = 0.5;
+		break;
+		
+		case 3:
+			snap_offset = 0.25;
+		break;
+		
+		case 4:
+			snap_offset = 0.125;
+		break;
+		
+		case 5:
+			snap_offset = 0.0625;
+		break;
+		
+		case 6:
+			snap_offset = 0.0;
+		break;	
 	}
 }
 
@@ -1558,12 +1622,23 @@ void ginit()
 	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);*/
 	
 	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
-	wdropdown_t *dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, menu_fn);
+	wdropdown_t *dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 100, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 200, NULL, menu_fn);
 	gui_AddOption(dd, "Update static world");
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "Exit");
 	
+	
+	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	dd = gui_AddDropDown(ppp, "Snapping", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50 + 200, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, snapping_fn);
+	gui_AddOption(dd, "2.0");
+	gui_AddOption(dd, "1.0");
+	gui_AddOption(dd, "0.5");
+	gui_AddOption(dd, "0.25");
+	gui_AddOption(dd, "0.125");
+	gui_AddOption(dd, "0.0625");
+	gui_AddOption(dd, "off");
+
 	
 	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
 	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 3, NULL, slider_fn);

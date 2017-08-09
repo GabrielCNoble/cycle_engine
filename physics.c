@@ -186,13 +186,13 @@ void physics_UpdateStaticWorld()
 	
 	for(i = 0; i < c; i++)
 	{
-		k = brush_list.draw_data->vert_count;
+		k = brush_list.draw_data[i].vert_count;
 		
 		for(j = 0; j < k;)
 		{
-			triangle_mesh->addTriangle(btVector3(brush_list.draw_data->verts[j * 6], 	   brush_list.draw_data->verts[j * 6 + 1], 		 brush_list.draw_data->verts[j * 6 + 2]),
-			      					   btVector3(brush_list.draw_data->verts[(j + 1) * 6], brush_list.draw_data->verts[(j + 1) * 6 + 1], brush_list.draw_data->verts[(j + 1) * 6 + 2]),
-									   btVector3(brush_list.draw_data->verts[(j + 2) * 6], brush_list.draw_data->verts[(j + 2) * 6 + 1], brush_list.draw_data->verts[(j + 2) * 6 + 2]));
+			triangle_mesh->addTriangle(btVector3(brush_list.draw_data[i].verts[j * 6], 	     brush_list.draw_data[i].verts[j * 6 + 1], 		 brush_list.draw_data[i].verts[j * 6 + 2]),
+			      					   btVector3(brush_list.draw_data[i].verts[(j + 1) * 6], brush_list.draw_data[i].verts[(j + 1) * 6 + 1], brush_list.draw_data[i].verts[(j + 1) * 6 + 2]),
+									   btVector3(brush_list.draw_data[i].verts[(j + 2) * 6], brush_list.draw_data[i].verts[(j + 2) * 6 + 1], brush_list.draw_data[i].verts[(j + 2) * 6 + 2]));
 			j += 3;						  
 		}
 		

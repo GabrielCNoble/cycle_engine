@@ -71,6 +71,8 @@ PEWAPI void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction);
 
 PEWAPI void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount);
 
+PEWAPI void brush_ScaleBrush(bmodel_ptr brush, vec3_t axis, float amount);
+
 PEWAPI bmodel_ptr brush_GetBrushByIndex(int index);
 
 #ifdef __cplusplus

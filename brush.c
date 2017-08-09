@@ -273,7 +273,109 @@ void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction)
 
 void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount)
 {
+	int i;
+	int c = brush.draw_data->vert_count;
+	vec3_t v;
+	vec3_t p;
+	vec3_t n;
 	
+	mat3_t rotation;
+	mat3_t old_rotation;
+	
+	
+	mat3_t_rotate(&rotation, axis, amount, 1);
+	
+	memcpy(&old_rotation.floats[0][0], &brush.position_data->orientation.floats[0][0], sizeof(mat3_t));
+	
+	mat3_t_mult(&brush.position_data->orientation, &old_rotation, &rotation);
+	
+	for(i = 0; i < c; i++)
+	{
+		
+		v.x = brush.draw_data->verts[i * 6];
+		v.y = brush.draw_data->verts[i * 6 + 1];
+		v.z = brush.draw_data->verts[i * 6 + 2];
+		
+		n.x = brush.draw_data->verts[3 + i * 6];
+		n.y = brush.draw_data->verts[3 + i * 6 + 1];
+		n.z = brush.draw_data->verts[3 + i * 6 + 2];
+		
+		v.x -= brush.position_data->position.x;
+		v.y -= brush.position_data->position.y;
+		v.z -= brush.position_data->position.z;
+		
+		p.x = v.x * rotation.floats[0][0] + 
+		      v.y * rotation.floats[1][0] + 
+		      v.z * rotation.floats[2][0];
+		      
+		p.y = v.x * rotation.floats[0][1] + 
+		      v.y * rotation.floats[1][1] + 
+		      v.z * rotation.floats[2][1];
+			  
+		p.z = v.x * rotation.floats[0][2] + 
+		      v.y * rotation.floats[1][2] + 
+		      v.z * rotation.floats[2][2];	        
+		
+		brush.draw_data->verts[i * 6] = p.x + brush.position_data->position.x;
+		brush.draw_data->verts[i * 6 + 1] = p.y + brush.position_data->position.y;
+		brush.draw_data->verts[i * 6 + 2] = p.z + brush.position_data->position.z;
+		
+		
+		p.x = n.x * rotation.floats[0][0] + 
+		      n.y * rotation.floats[1][0] + 
+		      n.z * rotation.floats[2][0];
+		      
+		p.y = n.x * rotation.floats[0][1] + 
+		      n.y * rotation.floats[1][1] + 
+		      n.z * rotation.floats[2][1];
+			  
+		p.z = n.x * rotation.floats[0][2] + 
+		      n.y * rotation.floats[1][2] + 
+		      n.z * rotation.floats[2][2];	        
+		
+		brush.draw_data->verts[3 + i * 6] = p.x;
+		brush.draw_data->verts[3 + i * 6 + 1] = p.y;
+		brush.draw_data->verts[3 + i * 6 + 2] = p.z;
+	}
+	
+	brush_UpdateBrush(brush);
+	
+}
+
+PEWAPI void brush_ScaleBrush(bmodel_ptr brush, vec3_t axis, float amount)
+{
+	int i;
+	int c = brush.draw_data->vert_count;
+	
+	vec3_t prev_scale;
+	vec3_t new_scale;
+	vec3_t translation;
+
+	
+	prev_scale.x = brush.position_data->scale.x;
+	prev_scale.y = brush.position_data->scale.y;
+	prev_scale.z = brush.position_data->scale.z;
+	
+	translation.x = brush.position_data->position.x;
+	translation.y = brush.position_data->position.y;
+	translation.z = brush.position_data->position.z;
+	
+	brush.position_data->scale.x += axis.x * amount;
+	brush.position_data->scale.y += axis.y * amount;
+	brush.position_data->scale.z += axis.z * amount;
+	
+	
+	prev_scale = MultiplyVector3(&brush.position_data->orientation, prev_scale);
+	new_scale = MultiplyVector3(&brush.position_data->orientation, brush.position_data->scale);
+	
+	for(i = 0; i < c; i++)
+	{
+		brush.draw_data->verts[i * 6] = (((brush.draw_data->verts[i * 6] - translation.x) / prev_scale.x) * new_scale.x) + translation.x;
+		brush.draw_data->verts[i * 6 + 1] = (((brush.draw_data->verts[i * 6 + 1] - translation.y) / prev_scale.y) * new_scale.y) + translation.y;
+		brush.draw_data->verts[i * 6 + 2] = (((brush.draw_data->verts[i * 6 + 2] - translation.z) / prev_scale.z) * new_scale.z) + translation.z;
+	}
+	
+	brush_UpdateBrush(brush);
 }
 
 PEWAPI bmodel_ptr brush_GetBrushByIndex(int index)
