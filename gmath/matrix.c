@@ -354,53 +354,19 @@ PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 	int i;
 	int j;
 	int k;
-	mat4_t t1 /*__attribute((aligned(64)))*/; 
-	
-	mat4_t t2 /*__attribute((aligned(64)))*/;
-	
-	/* actually faster for 4x4 matricies... */
-	for(i=0; i<4; i++)
-	{
-		for(j=0; j<4; j++)
-		{
-			t2.floats[i][j]=mat2->floats[j][i];
-		}
-	}
-	
-	//t1=*mat1;
+	mat4_t t1; 
+	mat4_t t2;
 	
 	for(i=0; i<4; i++)
 	{
 		for(j=0; j<4; j++)
 		{
-			result->floats[i][j]=mat1->floats[i][0] * t2.floats[j][0];
-			result->floats[i][j]+=mat1->floats[i][1] * t2.floats[j][1];
-			result->floats[i][j]+=mat1->floats[i][2] * t2.floats[j][2];
-			result->floats[i][j]+=mat1->floats[i][3] * t2.floats[j][3];
+			result->floats[i][j] =  mat1->floats[i][0] * mat2->floats[0][j];
+			result->floats[i][j] += mat1->floats[i][1] * mat2->floats[1][j];
+			result->floats[i][j] += mat1->floats[i][2] * mat2->floats[2][j];
+			result->floats[i][j] += mat1->floats[i][3] * mat2->floats[3][j];
 		}
 	}
-	
-	
-	/*result->floats[0][0]=mat1->floats[0][0]*mat2->floats[0][0] + mat1->floats[0][1]*mat2->floats[1][0] + mat1->floats[0][2]*mat2->floats[2][0] + mat1->floats[0][3]*mat2->floats[3][0];
-	result->floats[0][1]=mat1->floats[0][0]*mat2->floats[0][1] + mat1->floats[0][1]*mat2->floats[1][1] + mat1->floats[0][2]*mat2->floats[2][1] + mat1->floats[0][3]*mat2->floats[3][1];
-	result->floats[0][2]=mat1->floats[0][0]*mat2->floats[0][2] + mat1->floats[0][1]*mat2->floats[1][2] + mat1->floats[0][2]*mat2->floats[2][2] + mat1->floats[0][3]*mat2->floats[3][2];
-	result->floats[0][3]=mat1->floats[0][0]*mat2->floats[0][3] + mat1->floats[0][1]*mat2->floats[1][3] + mat1->floats[0][2]*mat2->floats[2][3] + mat1->floats[0][3]*mat2->floats[3][3];
-	
-	result->floats[1][0]=mat1->floats[1][0]*mat2->floats[0][0] + mat1->floats[1][1]*mat2->floats[1][0] + mat1->floats[1][2]*mat2->floats[2][0] + mat1->floats[1][3]*mat2->floats[3][0];
-	result->floats[1][1]=mat1->floats[1][0]*mat2->floats[0][1] + mat1->floats[1][1]*mat2->floats[1][1] + mat1->floats[1][2]*mat2->floats[2][1] + mat1->floats[1][3]*mat2->floats[3][1];
-	result->floats[1][2]=mat1->floats[1][0]*mat2->floats[0][2] + mat1->floats[1][1]*mat2->floats[1][2] + mat1->floats[1][2]*mat2->floats[2][2] + mat1->floats[1][3]*mat2->floats[3][2];
-	result->floats[1][3]=mat1->floats[1][0]*mat2->floats[0][3] + mat1->floats[1][1]*mat2->floats[1][3] + mat1->floats[1][2]*mat2->floats[2][3] + mat1->floats[1][3]*mat2->floats[3][3];
-	
-	result->floats[2][0]=mat1->floats[2][0]*mat2->floats[0][0] + mat1->floats[2][1]*mat2->floats[1][0] + mat1->floats[2][2]*mat2->floats[2][0] + mat1->floats[2][3]*mat2->floats[3][0];
-	result->floats[2][1]=mat1->floats[2][0]*mat2->floats[0][1] + mat1->floats[2][1]*mat2->floats[1][1] + mat1->floats[2][2]*mat2->floats[2][1] + mat1->floats[2][3]*mat2->floats[3][1];
-	result->floats[2][2]=mat1->floats[2][0]*mat2->floats[0][2] + mat1->floats[2][1]*mat2->floats[1][2] + mat1->floats[2][2]*mat2->floats[2][2] + mat1->floats[2][3]*mat2->floats[3][2];
-	result->floats[2][3]=mat1->floats[2][0]*mat2->floats[0][3] + mat1->floats[2][1]*mat2->floats[1][3] + mat1->floats[2][2]*mat2->floats[2][3] + mat1->floats[2][3]*mat2->floats[3][3];
-	
-	result->floats[3][0]=mat1->floats[3][0]*mat2->floats[0][0] + mat1->floats[3][1]*mat2->floats[1][0] + mat1->floats[3][2]*mat2->floats[2][0] + mat1->floats[3][3]*mat2->floats[3][0];
-	result->floats[3][1]=mat1->floats[3][0]*mat2->floats[0][1] + mat1->floats[3][1]*mat2->floats[1][1] + mat1->floats[3][2]*mat2->floats[2][1] + mat1->floats[3][3]*mat2->floats[3][1];
-	result->floats[3][2]=mat1->floats[3][0]*mat2->floats[0][2] + mat1->floats[3][1]*mat2->floats[1][2] + mat1->floats[3][2]*mat2->floats[2][2] + mat1->floats[3][3]*mat2->floats[3][2];
-	result->floats[3][3]=mat1->floats[3][0]*mat2->floats[0][3] + mat1->floats[3][1]*mat2->floats[1][3] + mat1->floats[3][2]*mat2->floats[2][3] + mat1->floats[3][3]*mat2->floats[3][3];*/
-
 	return;
 }
 //########################################################################################################################
@@ -640,33 +606,10 @@ void mat2_t_invert(mat2_t *mat)
 	return;
 }
 
-/*void InvertTransform(mat4_t *transform)
-{
-	float temp;
-	
-	temp=transform->floats[0][1];
-	transform->floats[0][1]=transform->floats[1][0];
-	transform->floats[1][0]=temp;
-	
-	temp=transform->floats[0][2];
-	transform->floats[0][2]=transform->floats[2][0];
-	transform->floats[2][0]=temp;
-	
-	temp=transform->floats[1][2];
-	transform->floats[1][2]=transform->floats[2][1];
-	transform->floats[2][1]=temp;
-	
-	transform->floats[3][0]=-transform->floats[3][0];
-	transform->floats[3][1]=-transform->floats[3][1];
-	transform->floats[3][2]=-transform->floats[3][2];
-	
-}*/
 
 PEWAPI void mat4_t_compose(mat4_t *result, mat3_t *orientation, vec3_t position)
 {
 	mat4_t output;
-	//mat4_t ori;
-	//mat4_t tra;
 	mat3_t ori;
 	if(orientation)
 	{
@@ -721,24 +664,6 @@ PEWAPI void mat3_t_compose(mat3_t *result, vec3_t vec)
 	return;
 }
 
-PEWAPI vec4_t MultiplyVector4(mat4_t *mat, vec4_t vec)
-{
-	vec4_t result;
-	result.floats[0] = 0.0;
-	result.floats[1] = 0.0;
-	result.floats[2] = 0.0;
-	result.floats[3] = 0.0;
-	register int i;
-	for(i=0; i<4; i++)
-	{
-		//result.floats[i]=mat->floats[0][i]*vec.floats[0]+mat->floats[1][i]*vec.floats[1]+mat->floats[2][i]*vec.floats[2]+mat->floats[3][i]*vec.floats[3];
-		result.floats[0] += mat->floats[i][0] * vec.floats[i];
-		result.floats[1] += mat->floats[i][1] * vec.floats[i];
-		result.floats[2] += mat->floats[i][2] * vec.floats[i];
-		result.floats[3] += mat->floats[i][3] * vec.floats[i];
-	}
-	return result;
-}
 
 PEWAPI vec3_t MultiplyVector3(mat3_t *mat, vec3_t vec)
 {
@@ -749,7 +674,6 @@ PEWAPI vec3_t MultiplyVector3(mat3_t *mat, vec3_t vec)
 	int i;
 	for(i=0; i<3; i++)
 	{
-		//result.floats[i]=mat->floats[0][i]*vec.floats[0]+mat->floats[1][i]*vec.floats[1]+mat->floats[2][i]*vec.floats[2];
 		result.floats[0] += mat->floats[i][0] * vec.floats[i];
 		result.floats[1] += mat->floats[i][1] * vec.floats[i];
 		result.floats[2] += mat->floats[i][2] * vec.floats[i];
@@ -758,35 +682,34 @@ PEWAPI vec3_t MultiplyVector3(mat3_t *mat, vec3_t vec)
 }
 
 
-PEWAPI mat3_t MatrixCopy3(mat3_t *out, mat3_t *in)
+/*PEWAPI mat3_t MatrixCopy3(mat3_t *out, mat3_t *in)
 {
-	register int i;
-	
-	for(i = 0; i < 9;)
-	{
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-	}
-}
+	asm
+	(
+		"movl %0, %%edi\n"
+		"movl %1, %%esi\n"
+		".intel_syntax noprefix\n"
+		"mov ecx, 9\n"
+		"rep stosd\n"
+		".att_syntax prefix"
+		:: "mr" (out), "mr" (in)
+	);
+}*/
 
-PEWAPI mat4_t MatrixCopy4(mat4_t *out, mat4_t *in)
+PEWAPI void MatrixCopy4(mat4_t *out, mat4_t *in)
 {
-	register int i;
-	for(i = 0; i < 16;)
-	{
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-		out->lfloats[i] = in->lfloats[i];
-		i++;
-	}
+	asm
+	(	
+		
+		"movl %0, %%edi\n"
+		"movl %1, %%esi\n"
+		
+		".intel_syntax noprefix\n"
+		"mov ecx, 16\n"
+		"rep stosd\n"
+		".att_syntax prefix"
+		:: "mr" (out), "mr" (in)
+	);
 }
 
 PEWAPI void quat_to_mat3_t(mat3_t *out, quaternion_t *q)

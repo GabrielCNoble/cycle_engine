@@ -43,13 +43,13 @@ typedef struct node_t
 							   for the whole life time of this node. */
 	char *name;
 	struct node_t *parent;
-	short node_index;			/* the position inside the parent's child node array */
-	short max_children;		/* this number may increase as this node gets more child nodes attatched to it. */
+	int node_index;			/* the position inside the parent's child node array */
+	int max_children;		/* this number may increase as this node gets more child nodes attatched to it. */
 	short sub_index;
 	short type;		
 	//short hint;				/* hint for the scenegraph on how to process this node. */
 	short parent_type;
-	short children_count;
+	int children_count;
 	void *children;
 }node_t;					/* Variable size node. Not safe to assume anything about its size */
 

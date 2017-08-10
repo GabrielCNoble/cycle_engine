@@ -770,7 +770,7 @@ void scenegraph_ProcessScenegraph()
 	mat4_t root_transform=mat4_t_id();
 	mat4_t model_view_projection_matrix;
 	
-	mat4_t_mult(&model_view_projection_matrix, &camera_a.cameras[renderer.active_camera_index].world_to_camera_matrix, &camera_a.cameras[renderer.active_camera_index].projection_matrix);
+	mat4_t_mult_fast(&model_view_projection_matrix, &camera_a.cameras[renderer.active_camera_index].world_to_camera_matrix, &camera_a.cameras[renderer.active_camera_index].projection_matrix);
 	
 	if(engine_state == 2)
 	{
@@ -856,7 +856,7 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 			a = &entity_a.aabb_data[node_index];
 			
 			mat4_t_compose(&transform, &entity_a.extra_data[node_index].local_orientation, entity_a.extra_data[node_index].local_position);
-			mat4_t_mult(&c_transform, &transform, parent_transform);
+			mat4_t_mult_fast(&c_transform, &transform, parent_transform);
 			
 			if(entity_a.position_data[node_index].bm_flags & ENTITY_HAS_MOVED)
 			{
@@ -889,7 +889,7 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 		
 		case NODE_CAMERA:
 			mat4_t_compose(&transform, &camera_a.cameras[node_index].local_orientation, camera_a.cameras[node_index].local_position);
-			mat4_t_mult(&c_transform, &transform, parent_transform);
+			mat4_t_mult_fast(&c_transform, &transform, parent_transform);
 			
 			camera_a.cameras[node_index].world_position.floats[0]=c_transform.floats[3][0];
 			camera_a.cameras[node_index].world_position.floats[1]=c_transform.floats[3][1];
@@ -903,7 +903,7 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 		case NODE_LIGHT:
 			
 			mat4_t_compose(&transform, &light_a.position_data[node_index].local_orientation, light_a.position_data[node_index].local_position.vec3);
-			mat4_t_mult(&c_transform, &transform, parent_transform);
+			mat4_t_mult_fast(&c_transform, &transform, parent_transform);
 			
 			light_a.position_data[node_index].world_position.floats[0] = c_transform.floats[3][0];
 			light_a.position_data[node_index].world_position.floats[1] = c_transform.floats[3][1];
@@ -938,12 +938,12 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 										(-light_a.position_data[node_index].world_position.floats[1])*light_a.extra_data[node_index].world_to_light_matrix.floats[1][2]	+
 										(-light_a.position_data[node_index].world_position.floats[2])*light_a.extra_data[node_index].world_to_light_matrix.floats[2][2];
 										
-			mat4_t_mult(&light_a.shadow_data[node_index].model_view_projection_matrix, &light_a.extra_data[node_index].world_to_light_matrix, &light_a.extra_data[node_index].light_projection_matrix);
+			mat4_t_mult_fast(&light_a.shadow_data[node_index].model_view_projection_matrix, &light_a.extra_data[node_index].world_to_light_matrix, &light_a.extra_data[node_index].light_projection_matrix);
 		break;
 		
 		case NODE_ARMATURE:
 			mat4_t_compose(&transform, &armature_list.armatures[node_index].local_orientation, armature_list.armatures[node_index].local_position);
-			mat4_t_mult(&c_transform, &transform, parent_transform);
+			mat4_t_mult_fast(&c_transform, &transform, parent_transform);
 			
 			/*for(i = 0; i < 3; i++)
 			{
@@ -966,7 +966,7 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 		
 		case NODE_BONE:
 			mat4_t_compose(&transform, &armature_list.armatures[node_index].world_orientation, armature_list.armatures[node_index].world_position);
-			mat4_t_mult(&c_transform, &armature_list.armatures[node_index].global_transform[sub_index], &transform);
+			mat4_t_mult_fast(&c_transform, &armature_list.armatures[node_index].global_transform[sub_index], &transform);
 		break;	
 		
 		case NODE_COLLIDER:
@@ -992,7 +992,7 @@ static void scenegraph_ProcessNode(node_t *node, mat4_t *parent_transform)
 				tr.getOpenGLMatrix(&transform.floats[0][0]);
 				/*	break;
 				}*/
-				mat4_t_mult(&c_transform, &transform, parent_transform);
+				mat4_t_mult_fast(&c_transform, &transform, parent_transform);
 			}
 		break;
 	}
@@ -1162,7 +1162,7 @@ static void scenegraph_CullLights()
 	memcpy(&view_matrix, &active_camera->world_to_camera_matrix, sizeof(mat4_t));
 	memcpy(&projection_matrix, &active_camera->projection_matrix, sizeof(mat4_t));
 	
-	mat4_t_mult(&view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
+	mat4_t_mult_fast(&view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
 	
 	//unsigned long long start = _rdtsc();
 	
@@ -1781,7 +1781,7 @@ static void scenegraph_FillShadowQueue()
 			frustum_planes[5] = ComputePlane(ftl, fbr, ftr);		/* far */
 			
 			projection_matrix=active_light_a.extra_data[j].light_projection_matrix;
-			mat4_t_mult(&scb.model_view_matrix, &active_light_a.extra_data[j].world_to_light_matrix, &active_light_a.extra_data[j].light_projection_matrix);
+			mat4_t_mult_fast(&scb.model_view_matrix, &active_light_a.extra_data[j].world_to_light_matrix, &active_light_a.extra_data[j].light_projection_matrix);
 				
 				
 			*(int *)&scb.model_view_matrix.floats[0][3] = 0xff000000;				/* this tells draw_DrawShadowMaps that this command_buffer_t starts a light's render queue */
@@ -1988,8 +1988,8 @@ static void scenegraph_FillShadowQueue()
 				//transform.floats[3][0] = - l_origin.x;
 				//transform.floats[3][1] = - l_origin.y;
 				//transform.floats[3][2] = - l_origin.z;
-				mat4_t_mult(&transform, &translation, &cube_shadow_mats[m]);	
-				mat4_t_mult(&scb.model_view_matrix, &transform, &projection_matrix);
+				mat4_t_mult_fast(&transform, &translation, &cube_shadow_mats[m]);	
+				mat4_t_mult_fast(&scb.model_view_matrix, &transform, &projection_matrix);
 				
 				/* ignore frustums that have no objects in it. */
 					
@@ -2048,7 +2048,8 @@ static void scenegraph_DispatchGeometry()
 	{
 		q = dispatch_list.indexes[i];
 		mat4_t_compose(&transform, &array->position_data[q].world_orientation, array->position_data[q].world_position);
-		mat4_t_mult(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
+		
+		mat4_t_mult_fast(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
 		m = &material_a.materials[array->draw_data[q].material_index];
 		if(m->bm_flags & MATERIAL_Translucent)
 		{

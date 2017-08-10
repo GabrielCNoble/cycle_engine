@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0000000100000000001000000
-UnitCount=109
+UnitCount=110
 
 [VersionInfo]
 Major=1
@@ -1134,6 +1134,16 @@ BuildCmd=
 FileName=brush.h
 CompileCpp=1
 Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit110]
+FileName=gmath\matrix.inl
+CompileCpp=1
+Folder=gmath
 Compile=1
 Link=1
 Priority=1000

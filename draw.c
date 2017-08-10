@@ -1335,7 +1335,8 @@ void draw_FillCommandBuffer128(command_buffer_t *cb, mesh_t *mesh, int entity_in
 	//int c=light_count;
 	mat4_t cb_data;
 	
-	MatrixCopy4(&cb->model_view_matrix, model_view_matrix);
+	//MatrixCopy4(&cb->model_view_matrix, model_view_matrix);
+	memcpy(&cb->model_view_matrix.floats[0][0], &model_view_matrix->floats[0][0], sizeof(mat4_t));
 	
 	//*((unsigned int *)&cb->model_view_matrix.floats[0][3])=mesh->vertex_buffer;
 	*((unsigned int *)&cb->model_view_matrix.floats[0][3]) = mesh->start;

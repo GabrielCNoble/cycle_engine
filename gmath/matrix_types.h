@@ -1,10 +1,8 @@
 #ifndef _MATRIX_TYPES_H_
 #define _MATRIX_TYPES_H_
 
-#pragma once
 
 //#include "includes.h"
-#include "GL/glew.h"
 #include "vector_types.h"
 
 
@@ -12,34 +10,34 @@
 
 typedef struct mat2_t
 {
-	GLfloat floats[2][2];
+	float floats[2][2];
 }mat2_t;
 
 typedef union mat3_t
 {
 	struct
 	{
-		GLfloat floats[3][3];
+		float floats[3][3];
 	};
 	
 	struct
 	{
-		GLfloat lfloats[9];
+		float lfloats[9];
 	};
 	
 	struct
 	{
-		GLfloat a00;
-		GLfloat a01;
-		GLfloat a02;
+		float a00;
+		float a01;
+		float a02;
 		
-		GLfloat a10;
-		GLfloat a11;
-		GLfloat a12;
+		float a10;
+		float a11;
+		float a12;
 		
-		GLfloat a20;
-		GLfloat a21;
-		GLfloat a22;
+		float a20;
+		float a21;
+		float a22;
 	};
 	
 	struct
@@ -62,35 +60,35 @@ typedef union mat4_t
 {
 	struct
 	{
-		GLfloat floats[4][4];
+		float floats[4][4];
 	};
 	
 	struct
 	{
-		GLfloat lfloats[16];
+		float lfloats[16];
 	};
 	
 	struct
 	{
-		GLfloat a00;
-		GLfloat a01;
-		GLfloat a02;
-		GLfloat a03;
+		float a00;
+		float a01;
+		float a02;
+		float a03;
 		
-		GLfloat a10;
-		GLfloat a11;
-		GLfloat a12;
-		GLfloat a13;
+		float a10;
+		float a11;
+		float a12;
+		float a13;
 		
-		GLfloat a20;
-		GLfloat a21;
-		GLfloat a22;
-		GLfloat a23;
+		float a20;
+		float a21;
+		float a22;
+		float a23;
 		
-		GLfloat a30;
-		GLfloat a31;
-		GLfloat a32;
-		GLfloat a33;
+		float a30;
+		float a31;
+		float a32;
+		float a33;
 	};
 	
 	struct
@@ -114,6 +112,11 @@ typedef union mat4_t
 	};
 	
 }mat4_t;
+
+
+typedef __attribute((aligned(16)))mat4_t amat4_t; 
+
+
 #endif // _MATRIX_TYPES_H_
 
 

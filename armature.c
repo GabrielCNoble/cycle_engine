@@ -499,7 +499,10 @@ void armature_SkinMeshesCPU()
 				temp4.y = p.y + inverse_translation[set->weights[j].global_id].y;
 				temp4.z = p.z + inverse_translation[set->weights[j].global_id].z;
 				temp4.w = set->weights[j].weight;
-				temp4 = MultiplyVector4(&global_transform[set->weights[j].global_id], temp4);
+				//temp4 = MultiplyVector4(&global_transform[set->weights[j].global_id], temp4);
+				
+				mat4_t_vec4_t_mult(&global_transform[set->weights[j].global_id], &temp4);
+				
 				ap.x += temp4.x * set->weights[j].weight;
 				ap.y += temp4.y * set->weights[j].weight;
 				ap.z += temp4.z * set->weights[j].weight;
@@ -510,7 +513,8 @@ void armature_SkinMeshesCPU()
 					temp4.y = n.y;
 					temp4.z = n.z;
 					temp4.w = 0.0;
-					temp4 = MultiplyVector4(&global_transform[set->weights[j].global_id], temp4);
+					//temp4 = MultiplyVector4(&global_transform[set->weights[j].global_id], temp4);
+					mat4_t_vec4_t_mult(&global_transform[set->weights[j].global_id], &temp4);
 					an.x += temp4.x * set->weights[j].weight;
 					an.y += temp4.y * set->weights[j].weight;
 					an.z += temp4.z * set->weights[j].weight;
@@ -522,7 +526,8 @@ void armature_SkinMeshesCPU()
 					temp4.y = t.y;
 					temp4.z = t.z;
 					temp4.w = 0.0;
-					temp4 = MultiplyVector4(&global_transform[set->weights[j].global_id], temp4);
+					//temp4 = MultiplyVector4(&global_transform[set->weights[j].global_id], temp4);
+					mat4_t_vec4_t_mult(&global_transform[set->weights[j].global_id], &temp4);
 					at.x += temp4.x * set->weights[j].weight;
 					at.y += temp4.y * set->weights[j].weight;
 					at.z += temp4.z * set->weights[j].weight;

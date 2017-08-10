@@ -209,7 +209,8 @@ PEWAPI void camera_ComputeWorldToCameraMatrix(camera_t *camera)
 {
 	mat4_t world_to_camera_matrix;
 	mat3_t t_rot;
-	MatrixCopy3(&t_rot, &camera->world_orientation);
+	//MatrixCopy3(&t_rot, &camera->world_orientation);
+	memcpy(&t_rot.floats[0][0], &camera->world_orientation.floats[0][0], sizeof(mat3_t));
 	
 	mat3_t_transpose(&t_rot);
 	
@@ -226,8 +227,9 @@ PEWAPI void camera_ComputeWorldToCameraMatrix(camera_t *camera)
 	world_to_camera_matrix.floats[3][2]=(-camera->world_position.floats[0])*world_to_camera_matrix.floats[0][2]	+	
 										(-camera->world_position.floats[1])*world_to_camera_matrix.floats[1][2]	+
 										(-camera->world_position.floats[2])*world_to_camera_matrix.floats[2][2];
-										
-	MatrixCopy4(&camera->world_to_camera_matrix, &world_to_camera_matrix);
+	
+	memcpy(&camera->world_to_camera_matrix.floats[0][0], &world_to_camera_matrix.floats[0][0], sizeof(mat4_t));									
+	//MatrixCopy4(&camera->world_to_camera_matrix, &world_to_camera_matrix);
 	//camera->world_to_camera_matrix=world_to_camera_matrix;
 }
 

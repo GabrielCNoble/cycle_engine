@@ -24,6 +24,8 @@ typedef struct
 	};
 }vec2_t;
 
+typedef __attribute((aligned(16)))vec2_t avec2_t;
+
 typedef union 
 {
 	struct
@@ -53,6 +55,10 @@ typedef union
 	};
 	
 }vec3_t;
+
+
+typedef __attribute((aligned(16)))vec3_t avec3_t;
+
 
 typedef union 
 {
@@ -91,6 +97,8 @@ typedef union
 	};
 	
 }vec4_t;
+
+typedef __attribute((aligned(16)))vec4_t avec4_t;
 
 
 typedef union quaternion_t 

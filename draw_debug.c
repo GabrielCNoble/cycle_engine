@@ -1695,7 +1695,8 @@ void draw_debug_DrawArmatures()
 			
 			mat4_t_compose(&local_bone_transform, &root->orientation, root->position);
 			mat4_t_mult(&bone_transform, &local_bone_transform, &transform_stack[stack_top - 1]);
-			MatrixCopy4(&transform_stack[stack_top], &bone_transform);
+			//MatrixCopy4(&transform_stack[stack_top], &bone_transform);
+			memcpy(&transform_stack[stack_top].floats[0][0], &bone_transform.floats[0][0], sizeof(mat4_t));
 			
 			_lb:
 				
@@ -1709,7 +1710,8 @@ void draw_debug_DrawArmatures()
 				continue;
 			}
 			
-			MatrixCopy4(&local_bone_transform, &transform_stack[stack_top]);
+			//MatrixCopy4(&local_bone_transform, &transform_stack[stack_top]);
+			memcpy(&local_bone_transform.floats[0][0], &transform_stack[stack_top].floats[0][0], sizeof(mat4_t));
 			mat4_t_mult(&bone_transform, &local_bone_transform, &armature_transform);
 			
 			p.x = bone_transform.floats[3][0];
