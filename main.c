@@ -1984,6 +1984,36 @@ void ginit()
 	//entity_SpawnEntity("plane2", def, vec3(0.0, -6.0, 100.0), &id);
 	//def = entity_GetEntityDef("stairs");
 	
+	
+	mat4_t a = mat4_t_id();
+	mat4_t bb = mat4_t_id();
+	
+	mat4_t_rotate(&a, vec3(1.0, 0.0, 0.0), 0.2, 1);
+	mat4_t_translate(&a, vec3(1.0, 0.0, 0.0), 1);
+	mat4_t_rotate(&bb, vec3(0.0, 1.0, 0.0), 0.17, 1);
+	mat4_t_translate(&bb, vec3(1.0, 0.0, 0.0), 1);
+	
+	
+	mat4_t c;
+	
+	mat4_t_mult_fast(&c, &a, &bb);
+	
+	
+	printf("[%f %f %f %f]\n[%f %f %f %f]\n[%f %f %f %f]\n[%f %f %f %f]\n\n", c.floats[0][0],c.floats[0][1],c.floats[0][2],c.floats[0][3],
+																		     c.floats[1][0],c.floats[1][1],c.floats[1][2],c.floats[1][3],
+																			 c.floats[2][0],c.floats[2][1],c.floats[2][2],c.floats[2][3],
+																			 c.floats[3][0],c.floats[3][1],c.floats[3][2],c.floats[3][3]);	
+																			 
+	
+	
+	mat4_t_mult(&c, &a, &bb);
+	
+	
+	printf("[%f %f %f %f]\n[%f %f %f %f]\n[%f %f %f %f]\n[%f %f %f %f]\n\n", c.floats[0][0],c.floats[0][1],c.floats[0][2],c.floats[0][3],
+																		     c.floats[1][0],c.floats[1][1],c.floats[1][2],c.floats[1][3],
+																			 c.floats[2][0],c.floats[2][1],c.floats[2][2],c.floats[2][3],
+																			 c.floats[3][0],c.floats[3][1],c.floats[3][2],c.floats[3][3]);																			 					
+	
 	//id = mat3_t_id();
 	def0 = entity_GetEntityDef("cube");
 	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);
@@ -2007,7 +2037,7 @@ void ginit()
 		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 0.0, -10.0 + i * 2), &id);
 	}*/
 	
-	for(i = 0; i < 10; i++)
+	for(i = 0; i < 1; i++)
 	{
 		entity_SpawnEntity("e", def0, vec3( 8.0, 0.0 + i * 4.0, 8.0), &id);
 		entity_SpawnEntity("e", def0, vec3( 4.0, 0.0 + i * 4.0, 8.0), &id);

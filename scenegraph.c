@@ -2050,6 +2050,8 @@ static void scenegraph_DispatchGeometry()
 		mat4_t_compose(&transform, &array->position_data[q].world_orientation, array->position_data[q].world_position);
 		
 		mat4_t_mult_fast(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
+		//mat4_t_mult(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
+		
 		m = &material_a.materials[array->draw_data[q].material_index];
 		if(m->bm_flags & MATERIAL_Translucent)
 		{

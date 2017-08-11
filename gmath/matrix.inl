@@ -1,7 +1,7 @@
 #include "matrix_types.h"
 
 
-PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
+/*PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 {
 	asm
 	(
@@ -53,10 +53,10 @@ PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 		:: "mr" (result), "mr" (mat1), "mr" (mat2)
 		
 	);
-}
+}*/
 
 
-PEWAPI void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2)
+/*PEWAPI void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2)
 {
 	asm
 	(
@@ -108,7 +108,7 @@ PEWAPI void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2)
 		:: "mr" (result), "mr" (mat1), "mr" (mat2)
 		
 	);
-}
+}*/
 
 PEWAPI void MultiplyVector4(mat4_t *mat, vec4_t *vec)
 {

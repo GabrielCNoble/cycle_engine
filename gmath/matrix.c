@@ -372,6 +372,68 @@ PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 //########################################################################################################################
 
 
+PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
+{
+	asm
+	(
+		/*"push %%ebx\n"
+		"push %%esi\n"
+		"push %%edi\n"*/
+		"movl %0, %%ebx\n"
+		"movl %1, %%esi\n"
+		"movl %2, %%edi\n"
+		
+		".intel_syntax noprefix\n"
+		
+		"mov ecx, 4\n"
+		
+		"movups  xmm0, [edi]\n"
+		"movups  xmm1, [edi + 16]\n"
+		"movups  xmm2, [edi + 32]\n"
+		"movups  xmm3, [edi + 48]\n"
+		
+		"_mat4_t_mult_fast_internal_loop:\n"
+			"movups xmm4, [esi]\n"
+			"add esi, 16\n"
+			"dec ecx\n"
+		
+			"movups xmm5, xmm4\n"
+			"shufps xmm5, xmm5, 0\n"
+			"mulps xmm5, xmm0\n"
+			"movups xmm6, xmm5\n"
+		
+			"movups xmm5, xmm4\n"
+			"shufps xmm5, xmm5, 0x55\n"
+			"mulps xmm5, xmm1\n"
+			"addps xmm6, xmm5\n"
+		
+			"movups xmm5, xmm4\n"
+			"shufps xmm5, xmm5, 0xaa\n"
+			"mulps xmm5, xmm2\n"
+			"addps xmm6, xmm5\n"
+		
+			"movups xmm5, xmm4\n"
+			"shufps xmm5, xmm5, 0xff\n"
+			"mulps xmm5, xmm3\n"
+			"addps xmm6, xmm5\n"
+		
+			"movups [ebx], xmm6\n"
+			"add ebx, 16\n"
+			"test ecx, ecx\n"
+			
+			"jnz _mat4_t_mult_fast_internal_loop\n"
+		
+		".att_syntax prefix\n"
+		
+		/*"pop %%edi\n"
+		"pop %%esi\n"
+		"pop %%ebx\n"*/
+		:: "m" (result), "m" (mat1), "m" (mat2) : "edi", "esi", "ebx"
+		
+	);
+}
+
+
 PEWAPI void mat3_t_mult(mat3_t *result,  mat3_t *mat1,  mat3_t *mat2)
 {
 

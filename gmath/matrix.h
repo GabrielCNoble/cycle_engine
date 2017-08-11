@@ -28,7 +28,7 @@ PEWAPI void mat2_t_rotate(mat2_t *mat, float angle, int b_set);
 
 PEWAPI void mat4_t_scale(mat4_t *mat, vec3_t axis, float scale_factor);
 
-PEWAPI void mat4_t_translante(mat4_t *mat, vec3_t position, int b_set);
+PEWAPI void mat4_t_translate(mat4_t *mat, vec3_t position, int b_set);
 
 PEWAPI mat4_t mat4_t_id();
 
@@ -38,9 +38,9 @@ PEWAPI mat2_t mat2_t_id();
 
 PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2);
 
-PEWAPI static inline void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2);
+PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2);
 
-PEWAPI static inline void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2);
+//PEWAPI static inline void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2);
 
 PEWAPI void mat3_t_mult(mat3_t *result, mat3_t *mat1, mat3_t *mat2);
 
