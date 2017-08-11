@@ -1,7 +1,7 @@
 #include "matrix_types.h"
 
 
-/*PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
+PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 {
 	asm
 	(
@@ -38,10 +38,10 @@
 			"mulps xmm5, xmm2\n"
 			"addps xmm6, xmm5\n"
 		
-			"movups xmm5, xmm4\n"
-			"shufps xmm5, xmm5, 0xff\n"
-			"mulps xmm5, xmm3\n"
-			"addps xmm6, xmm5\n"
+			//"movups xmm5, xmm4\n"
+			"shufps xmm4, xmm4, 0xff\n"
+			"mulps xmm4, xmm3\n"
+			"addps xmm6, xmm4\n"
 		
 			"movups [ebx], xmm6\n"
 			"add ebx, 16\n"
@@ -53,7 +53,7 @@
 		:: "mr" (result), "mr" (mat1), "mr" (mat2)
 		
 	);
-}*/
+}
 
 
 /*PEWAPI void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2)
@@ -134,16 +134,26 @@ PEWAPI void mat4_t_vec4_t_mult(mat4_t *mat, vec4_t *vec)
 {
 	asm
 	(
+		"movl %0, %%edi\n"
 		"movl %1, %%esi\n"
-		"movups (%%esi), %%xmm2\n"
+		
+		".intel_syntax noprefix\n"
+		
+		"movups xmm2, [esi]\n"
+		"movups xmm3, [esi + 16]\n"
+		"movups xmm4, [esi + 32]\n"
+		"movups xmm5, [esi + 48]\n"
+		
+		"movups xmm0, [edi]\n"
+		
+		/*"movups (%%esi), %%xmm2\n"
 		"movups 16(%%esi), %%xmm3\n"
 		"movups 32(%%esi), %%xmm4\n"
 		"movups 48(%%esi), %%xmm5\n"
 		
-		"movl %0, %%esi\n"
-		"movups (%%esi), %%xmm0\n"
 		
-		".intel_syntax noprefix\n"
+		"movups (%%edi), %%xmm0\n"*/
+		
 		"movups xmm1, xmm0\n"
 		
 		"shufps xmm0, xmm0, 0\n"

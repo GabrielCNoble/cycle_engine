@@ -38,7 +38,7 @@ PEWAPI mat2_t mat2_t_id();
 
 PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2);
 
-PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2);
+PEWAPI static inline void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2);
 
 //PEWAPI static inline void amat4_t_mult_fast(amat4_t *result, amat4_t *mat1, amat4_t *mat2);
 

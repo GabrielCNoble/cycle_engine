@@ -75,6 +75,8 @@ float cur_grab_offset_y = 0.0;
 
 float snap_offset = 0.5;
 
+float last_delta = 0.0;
+
 entity_ptr selected = {NULL, NULL, NULL, NULL};
 entity_ptr detected = {NULL, NULL, NULL, NULL};
 
@@ -304,6 +306,7 @@ void gmain(float delta_time)
 	//selected.extra_data = NULL;
 	int s = pew_GetPewState();
 	float f = 0.0;
+	float delta_angle;
 	vec3_t v;
 	mat3_t orientation = mat3_t_id();
 	mat4_t model_view_projection_matrix;
@@ -547,6 +550,18 @@ void gmain(float delta_time)
 					
 					case HANDLE_3D_ROTATION:
 						
+						//delta_y /= sqrt(delta_x * delta_x + delta_y * delta_y);
+						
+						//printf("%f\n", delta_y);
+						//delta_angle = 0.0;
+						/*f = asin(delta_y);
+						
+						
+						delta_angle = f - last_delta;
+						last_delta = f;
+						
+						printf("%f\n", delta_angle);*/
+						
 						cur_grab_offset_x = mouse_x - screen_x;
 						cur_grab_offset_y = mouse_y - screen_y;
 								
@@ -554,8 +569,50 @@ void gmain(float delta_time)
 								
 						cur_grab_offset_x /= f;
 						cur_grab_offset_y /= f;
-								
-						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x);
+						
+						
+						if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+						{
+							last_grab_offset_x = cur_grab_offset_x;
+							last_grab_offset_y = cur_grab_offset_y;
+						}
+						
+						f = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
+						
+					
+						/*f = cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x;
+						f = asin(f / 2.0);*/
+						
+			
+						delta_angle = sqrt(1.0 - f * f);
+						
+						printf("%f %f %f\n", f, RadToDeg(asin(delta_angle)), DegToRad(45.0));
+						
+					
+						f = 0.0;
+						
+						
+						
+					
+						/*if(f < 1.0)
+						{
+							printf("%f		", f);
+							f = sqrt(1.0 - f * f);
+							printf("%f		", f);
+							
+									
+							f = asin(f);
+							
+							printf("%f\n", f);
+						}
+						else
+						{
+							f = 0.0;
+						}*/
+						
+						
+						
+						
 						switch(handle_3d_bm)
 						{
 							case HANDLE_3D_GRABBED_X_AXIS:
@@ -578,19 +635,20 @@ void gmain(float delta_time)
 						
 						if(cr.type == PICK_ENTITY)
 						{
-							entity_RotateEntity(e, v, -f * 0.5, 0);
+							entity_RotateEntity(e, v, -f, 0);
 						}
 						else if(cr.type == PICK_LIGHT)
 						{
-							light_RotateLight(l, v, -f * 0.5, 0);
+							light_RotateLight(l, v, -f, 0);
 						}
 						else
 						{
-							brush_RotateBrush(b, v, -f * 0.5);
+							brush_RotateBrush(b, v, -f);
 						}
 						
-						last_grab_offset_x = cur_grab_offset_x;
-						last_grab_offset_y = cur_grab_offset_y;
+						//last_grab_offset_x = cur_grab_offset_x;
+						//last_grab_offset_y = cur_grab_offset_y;
+						//last_angle = f;
 						
 					break;
 					
@@ -1996,7 +2054,7 @@ void ginit()
 	
 	mat4_t c;
 	
-	mat4_t_mult_fast(&c, &a, &bb);
+	/*mat4_t_mult_fast(&c, &a, &bb);
 	
 	
 	printf("[%f %f %f %f]\n[%f %f %f %f]\n[%f %f %f %f]\n[%f %f %f %f]\n\n", c.floats[0][0],c.floats[0][1],c.floats[0][2],c.floats[0][3],
@@ -2013,7 +2071,7 @@ void ginit()
 																		     c.floats[1][0],c.floats[1][1],c.floats[1][2],c.floats[1][3],
 																			 c.floats[2][0],c.floats[2][1],c.floats[2][2],c.floats[2][3],
 																			 c.floats[3][0],c.floats[3][1],c.floats[3][2],c.floats[3][3]);																			 					
-	
+	*/
 	//id = mat3_t_id();
 	def0 = entity_GetEntityDef("cube");
 	//entity_SpawnEntity("cargo", def0, vec3(8.0, 0.0, 0.0), &id);

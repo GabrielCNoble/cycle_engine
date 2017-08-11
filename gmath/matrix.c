@@ -372,13 +372,11 @@ PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 //########################################################################################################################
 
 
-PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
+/*PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 {
 	asm
 	(
-		/*"push %%ebx\n"
-		"push %%esi\n"
-		"push %%edi\n"*/
+
 		"movl %0, %%ebx\n"
 		"movl %1, %%esi\n"
 		"movl %2, %%edi\n"
@@ -424,14 +422,10 @@ PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 			"jnz _mat4_t_mult_fast_internal_loop\n"
 		
 		".att_syntax prefix\n"
-		
-		/*"pop %%edi\n"
-		"pop %%esi\n"
-		"pop %%ebx\n"*/
 		:: "m" (result), "m" (mat1), "m" (mat2) : "edi", "esi", "ebx"
 		
 	);
-}
+}*/
 
 
 PEWAPI void mat3_t_mult(mat3_t *result,  mat3_t *mat1,  mat3_t *mat2)
