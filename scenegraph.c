@@ -49,6 +49,7 @@ extern int engine_state;
 
 extern int wireframe_shader_index;
 extern int light_pick_shader;
+extern int brush_pick_shader;
 
 extern mat4_t cube_shadow_mats[6];
 
@@ -2472,9 +2473,9 @@ pick_record_t scenegraph_Pick()
 		glDrawArrays(draw_mode, start, vert_count);
 	}
 	
-	
-	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
-	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(0));
+	shader_SetShaderByIndex(brush_pick_shader);
+	glEnableVertexAttribArray(shader_a.shaders[brush_pick_shader].v_position);
+	glVertexAttribPointer(shader_a.shaders[brush_pick_shader].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(0));
 	
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
 	
@@ -2483,12 +2484,15 @@ pick_record_t scenegraph_Pick()
 	//c = brush_render_queue.command_buffer_count;
 	for(i = 0; i < c; i++)
 	{
+		start = brush_list.draw_data[i].start / (sizeof(float) * 6);
+		
 		*(int *)&wcolor[0] = (i + 1);
-		wcolor[2] = 0.0;
+		wcolor[2] = start / 3 + brush_list.draw_data[i].vert_count / 3;
 		wcolor[3] = 0.0;
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
-		start = brush_list.draw_data[i].start / (sizeof(float) * 6);
 		glDrawArrays(GL_TRIANGLES, start, brush_list.draw_data[i].vert_count);
+		
+		
 		
 	}
 	
@@ -2545,9 +2549,10 @@ pick_record_t scenegraph_Pick()
 	
 	glReadPixels(mouse_x, mouse_y, 1, 1, GL_RGB, GL_FLOAT, pixel);
 	
-	//printf("%d %d %d\n", *(int *)&pixel[0], *(int *)&pixel[1], *(int *)&pixel[2]);
+	//printf("%d %d %f\n", *(int *)&pixel[0], *(int *)&pixel[1], pixel[2]);
 	r.index = *(int *)&pixel[0] - 1;
 	r.type = *(int *)&pixel[1];
+	r.face = 0;
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glLineWidth(1.0);

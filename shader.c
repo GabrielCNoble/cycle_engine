@@ -186,6 +186,7 @@ static varying_t *vroot = NULL;
 static varying_t *vlast;
 
 int light_pick_shader;
+int brush_pick_shader;
 extern int bm_extensions;
 
 static varying_t *froot = NULL;
@@ -333,7 +334,7 @@ PEWAPI void shader_Init(char *path)
 	intensity1_shader_index = shader_LoadShader("intensity_vert.glsl", "intensity1_frag.glsl", "intensity1");
 	
 	light_pick_shader = shader_LoadShader("light_pick_vert.glsl", "light_pick_frag.glsl", "light_pick");
-	
+	brush_pick_shader = shader_LoadShader("brush_pick_vert.glsl", "brush_pick_frag.glsl", "brush_pick");
 	stencil_lights_shader = shader_LoadShader("stencil_lights_vert.glsl", "stencil_lights_frag.glsl", "stencil_lights");
 	
 	//printf("here\n");

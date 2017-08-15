@@ -70,57 +70,7 @@ avarage gui time: 0.000000
 
 ##########################
 
-frames: 81
-
-avarage fill gbuffer time: 0.000000
-avarage process gbuffer time: 0.000000
-avarage generate shadow map time: 0.000000
-avarage gui time: 0.000000
-##########################
-
-##########################
-
-frames: 4606
-
-avarage fill gbuffer time: 0.000000
-avarage process gbuffer time: 0.000000
-avarage generate shadow map time: 0.000000
-avarage gui time: 0.000000
-##########################
-
-##########################
-
-frames: 23930
-
-avarage fill gbuffer time: 0.000000
-avarage process gbuffer time: 0.000000
-avarage generate shadow map time: 0.000000
-avarage gui time: 0.000000
-##########################
-
-##########################
-
-frames: 241
-
-avarage fill gbuffer time: 0.000000
-avarage process gbuffer time: 0.000000
-avarage generate shadow map time: 0.000000
-avarage gui time: 0.000000
-##########################
-
-##########################
-
-frames: 4811
-
-avarage fill gbuffer time: 0.000000
-avarage process gbuffer time: 0.000000
-avarage generate shadow map time: 0.000000
-avarage gui time: 0.000000
-##########################
-
-##########################
-
-frames: 3023
+frames: 338
 
 avarage fill gbuffer time: 0.000000
 avarage process gbuffer time: 0.000000

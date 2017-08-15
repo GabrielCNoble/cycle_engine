@@ -466,7 +466,6 @@ draw_Init
 	//debug_draw_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA);
 	picking_buffer = framebuffer_CreateFramebuffer(renderer.screen_width, renderer.screen_height, GL_DEPTH_COMPONENT, 1, GL_RGBA32F);
 	
-	
 	glGenFramebuffers(1, &b_fb_l);
 	glGenFramebuffers(1, &b_fb_r);
 	//glGenFramebuffers(1, &e_fb);

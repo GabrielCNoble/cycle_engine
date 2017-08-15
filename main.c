@@ -290,10 +290,15 @@ void add_def(swidget_t *swidget, void *data, int i)
 void add_brush(swidget_t *swidget, void *data, int i)
 {
 	mat3_t id = mat3_t_id();
+	int type;
 	switch(i)
 	{
 		case 0:
 			brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0, 0);
+		break;
+		
+		case 1:
+			brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CYLINDER, 0, 0);
 		break;
 	}
 }
@@ -478,10 +483,10 @@ void gmain(float delta_time)
 					
 				}
 				
-				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
-				delta_y = (mouse_y - screen_y - grab_offset_y) * p.z * 2.0;
+				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z;
+				delta_y = (mouse_y - screen_y - grab_offset_y) * p.z;
 				
-				p.z /= p.w;
+				//p.z /= p.w;
 				
 				
 				
@@ -581,7 +586,7 @@ void gmain(float delta_time)
 						
 						
 			
-						delta_angle = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
+						//delta_angle = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
 						
 						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x) / (3.14159265);
 						
@@ -595,10 +600,7 @@ void gmain(float delta_time)
 							{
 								f *= snap_offset / fabs(f);
 							}
-							else
-							{
-								f -= f * (0.0027777777777778 / fabs(f));
-							}
+							printf("%f\n", f);
 							
 							switch(handle_3d_bm)
 							{
@@ -1039,6 +1041,7 @@ void open_add_to_world_menu()
 	
 	wdropdown_t *test = gui_NestleDropDown(dd, 2, "Brush", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, add_brush);
 	gui_AddOption(test, "Cube");
+	gui_AddOption(test, "Cylinder");
 
 	
 	/*wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);

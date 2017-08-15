@@ -76,6 +76,8 @@ PEWAPI static inline void mat4_t_vec4_t_mult(mat4_t *mat, vec4_t *vec);
 
 PEWAPI vec3_t MultiplyVector3(mat3_t *mat, vec3_t vec);
 
+//PEWAPI static inline void mat3_t_vec3_t_mult(mat3_t *mat, avec3_t *vec);
+
 //PEWAPI mat3_t MatrixCopy3(mat3_t *out, mat3_t *in);
 
 //PEWAPI void MatrixCopy4(mat4_t *out, mat4_t *in);

@@ -34,6 +34,7 @@ typedef struct
 typedef struct
 {
 	float *verts;
+	int *face_indexes;
 	int vert_count;
 	int handle;
 	int start;

@@ -47,7 +47,6 @@ static float cube_bmodel_verts[] =
 	 1.0,-1.0,-1.0,
 	 1.0,-1.0, 1.0,
 	-1.0,-1.0, 1.0,         
-	  
 };
 
 
@@ -100,6 +99,7 @@ static float cube_bmodel_normals[] =
 static int cube_bmodel_size = sizeof(float) * 6 * 36;
 static int cube_bmodel_vcount = 36;
 
+
 //static unsigned int brush_buffer;
 
 
@@ -110,6 +110,155 @@ brush_list_t visible_brush_list;	/* updated every frame... */
 extern "C"
 {
 #endif
+
+void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **vertices, float **normals)
+{
+	float *verts;
+	float *norms;
+	int i;
+	int k;
+	float a;
+	float b = (2.0 * 3.14159265) / base_vertexes;
+	
+	vec3_t r;
+	vec3_t t;
+	vec3_t s;
+	
+	if(base_vertexes < 3)
+	{
+		*vertices = NULL;
+		*normals = NULL;
+		*vert_count = 0;
+		return;
+	}
+	
+	*vert_count = ((base_vertexes * 2 * 3) + (base_vertexes * 6));
+	
+	
+	*vertices = (float *)malloc(sizeof(float) * 3 * (*vert_count));
+	*normals = (float *)malloc(sizeof(float) * 3 * (*vert_count));
+	
+	verts = *vertices;
+	norms = *normals;
+	a = 0.0;
+	for(i = 0; i < base_vertexes * 3;)
+	{
+		verts[i * 3] = 0.0;
+		verts[i * 3 + 1] = 1.0;
+		verts[i * 3 + 2] = 0.0;
+		
+		i++;
+		
+		verts[i * 3] = cos(a);
+		verts[i * 3 + 1] = 1.0;
+		verts[i * 3 + 2] = sin(a);
+		
+		a -= b;
+		i++;
+		
+		verts[i * 3] = cos(a);
+		verts[i * 3 + 1] = 1.0;
+		verts[i * 3 + 2] = sin(a);
+	
+		i++;
+	}
+	
+	k = i;
+	a = 0.0;
+	for(i = 0; i < base_vertexes * 3;)
+	{
+		verts[k * 3 + i * 3] = 0.0;
+		verts[k * 3 + i * 3 + 1] = -1.0;
+		verts[k * 3 + i * 3 + 2] = 0.0;
+		
+		i++;
+		
+		verts[k * 3 + i * 3] = cos(a);
+		verts[k * 3 + i * 3 + 1] = -1.0;
+		verts[k * 3 + i * 3 + 2] = sin(a);
+		
+		a += b;
+		i++;
+		
+		verts[k * 3 + i * 3] = cos(a);
+		verts[k * 3 + i * 3 + 1] = -1.0;
+		verts[k * 3 + i * 3 + 2] = sin(a);
+		
+		i++;
+	}
+	
+	k += i;
+	a = 0.0;
+	
+	for(i = 0; i < base_vertexes * 6;)
+	{
+		verts[k * 3 + i * 3] = cos(a);
+		verts[k * 3 + i * 3 + 1] = 1.0;
+		verts[k * 3 + i * 3 + 2] = sin(a);
+		
+		i++;
+		
+		verts[k * 3 + i * 3] = verts[k * 3 + (i - 1) * 3];
+		verts[k * 3 + i * 3 + 1] = -1.0;
+		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 1) * 3 + 2];
+		
+		a -= b;
+		i++;
+		
+		verts[k * 3 + i * 3] = cos(a);
+		verts[k * 3 + i * 3 + 1] = 1.0;
+		verts[k * 3 + i * 3 + 2] = sin(a);
+		
+		i++;
+		
+		verts[k * 3 + i * 3] = verts[k * 3 + (i - 1) * 3];
+		verts[k * 3 + i * 3 + 1] = 1.0;
+		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 1) * 3 + 2];
+		
+		i++;
+		
+		verts[k * 3 + i * 3] = verts[k * 3 + (i - 3) * 3];
+		verts[k * 3 + i * 3 + 1] = -1.0;
+		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 3) * 3 + 2];
+		
+		i++;
+		
+		verts[k * 3 + i * 3] = verts[k * 3 + (i - 3) * 3];
+		verts[k * 3 + i * 3 + 1] = -1.0;
+		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 3) * 3 + 2];
+		
+		i++;
+	}
+	
+	k = *vert_count;
+	
+	for(i = 0; i < k;)
+	{
+		s.x = verts[(i + 1) * 3] - verts[i * 3];
+		s.y = verts[(i + 1) * 3 + 1] - verts[i * 3 + 1];
+		s.z = verts[(i + 1) * 3 + 2] - verts[i * 3 + 2];
+		
+		t.x = verts[(i + 2) * 3] - verts[i * 3];
+		t.y = verts[(i + 2) * 3 + 1] - verts[i * 3 + 1];
+		t.z = verts[(i + 2) * 3 + 2] - verts[i * 3 + 2];
+		
+		r = cross(s, t);
+		
+		norms[i * 3] = r.x;
+		norms[i * 3 + 1] = r.y;
+		norms[i * 3 + 2] = r.z;
+		
+		norms[(i + 1) * 3] = r.x;
+		norms[(i + 1) * 3 + 1] = r.y;
+		norms[(i + 1) * 3 + 2] = r.z;
+		
+		norms[(i + 2) * 3] = r.x;
+		norms[(i + 2) * 3 + 1] = r.y;
+		norms[(i + 2) * 3 + 2] = r.z;
+		
+		i += 3;
+	}
+}
 
 void brush_Init()
 {
@@ -164,6 +313,11 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 			vert_count = cube_bmodel_vcount;
 			vertex_src = cube_bmodel_verts;
 			normal_src = cube_bmodel_normals;
+		break;
+		
+		case BRUSH_CYLINDER:
+			brush_CreateCylinderBrush(16, &vert_count, &vertex_src, &normal_src);
+			size = sizeof(float) * vert_count * 6;
 		break;
 	}
 	
@@ -220,6 +374,14 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
 	
 	brush_SortBrushList();
+	
+	
+	if(type == BRUSH_CYLINDER)
+	{
+		free(vertex_src);
+		free(normal_src);
+	}
+	
 	
 	return index;
 	
