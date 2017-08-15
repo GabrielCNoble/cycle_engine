@@ -133,7 +133,7 @@ void brush_Finish()
 }
 
 
-PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index)
+PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index, short bm_flags)
 {
 	bmodel_data0_t *position_data;
 	bmodel_data1_t *draw_data;
@@ -179,6 +179,7 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 	draw_data->vert_count = vert_count;
 	draw_data->type = type;
 	draw_data->material_index = material_index;
+	draw_data->bm_flags = bm_flags;
 	
 	
 	for(i = 0; i < vert_count; i++)
@@ -217,6 +218,8 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 	draw_data->start = gpu_GetAllocStart(draw_data->handle);
 	
 	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
+	
+	brush_SortBrushList();
 	
 	return index;
 	
@@ -260,6 +263,7 @@ PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name)
 	draw_data->vert_count = vert_count; 
 	draw_data->type = brush.draw_data->type;
 	draw_data->material_index = brush.draw_data->material_index;
+	draw_data->bm_flags = brush.draw_data->bm_flags;
 	
 	
 	
@@ -279,7 +283,15 @@ PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name)
 	
 	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
 	
+	brush_SortBrushList();
+	
+	
 	return index;
+}
+
+void brush_IntersectBrushes(bmodel_ptr brush, bmodel_ptr subtractive_brush)
+{
+	
 }
 
 void brush_UpdateBrush(bmodel_ptr brush)
@@ -316,6 +328,9 @@ void brush_DeleteBrush(bmodel_ptr brush)
 			brush_list.position_data[index].brush_index = index;
 		}
 		brush_list.count--;
+		
+		brush_SortBrushList();
+		
 	}
 }
 
@@ -332,6 +347,55 @@ void brush_ResizeBrushList(int new_size)
 	brush_list.max_brushes = new_size;
 	brush_list.position_data = d0;
 	brush_list.draw_data = d1;
+}
+
+void brush_QuickSort(int left, int right)
+{
+	int l = left;
+	int r = right;
+	int i;
+	int j;
+	bmodel_ptr b;
+	bmodel_data0_t position_data;
+	bmodel_data1_t draw_data;
+	
+	int m = (l + r) / 2;
+	
+	b = brush_GetBrushByIndex(m);
+	i = left;
+	j = right;
+	do
+	{
+		for(;i < right && brush_list.draw_data[i].material_index < b.draw_data->material_index; i++);
+		for(; j > left && brush_list.draw_data[j].material_index > b.draw_data->material_index; j--);
+		
+		if(i <= j)
+		{
+			
+			draw_data = brush_list.draw_data[i];
+			position_data = brush_list.position_data[i];
+			
+			brush_list.draw_data[i] = brush_list.draw_data[j];
+			brush_list.position_data[i] = brush_list.position_data[j];
+			brush_list.position_data[i].brush_index = i;
+		
+			brush_list.draw_data[j] = draw_data;
+			brush_list.position_data[j] = position_data;
+			brush_list.position_data[j].brush_index = j;
+			
+			i++;
+			j--;
+		}
+	}while(i <= j);
+	
+	if(j > left) brush_QuickSort(left, j);
+	if(i < right) brush_QuickSort(i, right);
+}
+
+void brush_SortBrushList()
+{
+	
+	brush_QuickSort(0, brush_list.count - 1);
 }
 
 void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction)

@@ -153,9 +153,9 @@ PEWAPI void mat3_t_rotate(mat3_t *mat, vec3_t axis, float angle,  int b_set)
 		temp.floats[2][1]=nAxis.floats[1]*nAxis.floats[2]*(c_m_one)-nAxis.floats[0]*Sin;
 		temp.floats[2][2]=nAxis.floats[2]*nAxis.floats[2]*(c_m_one)+Cos;
 	
-		row1=normalize3(vec3(temp.floats[0][0], temp.floats[0][1], temp.floats[0][2]));
-		row2=normalize3(vec3(temp.floats[1][0], temp.floats[1][1], temp.floats[1][2]));
-		row3=normalize3(vec3(temp.floats[2][0], temp.floats[2][1], temp.floats[2][2]));
+		row1=(vec3(temp.floats[0][0], temp.floats[0][1], temp.floats[0][2]));
+		row2=(vec3(temp.floats[1][0], temp.floats[1][1], temp.floats[1][2]));
+		row3=(vec3(temp.floats[2][0], temp.floats[2][1], temp.floats[2][2]));
 	
 		temp.floats[0][0]=row1.floats[0];
 		temp.floats[0][1]=row1.floats[1];
@@ -372,7 +372,7 @@ PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 //########################################################################################################################
 
 
-/*PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
+PEWAPI void mat4_t_mult_fast(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 {
 	asm
 	(
@@ -425,7 +425,7 @@ PEWAPI void mat4_t_mult(mat4_t *result, mat4_t *mat1, mat4_t *mat2)
 		:: "m" (result), "m" (mat1), "m" (mat2) : "edi", "esi", "ebx"
 		
 	);
-}*/
+}
 
 
 PEWAPI void mat3_t_mult(mat3_t *result,  mat3_t *mat1,  mat3_t *mat2)

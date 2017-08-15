@@ -123,6 +123,7 @@ typedef struct
 	int max_command_buffer;
 	int *count;
 	int *start;
+	int *material_indexes;
 }brush_render_queue_t;
 
 typedef struct

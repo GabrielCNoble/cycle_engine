@@ -438,7 +438,7 @@ draw_Init
 	brush_render_queue.max_command_buffer = 16;
 	brush_render_queue.count = (int *)malloc(sizeof(int) * brush_render_queue.max_command_buffer);
 	brush_render_queue.start = (int *)malloc(sizeof(int) * brush_render_queue.max_command_buffer);
-
+	brush_render_queue.material_indexes = (int *)malloc(sizeof(int) * brush_render_queue.max_command_buffer);
 	
 	//screen_quad_buffer=gpu_CreateGPUBuffer(sizeof(float)*3*4, GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW);
 	//gpu_FillGPUBuffer(&screen_quad_buffer, sizeof(float)*3, 4, screen_quad);
@@ -2052,14 +2052,22 @@ void draw_DrawLit()
 	v_tangent = shader_a.shaders[lit_shader_index].v_tangent;
 	v_tex_coord = shader_a.shaders[lit_shader_index].v_tcoord;
 	
-	if(brush_render_queue.command_buffer_count)
+	
+	c = brush_render_queue.command_buffer_count;
+	
+	//if(brush_render_queue.command_buffer_count)
+	for(i = 0; i < c;)
 	{	
+		material_SetMaterialByIndex(brush_render_queue.material_indexes[i]);
+		
 		glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
 		glEnableVertexAttribArray(v_position);
 		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)0);
 		glEnableVertexAttribArray(v_normal);
 		glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(sizeof(float) * 3));
-		glMultiDrawArrays(GL_TRIANGLES, brush_render_queue.start, brush_render_queue.count, brush_render_queue.command_buffer_count);
+		glMultiDrawArrays(GL_TRIANGLES, brush_render_queue.start + i + 1, brush_render_queue.count + i + 1, brush_render_queue.start[i]);
+		
+		i += brush_render_queue.start[i] + 1;
 	}
 	
 		
@@ -3396,10 +3404,10 @@ void draw_DrawShadowMaps()
 	
 	
 	/* this can cause a very sneaky bug... */
-	asm volatile
+	/*asm volatile
 	(
 		"movl %0, %%esi\n" : : "m" (shadow_q.command_buffers) : "esi"
-	);
+	);*/
 	
 	#ifdef PROFILE_RENDERER
 	

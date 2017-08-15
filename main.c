@@ -293,7 +293,7 @@ void add_brush(swidget_t *swidget, void *data, int i)
 	switch(i)
 	{
 		case 0:
-			brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);
+			brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0, 0);
 		break;
 	}
 }
@@ -450,7 +450,7 @@ void gmain(float delta_time)
 				p.z = selected_position->z;
 				p.w = 1.0;
 				
-				mat4_t_mult(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
+				mat4_t_mult_fast(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
 				
 				MultiplyVector4(&model_view_projection_matrix, &p);
 				
@@ -461,11 +461,11 @@ void gmain(float delta_time)
 				p.x /= p.w;
 				p.y /= p.w;
 				
-				screen_x = p.x * 0.5 + 0.5;
-				screen_y = p.y * 0.5 + 0.5;
+				screen_x = p.x;
+				screen_y = p.y;
 				
-				mouse_x = input.normalized_mouse_x * 0.5 + 0.5;
-				mouse_y = input.normalized_mouse_y * 0.5 + 0.5;
+				mouse_x = input.normalized_mouse_x;
+				mouse_y = input.normalized_mouse_y;
 				
 				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 				{
@@ -480,6 +480,8 @@ void gmain(float delta_time)
 				
 				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z * 2.0;
 				delta_y = (mouse_y - screen_y - grab_offset_y) * p.z * 2.0;
+				
+				p.z /= p.w;
 				
 				
 				
@@ -577,103 +579,68 @@ void gmain(float delta_time)
 							last_grab_offset_y = cur_grab_offset_y;
 						}
 						
-						f = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
-						
-					
-						/*f = cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x;
-						f = asin(f / 2.0);*/
 						
 			
-						delta_angle = sqrt(1.0 - f * f);
+						delta_angle = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
 						
-						printf("%f %f %f\n", f, RadToDeg(asin(delta_angle)), DegToRad(45.0));
+						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x) / (3.14159265);
 						
-					
-						f = 0.0;
+						//printf("%f   %f   %f   %f %f \n", f, delta_angle, f / delta_angle, cur_grab_offset_x, cur_grab_offset_y);
 						
+						//f = 0.0;
 						
-						
-					
-						/*if(f < 1.0)
+						if(fabs(f) > snap_offset)
 						{
-							printf("%f		", f);
-							f = sqrt(1.0 - f * f);
-							printf("%f		", f);
+							if(snap_offset > 0.0)
+							{
+								f *= snap_offset / fabs(f);
+							}
+							else
+							{
+								f -= f * (0.0027777777777778 / fabs(f));
+							}
 							
-									
-							f = asin(f);
+							switch(handle_3d_bm)
+							{
+								case HANDLE_3D_GRABBED_X_AXIS:
+									v = vec3(1.0, 0.0, 0.0);
+								break;
+								
+								case HANDLE_3D_GRABBED_Y_AXIS:
+									v = vec3(0.0, 1.0, 0.0);
+								break;
+								
+								case HANDLE_3D_GRABBED_Z_AXIS:
+									v = vec3(0.0, 0.0, 1.0);
+								break;
+							}
 							
-							printf("%f\n", f);
-						}
-						else
-						{
-							f = 0.0;
-						}*/
-						
-						
-						
-						
-						switch(handle_3d_bm)
-						{
-							case HANDLE_3D_GRABBED_X_AXIS:
-								v = vec3(1.0, 0.0, 0.0);
-							break;
+							p = vec4(v.x, v.y, v.z, 0.0);
+							MultiplyVector4(&active_camera->world_to_camera_matrix, &p);
+							//mat4_t_vec4_t_mult(&active_camera->world_to_camera_matrix, &p);
+							if(p.z < 0.0) f = -f;
 							
-							case HANDLE_3D_GRABBED_Y_AXIS:
-								v = vec3(0.0, 1.0, 0.0);
-							break;
+							if(cr.type == PICK_ENTITY)
+							{
+								entity_RotateEntity(e, v, -f, 0);
+							}
+							else if(cr.type == PICK_LIGHT)
+							{
+								light_RotateLight(l, v, -f, 0);
+							}
+							else
+							{
+								brush_RotateBrush(b, v, -f);
+							}
 							
-							case HANDLE_3D_GRABBED_Z_AXIS:
-								v = vec3(0.0, 0.0, 1.0);
-							break;
+							
+							last_grab_offset_x = cur_grab_offset_x;
+							last_grab_offset_y = cur_grab_offset_y;
+							//last_angle = f;
 						}
 						
-						p = vec4(v.x, v.y, v.z, 0.0);
-						MultiplyVector4(&active_camera->world_to_camera_matrix, &p);
-						//mat4_t_vec4_t_mult(&active_camera->world_to_camera_matrix, &p);
-						if(p.z < 0.0) f = -f;
-						
-						if(cr.type == PICK_ENTITY)
-						{
-							entity_RotateEntity(e, v, -f, 0);
-						}
-						else if(cr.type == PICK_LIGHT)
-						{
-							light_RotateLight(l, v, -f, 0);
-						}
-						else
-						{
-							brush_RotateBrush(b, v, -f);
-						}
-						
-						//last_grab_offset_x = cur_grab_offset_x;
-						//last_grab_offset_y = cur_grab_offset_y;
-						//last_angle = f;
 						
 					break;
-					
-					/*case HANDLE_3D_SCALE:
-						if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
-						{
-							v = vec3(1.0, 0.0, 0.0);
-						}
-						if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
-						{
-							v = vec3(0.0, 1.0, 0.0);
-						}
-						if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
-						{
-							v = vec3(0.0, 0.0, 1.0);
-						}
-						
-						p = vec4(v.x, v.y, v.z, 0.0);
-						p = MultiplyVector4(&active_camera->world_to_camera_matrix, p);
-						
-						f = sqrt(p.x * p.x + p.y * p.y);
-						p.x /= f;
-						p.y /= f;
-						f = p.x * delta_x + p.y * delta_y;
-					break;*/
 				}
 			}
 			else
@@ -2095,7 +2062,7 @@ void ginit()
 		entity_SpawnEntity("ico_tufted_leather", def0, vec3(-4.0, 0.0, -10.0 + i * 2), &id);
 	}*/
 	
-	for(i = 0; i < 1; i++)
+	for(i = 0; i < 0; i++)
 	{
 		entity_SpawnEntity("e", def0, vec3( 8.0, 0.0 + i * 4.0, 8.0), &id);
 		entity_SpawnEntity("e", def0, vec3( 4.0, 0.0 + i * 4.0, 8.0), &id);
@@ -2185,10 +2152,12 @@ void ginit()
 		//light_CreatePointLight("lightwow4", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
 	
-/*	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
-	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,2.0), BRUSH_CUBE, 0);
+	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,2.0), BRUSH_CUBE, material_GetMaterialIndex("red"), 0);
 	
-	brush_CreateBrush("brush2", vec3(5.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);*/
+	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 2.0 ,1.0), BRUSH_CUBE, material_GetMaterialIndex("blue"), 0);
+	
+	/*brush_CreateBrush("brush2", vec3(5.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);*/
 	
 	
 	//physics_UpdateStaticMeshes();

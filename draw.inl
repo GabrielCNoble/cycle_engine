@@ -12,9 +12,13 @@ extern render_queue t_render_q;
 extern render_queue shadow_q;
 extern brush_render_queue_t brush_render_queue;
 
+
 extern int draw_calls;
 extern int texture_binds;
 extern int shader_swaps;
+
+static int cur_brush_material_index = -1;
+static int render_head_index = -1;
 
 #ifdef __cplusplus
 extern "C"
@@ -28,6 +32,13 @@ PEWAPI void draw_ResetRenderQueue()
 	render_q.count=0;
 	t_render_q.count = 0;
 	return;
+}
+
+void draw_ResetBrushRenderQueue()
+{
+	cur_brush_material_index = -1;
+	render_head_index = -1;
+	brush_render_queue.command_buffer_count = 0;
 }
 
 
@@ -64,21 +75,26 @@ inline void draw_ResizeBrushRenderQueue(int new_size)
 {
 	int *a = (int *)malloc(sizeof(int) * new_size);
 	int *b = (int *)malloc(sizeof(int) * new_size);
+	int *c = (int *)malloc(sizeof(int) * new_size);
 	
 	memcpy(a, brush_render_queue.count, sizeof(int) * brush_render_queue.max_command_buffer);
 	memcpy(b, brush_render_queue.start, sizeof(int) * brush_render_queue.max_command_buffer);
+	memcpy(c, brush_render_queue.material_indexes, sizeof(int) * brush_render_queue.max_command_buffer);
 	
 	free(brush_render_queue.count);
 	free(brush_render_queue.start);
+	free(brush_render_queue.material_indexes);
 	
 	brush_render_queue.count = a;
 	brush_render_queue.start = b;
+	brush_render_queue.material_indexes = c;
 	
 	brush_render_queue.max_command_buffer = new_size;
 }
 
 inline int draw_DispatchBrushCommandBuffer(int start, int count, short material_index)
 {
+	
 	int index = brush_render_queue.command_buffer_count;
 	
 	if(index >= brush_render_queue.max_command_buffer)
@@ -86,8 +102,26 @@ inline int draw_DispatchBrushCommandBuffer(int start, int count, short material_
 		draw_ResizeBrushRenderQueue(index + 16);
 	}
 	
+	if(cur_brush_material_index != material_index)
+	{
+		cur_brush_material_index = material_index;
+		render_head_index = index;
+		
+		brush_render_queue.count[index] = 0;
+		brush_render_queue.start[index] = 1;
+		brush_render_queue.material_indexes[index] = material_index;
+		
+		brush_render_queue.command_buffer_count++;
+		index++;
+	}
+	else
+	{
+		brush_render_queue.start[render_head_index]++;
+	}
+	
 	brush_render_queue.count[index] = count;
 	brush_render_queue.start[index] = start;
+	brush_render_queue.material_indexes[index] = material_index;
 	
 	brush_render_queue.command_buffer_count++;
 	

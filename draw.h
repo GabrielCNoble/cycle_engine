@@ -60,6 +60,8 @@ inline void draw_ResizeBrushRenderQueue(int new_size);
 
 inline void draw_ResetRenderQueue();
 
+inline void draw_ResetBrushRenderQueue();
+
 inline void draw_ResetShadowQueue();
 
 void draw_SortRenderQueue(render_queue *queue, int left, int right);

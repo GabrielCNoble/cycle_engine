@@ -1596,11 +1596,12 @@ static void scenegraph_CullBrushes()
 	int i;
 	int c = brush_list.count;
 	
-	brush_render_queue.command_buffer_count = 0;
+	//brush_render_queue.command_buffer_count = 0;
+	draw_ResetBrushRenderQueue();
 	
 	for(i = 0; i < c; i++)
 	{
-		draw_DispatchBrushCommandBuffer(brush_list.draw_data[i].start / (sizeof(float) * 6), brush_list.draw_data[i].vert_count, 0);
+		draw_DispatchBrushCommandBuffer(brush_list.draw_data[i].start / (sizeof(float) * 6), brush_list.draw_data[i].vert_count, brush_list.draw_data[i].material_index);
 	}
 }
 
@@ -2048,6 +2049,8 @@ static void scenegraph_DispatchGeometry()
 	{
 		q = dispatch_list.indexes[i];
 		mat4_t_compose(&transform, &array->position_data[q].world_orientation, array->position_data[q].world_position);
+		
+		/* hmm... this doesn't make sense... */
 		
 		mat4_t_mult_fast(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);
 		//mat4_t_mult(&model_view_matrix, &transform, &active_camera->world_to_camera_matrix);

@@ -14,6 +14,12 @@ enum BRUSH_TYPE
 	BRUSH_CYLINDER,
 };
 
+enum BRUSH_FLAGS
+{
+	BRUSH_SUBTRACTIVE = 1,
+	
+};
+
 
 typedef struct
 {
@@ -33,6 +39,7 @@ typedef struct
 	int start;
 	short material_index;
 	short type;
+	short bm_flags;
 }bmodel_data1_t;
 
 
@@ -60,15 +67,21 @@ void brush_Init();
 
 void brush_Finish();
 
-PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index);
+PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, vec3_t scale, short type, short material_index, short bm_flags);
 
 PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name);
+
+void brush_IntersectBrushes(bmodel_ptr brush, bmodel_ptr subtractive_brush);
 
 void brush_UpdateBrush(bmodel_ptr brush);
 
 PEWAPI void brush_DeleteBrush(bmodel_ptr brush);
 
 void brush_ResizeBrushList(int new_size);
+
+/* keeping the brush list sorted is important for command buffer emission. It avoids sorting
+by material every frame before putting the visible brushes into the render queue. */
+void brush_SortBrushList();
 
 PEWAPI void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction);
 
