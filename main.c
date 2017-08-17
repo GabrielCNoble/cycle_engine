@@ -274,7 +274,7 @@ void add_light(swidget_t *swidget, void *data, int i)
 		break;
 			
 		case 1:
-			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 25.0, 0.01, 0.002, 0.000, 0.01, 4, 256, -1);
+			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS | LIGHT_DRAW_VOLUME, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 25.0, 0.01, 0.002, 0.000, 0.01, 4, 256, -1);
 		break;	
 	}
 }

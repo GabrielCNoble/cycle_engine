@@ -274,8 +274,8 @@ void brush_Finish()
 	for(i = 0; i < brush_list.count; i++)
 	{
 		free(brush_list.position_data[i].name);
-		free(brush_list.draw_data->verts);
-		gpu_Free(brush_list.draw_data->handle);
+		free(brush_list.draw_data[i].verts);
+		gpu_Free(brush_list.draw_data[i].handle);
 	}
 	free(brush_list.position_data);
 	free(brush_list.draw_data);

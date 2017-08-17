@@ -322,7 +322,7 @@ PEWAPI void shader_Init(char *path)
 	wireframe_shader_index=shader_LoadShader("wireframe_vert.glsl", "wireframe_frag.glsl", "wireframe");
 	flat_shader_index=shader_LoadShader("flat_vert.glsl", "flat_frag.glsl", "flat");
 	smap_shader_index=shader_LoadShader("smap_vert.glsl", "smap_frag.glsl", "smap");
-	plvol_shader_index=shader_LoadShader("volumetric_light_vert.glsl", "volumetric_light_frag.glsl", "volumetric_point_light");
+	plvol_shader_index=shader_LoadShader("volumetric_light_vert.glsl", "volumetric_light_frag.glsl", "volumetric_light");
 	//slvol_shader_index=shader_LoadShader("volumetric_spot_light_vert.txt", "volumetric_spot_light_frag.txt", "volumetric_spot_light");
 	bl_shader_index=shader_LoadShader("bilateral_blur_vert.glsl", "bilateral_blur_frag.glsl", "bilateral_blur");
 	gb_shader_index = shader_LoadShader("gaussian_blur_vert.glsl", "gaussian_blur_frag.glsl", "gaussian_blur");

@@ -409,15 +409,8 @@ PEWAPI void gpu_Read(int handle, int offset, void *buffer, int count, int raw)
 
 PEWAPI void gpu_Write(int handle, int offset, void *buffer, int count, int raw)
 {
-	unsigned int i;
-	unsigned int c = count;
 	int start;
 	void *p;
-	
-	unsigned long long s;
-	unsigned long long e;
-	
-	//printf("begin of gpu_Write\n");
 	
 	if(raw)
 	{
@@ -426,61 +419,33 @@ PEWAPI void gpu_Write(int handle, int offset, void *buffer, int count, int raw)
 	else
 	{
 		start = alloc_list.list[handle].start;
-	}
-	//asm("movl $0, %edi\n");
-	//printf("0\n");
-	
+	}	
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	p = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	p = ((char *)p) + start + offset; 
-	//printf("1\n");
-	//printf("%d  %d\n", handle, start);
-	if(!(count % 4))
-	{
+	p = ((char *)p) + start + offset; 	
+	
+	asm
+	(
+		"movl %0, %%edi\n"
+		"movl %1, %%esi\n"
+		"movl %2, %%ecx\n"
 		
-		//c >>= 2;
-		//s = _rdtsc();
-		asm
-		(
-			".intel_syntax noprefix\n"
-			"mov %%edi, %[pnt]\n"
-			"mov %%esi, %[buf]\n"
-			"mov %%ecx, %[cnt]\n"
-			"shr ecx, 2\n"
-			"rep movsd\n"
-			".att_syntax prefix\n"
-			: [pnt] "+g" (p) : [buf] "r" (buffer), [cnt] "r" (c) : "edi", "esi", "ecx"		
-		);
-		//e = _rdtsc();
-		//printf("%llu\n", e - s);
+		".intel_syntax noprefix\n"
+		"test ecx, 3\n"
+		"jz _even\n"
+		"mov eax, ecx\n"
+		"and ecx, 3\n"
+		"rep movsb\n"
+		"lea ecx, [eax - 3]\n"
+		"_even:\n"
+		"shr ecx, 2\n"
+		"rep movsd\n"
 		
-		//s = _rdtsc();
-		/*for(i = 0; i < c; i++)
-		{
-			*((int *)p + i) = *((int *)buffer + i);
-		}*/
-		//e = _rdtsc();
-		//printf("%llu\n", e - s);
-	}
-	else if(!(count % 2))
-	{
-		c >>= 1;
-		
-		for(i = 0; i < c; i++)
-		{
-			*((short *)p + i) = *((short *)buffer + i);
-		}
-	}
-	else
-	{
-		for(i = 0; i < c; i++)
-		{
-			*((char *)p + i) = *((char *)buffer + i);
-		}
-	}
+		".att_syntax prefix\n"
+		:: "rm" (p), "rm" (buffer), "rm" (count)
+	);
 	
 	glUnmapBuffer(GL_ARRAY_BUFFER);
-	//printf("3\n");
 	if(bound_array_buffer)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, bound_array_buffer);
@@ -493,7 +458,6 @@ PEWAPI void gpu_Write(int handle, int offset, void *buffer, int count, int raw)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-	//printf("end of gpu_Write\n");
 }
 
 

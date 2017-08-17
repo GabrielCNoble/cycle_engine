@@ -1,6 +1,8 @@
 //varying vec2 UV;
 //varying vec3 viewRay;
 
+#include "light.h"
+
 
 uniform sampler2D sysTextureSampler1;
 uniform sampler2D sysTextureSampler0;
@@ -22,16 +24,6 @@ uniform float sysLightZFar;
 
 uniform float sysRenderTargetWidth;
 uniform float sysRenderTargetHeight;
-
-
-#define sysLightType int(gl_LightSource[1].spotCutoff)
-#define sysLightRadius gl_LightSource[0].diffuse.a
-#define sysUseShadows gl_LightSource[3].spotExponent
-#define sysProjectTexture gl_LightSource[4].spotExponent
-
-#define LIGHT_POINT 1
-#define LIGHT_SPOT 2
-#define LIGHT_DIRECTIONAL 4
 
 //varying mat4 inverse_projection_matrix;
 //varying mat4 inverse_modelview_matrix;
@@ -230,7 +222,8 @@ void main()
     vec3 light_pos;
     
     
-    vec3 vcolor = gl_LightSource[0].diffuse.rgb;
+    //vec3 vcolor = gl_LightSource[0].diffuse.rgb;
+    vec3 vcolor = sysLightParams[sysLightIndexes[0]].sysLightColor.rgb;
 	vec2 uv = vec2(gl_FragCoord.x / sysRenderTargetWidth, gl_FragCoord.y / sysRenderTargetHeight);
 	vec3 view_ray;
 	vec3 p;
@@ -267,9 +260,9 @@ void main()
 	//depth = -j.z;
 
 	
-	if(sysLightType == LIGHT_POINT)
+	if(sysLightParams[sysLightIndexes[0]].sysLightType == LIGHT_POINT)
 	{
-		intersect_sphere(gl_LightSource[0].position.xyz, vec3(0.0, 0.0, 0.0), view_vec, depth0, depth1, gl_LightSource[0].diffuse.a);
+		intersect_sphere(gl_LightSource[0].position.xyz, vec3(0.0, 0.0, 0.0), view_vec, depth0, depth1, sysLightParams[sysLightIndexes[0]].sysLightRadius);
 	
 	    start_depth = max(0.0, depth0);
 	  	start_depth=min(depth / (-view_vec.z), start_depth);
@@ -287,12 +280,12 @@ void main()
 		{
 			cur_pos += step_len_world * view_vec;
 			shadow = sample_3d_shadow_map(cur_pos);
-			accum += shade_point_point(gl_LightSource[0].position.xyz, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow;
+			accum += shade_point_point(gl_LightSource[0].position.xyz, sysLightParams[sysLightIndexes[0]].sysLightRadius, cur_pos) * scattering * step_len_world * shadow;
 		}
 	}
 	else if(sysLightType == LIGHT_SPOT)
 	{
-		intersect_cone(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, ((3.14159265*gl_LightSource[0].spotCutoff)/180.0), vec3(0.0, 0.0, 0.0), view_vec, depth0, depth1);
+		intersect_cone(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, ((3.14159265*sysLightParams[sysLightIndexes[0]].sysLightSpotCutoff)/180.0), vec3(0.0, 0.0, 0.0), view_vec, depth0, depth1);
 	    start_depth = max(0.0, depth0);
 	  	start_depth=min(depth / (-view_vec.z), start_depth);
 	    end_depth = max(0.0, depth1);
@@ -323,7 +316,7 @@ void main()
 			{
 				cur_pos += step_len_world * view_vec;
 				shadow = sample_2d_shadow_map(cur_pos);
-				accum += shade_point_spot(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, gl_LightSource[0].diffuse.a, cur_pos) * scattering * step_len_world * shadow;
+				accum += shade_point_spot(gl_LightSource[0].position.xyz, gl_LightSource[0].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, cur_pos) * scattering * step_len_world * shadow;
 			}
 		//}
 		

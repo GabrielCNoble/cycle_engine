@@ -731,7 +731,7 @@ draw_Init
 
 	
 	draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
-	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS | RENDERFLAG_DRAW_LIGHT_VOLUMES);
+	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS);
 	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
 	draw_SetDebugFlag(DEBUG_DRAW_LIGHT_ORIGINS);
 	draw_SetDebugFlag(DEBUG_DRAW_OUTLINES);
@@ -1118,24 +1118,15 @@ draw_DrawFrame
 void draw_DrawFrame()
 {
 	int i;
-	
-	//draw_profile_BeginTimer();
-	
-	//while(glGetError() != GL_NO_ERROR);
-	//draw_profile_BeginTimer();
+
 	for(i=0; i<frame_func_count; i++)
 	{
 		frame_funcs[i]();
 	}
-	//printf("%f\n", draw_profile_EndTimer());
-	//printf("%x\n", glGetError());
 	
 	draw_DrawWidgets();
 	
-	if(unlikely(console.bm_status&CONSOLE_VISIBLE)) draw_DrawConsole();
-	
-	//printf("%llu\n", draw_profile_EndTimer());
-	
+	if(unlikely(console.bm_status&CONSOLE_VISIBLE)) draw_DrawConsole();	
 	return;
 }
 
@@ -3678,7 +3669,8 @@ void draw_DrawLightVolumes()
 	shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_camera->frustum.zfar);
 	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, right_volume_buffer.width);
 	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, right_volume_buffer.height);
-		
+	
+	light_BindLightCache();	
 	
 	for(i=0; i<c; i++)
 	{
@@ -3783,6 +3775,8 @@ void draw_DrawLightVolumes()
 	//	glDrawArrays(GL_TRIANGLES, draw_start, draw_count);
 
 	}
+	
+	light_UnbindLightCache();
 
 	glFlush();
 	glEnable(GL_DEPTH_TEST);
@@ -3812,6 +3806,7 @@ void draw_DrawLightVolumes()
 	shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, final_volume_buffer.height);
 	
 	glDrawArrays(GL_QUADS, 0, 4);
+	
 	
 	/*framebuffer_BindFramebuffer(&right_volume_buffer);
 	shader_SetShaderByIndex(bloom_blur_shader_index);
