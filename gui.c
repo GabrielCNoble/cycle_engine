@@ -708,6 +708,52 @@ PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name,
 	return t;
 }
 
+
+PEWAPI wsurface_t *gui_AddSurface(widget_t *widget, char *name, short bm_flags, float x, float y, float width, float height, unsigned int src_id, void (*surface_callback)(swidget_t *, int))
+{
+	wsurface_t *t = NULL;
+	if(widget)
+	{
+		t = (wsurface_t *)malloc(sizeof(wsurface_t));
+		t->swidget.name = strdup(name);
+		
+		t->swidget.x = x;
+		t->swidget.y = y;
+		t->swidget.w = width;
+		t->swidget.h = height;
+		
+		
+		t->swidget.cx = x;
+		t->swidget.cy = y;
+		t->swidget.cw = width;
+		t->swidget.ch = height;
+		
+		t->swidget.type = WIDGET_SURFACE;
+		t->swidget.bm_flags = 0;
+		t->swidget.widget_callback = NULL;
+		t->swidget.next = NULL;
+		
+		//t->bm_flags = bm_flags;
+		//t->data = data;
+		t->surface_callback = surface_callback;
+		t->src_id = src_id;
+
+		if(!widget->sub_widgets)
+		{
+			widget->sub_widgets = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		else
+		{
+			widget->last_added->next = (swidget_t *)t;
+			widget->last_added = (swidget_t *)t;
+		}
+		widget->sub_widgets_count++;
+	}
+	
+	return t;
+}
+
 PEWAPI void gui_DeleteWidgetByName(char *name)
 {
 	swidget_t *w;

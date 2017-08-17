@@ -163,6 +163,7 @@ enum WIDGET_TYPES
 	WIDGET_DROP_DOWN,
 	WIDGET_SLIDER,
 	WIDGET_SLIDER_GROUP,
+	WIDGET_SURFACE,
 	WIDGET_VAR,
 	WIDGET_VERTICAL_SCROLLER,
 	WIDGET_HORIZONTAL_SCROLLER
@@ -462,27 +463,11 @@ typedef struct
 
 typedef struct
 {
-	//wbase_t base;
-	float min;						/* relative minimum normalized position the scroller can go */
-	float cur;						/* current relative normalized position the scroller is*/
-	float max;						/* well... */
-	//void (*fn)(wbase_t *);		
-}wvscroller_t;
+	swidget_t swidget;
+	unsigned int src_id;
+	void (*surface_callback)(swidget_t *, int);
+}wsurface_t;
 
-typedef struct
-{
-	//wbase_t base;
-	float min;						/* relative minimum normalized position the scroller can go */
-	float cur;						/* current relative normalized position the scroller is*/
-	float max;						/* well... */
-	//void (*affect_fn)(wbase_t *, float, float, float);	
-}whscroller_t;
-
-typedef struct
-{
-	//wbase_t base;
-	framebuffer_t framebuffer;
-}wdsurface_t;
 
 #ifdef __cplusplus
 extern "C"
@@ -520,6 +505,8 @@ PEWAPI wslider_t *gui_AddSlider(widget_t *widget, char *name, short bm_flags, fl
 PEWAPI wslidergroup_t *gui_AddSliderGroup(widget_t *widget, char *name, short bm_flags, float x, float y, float width, int slider_count_hint, void *data, void (*slider_group_callback)(swidget_t *, void *, int));
 
 PEWAPI wslider_t *gui_AddSliderToGroup(wslidergroup_t *slider_group, char *name, float pos, float max, float min, short bm_flags, void *data, void (*slider_callback)(swidget_t *, void *, float));
+
+PEWAPI wsurface_t *gui_AddSurface(widget_t *widget, char *name, short bm_flags, float x, float y, float width, float height, unsigned int src_id, void (*surface_callback)(swidget_t *, int));
 //PEWAPI void gui_AddSubWidget(widget_t *base, int bm_flags, short type, char *name, float x, float y, float w, float h, float scroller_max, float scroller_min, float r, float g, float b, float a, unsigned int tex_handle, wbase_t *affected_widget, void *affect_function);
 
 PEWAPI void gui_DeleteWidgetByName(char *name);

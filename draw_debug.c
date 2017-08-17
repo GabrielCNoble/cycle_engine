@@ -23,6 +23,7 @@
 unsigned int screen_area_mesh_gpu_buffer;
 extern framebuffer_t backbuffer;
 extern framebuffer_t geometry_buffer;
+extern framebuffer_t final_buffer;
 
 int draw_buffer_shader_index;
 int draw_z_buffer_shader_index;
@@ -306,7 +307,8 @@ void draw_debug_Draw()
 	
 	framebuffer_t *framebuffer;
 	
-	framebuffer_BindFramebuffer(&backbuffer);
+	//framebuffer_BindFramebuffer(&backbuffer);
+	framebuffer_BindFramebuffer(&final_buffer);
 	
 	glUseProgram(0);
 	
@@ -592,6 +594,7 @@ void draw_debug_Draw()
 			
 			case DRAW_OUTLINE:
 				glEnable(GL_STENCIL_TEST);
+				//glDisable(GL_STENCIL_TEST);
 				glClearStencil(0);
 				glClear(GL_STENCIL_BUFFER_BIT);
 				

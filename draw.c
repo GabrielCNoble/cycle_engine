@@ -123,8 +123,9 @@ extern int max_lights_per_pass;
 
 framebuffer_t geometry_buffer;
 framebuffer_t transparency_buffer;
-static framebuffer_t composite_buffer;
+framebuffer_t composite_buffer;
 framebuffer_t backbuffer;
+framebuffer_t final_buffer;
 //gpu_buffer_t debug_buffer;
 //gpu_buffer_t screen_quad_buffer;
 
@@ -456,6 +457,7 @@ draw_Init
 	
 	geometry_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 4, GL_RGBA16F, GL_RGBA, GL_R16F, GL_RGB16F);
 	transparency_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 3, GL_RGBA16F, GL_RGBA16F, GL_RGBA16F);
+	final_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 1, GL_RGBA);
 	left_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_STENCIL, 1, GL_RGBA16F);
 	right_buffer = framebuffer_CreateFramebuffer(renderer.width, renderer.height, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
 	left_volume_buffer = framebuffer_CreateFramebuffer(renderer.width / 2, renderer.height / 2, GL_DEPTH_COMPONENT, 1, GL_RGBA16F);
@@ -4195,20 +4197,21 @@ void draw_BlitToScreen()
 	
 	//framebuffer_BindFramebuffer(&backbuffer);
 	//glDisable(GL_STENCIL_TEST);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, final_buffer.id);
 	//glDrawBuffer(GL_NONE);
 	
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
 	glReadBuffer(GL_NONE);
 	
 	//glViewport(0, 0, backbuffer.width, backbuffer.height);
-	glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, backbuffer.width, backbuffer.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, final_buffer.width, final_buffer.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	
 	//glDrawBuffer(GL_LEFT);
 	//glDrawBuffers(1, (GLenum *)&i);
 	
 	/* tone mapping is done here... */
-	framebuffer_BindFramebuffer(&backbuffer);
+	//framebuffer_BindFramebuffer(&backbuffer);
+	framebuffer_BindFramebuffer(&final_buffer);
 	//glDrawBuffer(GL_LEFT);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
@@ -4514,6 +4517,7 @@ PEWAPI void draw_DrawWidgets()
 	wvar_t *var;
 	wslider_t *slider;
 	wslidergroup_t *slider_group;
+	wsurface_t *surface;
 	
 	int i;
 	
@@ -4748,6 +4752,31 @@ PEWAPI void draw_DrawWidgets()
 			switch(cswidget->type)
 			{
 				
+				case WIDGET_SURFACE:
+					
+					surface = (wsurface_t *)cswidget;
+					hw = surface->swidget.w / 2.0;
+					hh = surface->swidget.h / 2.0;
+					
+					glDisable(GL_BLEND);
+					glEnable(GL_TEXTURE_2D);
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, surface->src_id);
+					
+					glBegin(GL_QUADS);
+					glColor4f(1.0, 1.0, 1.0, 1.0);
+					glTexCoord2f(0.0, 1.0);
+					glVertex3f(surface->swidget.x + x - hw, surface->swidget.y + y + hh, -0.5);
+					glTexCoord2f(0.0, 0.0);
+					glVertex3f(surface->swidget.x + x - hw, surface->swidget.y + y - hh, -0.5);
+					glTexCoord2f(1.0, 0.0);
+					glVertex3f(surface->swidget.x + x + hw, surface->swidget.y + y - hh, -0.5);
+					glTexCoord2f(1.0, 1.0);
+					glVertex3f(surface->swidget.x + x + hw, surface->swidget.y + y + hh, -0.5);
+					glEnd();
+					
+					glBindTexture(GL_TEXTURE_2D, 0);
+				break;
 				
 				
 				case WIDGET_BUTTON:

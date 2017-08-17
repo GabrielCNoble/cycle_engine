@@ -2376,13 +2376,13 @@ int scenegraph_GetEntityUnderMouse()
 }
 
 
-pick_record_t scenegraph_Pick()
+pick_record_t scenegraph_Pick(float mouse_x, float mouse_y)
 {
 	int i;
 	int c = render_q.count;
 	
-	float mouse_x = input.mouse_x;
-	float mouse_y = input.mouse_y;
+	//float mouse_x = input.mouse_x;
+	//float mouse_y = input.mouse_y;
 	mat4_t model_view_matrix;
 	
 	camera_t *active_camera = camera_GetActiveCamera();

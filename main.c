@@ -17,6 +17,9 @@ extern entity_array entity_a;
 extern input_cache input;
 extern light_array light_a;
 extern brush_list_t brush_list;
+extern framebuffer_t geometry_buffer;
+extern framebuffer_t composite_buffer;
+extern framebuffer_t final_buffer;
 
 int l_count;
 
@@ -360,7 +363,7 @@ void gmain(float delta_time)
 				
 				if(!handle_3d_bm)
 				{
-					r = scenegraph_Pick();	
+					r = scenegraph_Pick(input.mouse_x, input.mouse_y);	
 					switch(r.type)
 					{
 						case PICK_ENTITY:
@@ -1778,6 +1781,8 @@ void ginit()
 	gui_AddVar(ppp, "shadow map generation", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &generate_shadow_map_time);
 	gui_AddVar(ppp, "gui", 0, 0, VAR_FLOAT, 0.0, -30.0, 300.0, 20.0, &gui_time);
 	
+	ppp = gui_CreateWidget("test2", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width * 0.1, renderer.height * 0.1, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	gui_AddSurface(ppp, "surface_test", 0, 0, 0, renderer.width * 0.6, renderer.height * 0.6, final_buffer.color_out1, NULL);
 	
 	//gui_AddSliderToGroup(z, "parm", 0.0, 1.0, 0.0, 0, NULL, NULL);
 	//gui_AddSliderToGroup(z, "spot_angle", 0.0, 100.0, 1.0, 0, NULL, NULL);

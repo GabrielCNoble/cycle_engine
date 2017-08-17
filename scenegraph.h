@@ -72,7 +72,7 @@ PEWAPI void scenegraph_PrintChildsNames(node_t *node);
 
 int scenegraph_GetEntityUnderMouse();
 
-pick_record_t scenegraph_Pick();
+pick_record_t scenegraph_Pick(float mouse_x, float mouse_y);
 
 #ifdef __cplusplus
 }
