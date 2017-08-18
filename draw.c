@@ -4658,7 +4658,7 @@ PEWAPI void draw_DrawWidgets()
 		
 		if(cwidget->tex_handle > -1)
 		{
-
+			glDisable(GL_BLEND);
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, cwidget->tex_handle);

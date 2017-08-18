@@ -1781,7 +1781,7 @@ void ginit()
 	gui_AddVar(ppp, "shadow map generation", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &generate_shadow_map_time);
 	gui_AddVar(ppp, "gui", 0, 0, VAR_FLOAT, 0.0, -30.0, 300.0, 20.0, &gui_time);
 	
-	ppp = gui_CreateWidget("test2", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width * 0.1, renderer.height * 0.1, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	ppp = gui_CreateWidget("test2", WIDGET_HIGHTLIGHT_BORDERS, 0, 0, renderer.width * 0.6, renderer.height * 0.6, 1.0, 1.0, 1.0, 1.0, WIDGET_NO_TEXTURE, 0);
 	gui_AddSurface(ppp, "surface_test", 0, 0, 0, renderer.width * 0.6, renderer.height * 0.6, final_buffer.color_out1, NULL);
 	
 	//gui_AddSliderToGroup(z, "parm", 0.0, 1.0, 0.0, 0, NULL, NULL);
