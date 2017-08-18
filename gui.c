@@ -96,7 +96,7 @@ PEWAPI void gui_Finish()
 }
 
 
-PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused)
+PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused, void (*widget_callback)(widget_t *))
 {
 	widget_t *temp;
 	
@@ -135,6 +135,7 @@ PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, fl
 	temp->sub_widgets = NULL;
 	temp->last_added = NULL;
 	temp->sub_widgets_count = 0;
+	temp->widget_callback = widget_callback;
 	
 	widget_count++;
 	
@@ -729,7 +730,7 @@ PEWAPI wsurface_t *gui_AddSurface(widget_t *widget, char *name, short bm_flags, 
 		t->swidget.ch = height;
 		
 		t->swidget.type = WIDGET_SURFACE;
-		t->swidget.bm_flags = 0;
+		t->swidget.bm_flags = bm_flags;
 		t->swidget.widget_callback = NULL;
 		t->swidget.next = NULL;
 		
@@ -928,7 +929,7 @@ void gui_SetFocused(widget_t *widget)
 		to update anything... */
 		if(widget_count > 1)
 		{
-			top_widget->bm_flags &= ~WIDGET_MOUSE_OVER;
+			//top_widget->bm_flags &= ~WIDGET_MOUSE_OVER;
 			if(widget != widgets->next)
 			{
 				
@@ -949,9 +950,6 @@ void gui_SetFocused(widget_t *widget)
 				widget->next = widgets->next;
 				widget->next->prev = widget;
 				widgets->next = widget;
-				
-				
-				
 				
 			}
 
@@ -1041,7 +1039,10 @@ void gui_ProcessWidgets()
 		cw = cwidget->w / cwidget->cw;
 		ch = cwidget->h / cwidget->ch;
 		
-		if((cwidget == top_widget || (!(top_widget->bm_flags & WIDGET_MOUSE_OVER))) && 
+		/* If this isn't the top widget and the top widget doesn't have the mouse over it, they don't
+		overlap, which means that is necessary to calculate this widget's relative mouse position. Otherwise, 
+		this widget is the top widget, and HAS to have it's stuff updated... */	
+		if(((cwidget == top_widget) || (!(top_widget->bm_flags & WIDGET_MOUSE_OVER))) &&
 		        cwidget->relative_mouse_x <= 1.0 && cwidget->relative_mouse_x >= -1.0)
 		{
 			if(cwidget->relative_mouse_y <= 1.0 && cwidget->relative_mouse_y >= -1.0)
@@ -1057,9 +1058,30 @@ void gui_ProcessWidgets()
 				if(!(cwidget->bm_flags & WIDGET_IGNORE_MOUSE))
 				{
 					input.bm_mouse |= MOUSE_OVER_WIDGET;
+					
+					if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+					{
+						cwidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+						if(cwidget != top_widget)
+						{
+							gui_SetFocused(cwidget);
+						}
+					}
+					else
+					{
+						cwidget->bm_flags &= ~WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+					}
+					
+					if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
+					{
+						cwidget->bm_flags |= WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
+					}
+					else
+					{
+						cwidget->bm_flags &= ~WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
+					}
+					
 				}
-				
-				//input.bm_mouse |= MOUSE_OVER_WIDGET;
 				
 				mouse_over_widgets++;
 				
@@ -1106,14 +1128,13 @@ void gui_ProcessWidgets()
 				}
 				
 				
-				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+			/*	if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 				{
 					cwidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
 					if(cwidget != top_widget)
 					{
 						gui_SetFocused(cwidget);
 					}
-					
 				}
 				else
 				{
@@ -1127,7 +1148,7 @@ void gui_ProcessWidgets()
 				else
 				{
 					cwidget->bm_flags &= ~WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
-				}
+				}*/
 				
 			}	
 			else
@@ -1140,40 +1161,52 @@ void gui_ProcessWidgets()
 			cwidget->bm_flags &= ~(WIDGET_MOUSE_OVER | WIDGET_MOUSE_OVER_HEADER | WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER);
 		}
 		
-		if((cwidget == top_widget || (!(top_widget->bm_flags & WIDGET_MOUSE_OVER))) && top_widget->bm_flags & WIDGET_RESIZABLE)
+		/* If this widget is not the top widget and the top widget doesn't have the mouse over it, it means they
+		don't overlap, so it's safe to allow the pointer to change. If this is the top widget, then it's also safe
+		to set the cursor, for the top widget has the final word about the cursor used... */
+		if(((cwidget == top_widget) || (!(top_widget->bm_flags & WIDGET_MOUSE_OVER))))
 		{
-			switch(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | 
+			
+			if(cwidget->bm_flags & WIDGET_RESIZABLE)
+			{
+				switch(cwidget->bm_flags & (WIDGET_MOUSE_OVER_TOP_BORDER | 
 									WIDGET_MOUSE_OVER_BOTTOM_BORDER |
 									WIDGET_MOUSE_OVER_LEFT_BORDER | 
 									WIDGET_MOUSE_OVER_RIGHT_BORDER))
 									
-			{
-				case WIDGET_MOUSE_OVER_BOTTOM_BORDER:
-				case WIDGET_MOUSE_OVER_TOP_BORDER:
-					input_SetCursor(CURSOR_VERTICAL_ARROWS);
-				break;
-				
-				case WIDGET_MOUSE_OVER_LEFT_BORDER:
-				case WIDGET_MOUSE_OVER_RIGHT_BORDER:
-					input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
-				break;	
-				
-				case WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER:
-				case WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER:
-					input_SetCursor(CURSOR_LEFT_DIAGONAL_ARROWS);
-				break;
-				
-				
-				case WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER:
-				case WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER:
-					input_SetCursor(CURSOR_RIGHT_DIAGONAL_ARROWS);
-				break;
-				
-				default:
-					input_SetCursor(CURSOR_ARROW);
-				break;
+				{
+					case WIDGET_MOUSE_OVER_BOTTOM_BORDER:
+					case WIDGET_MOUSE_OVER_TOP_BORDER:
+						input_SetCursor(CURSOR_VERTICAL_ARROWS);
+					break;
 					
-			}	
+					case WIDGET_MOUSE_OVER_LEFT_BORDER:
+					case WIDGET_MOUSE_OVER_RIGHT_BORDER:
+						input_SetCursor(CURSOR_HORIZONTAL_ARROWS);
+					break;	
+					
+					case WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER:
+					case WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER:
+						input_SetCursor(CURSOR_LEFT_DIAGONAL_ARROWS);
+					break;
+					
+					
+					case WIDGET_MOUSE_OVER_RIGHT_BORDER | WIDGET_MOUSE_OVER_TOP_BORDER:
+					case WIDGET_MOUSE_OVER_LEFT_BORDER | WIDGET_MOUSE_OVER_BOTTOM_BORDER:
+						input_SetCursor(CURSOR_RIGHT_DIAGONAL_ARROWS);
+					break;
+					
+					default:
+						input_SetCursor(CURSOR_ARROW);
+					break;
+						
+				}
+			}
+			
+			if(cwidget->widget_callback)
+			{
+				cwidget->widget_callback(cwidget);
+			}
 		}
 								
 		
@@ -1187,6 +1220,15 @@ void gui_ProcessWidgets()
 			else
 			{
 				cwidget->bm_flags &= ~WIDGET_GRABBED_HEADER;
+				
+				if(cwidget->bm_flags & WIDGET_MOUSE_OVER_TOP_BORDER)
+				{
+					cwidget->bm_flags |= WIDGET_GRABBED_TOP_BORDER;
+				}
+				else
+				{
+					cwidget->bm_flags &= ~WIDGET_GRABBED_TOP_BORDER;
+				}
 			}
 			
 			if(cwidget->bm_flags & WIDGET_MOUSE_OVER_LEFT_BORDER)
@@ -1215,6 +1257,8 @@ void gui_ProcessWidgets()
 			{
 				cwidget->bm_flags &= ~WIDGET_GRABBED_BOTTOM_BORDER;
 			}
+			
+			
 		}
 		
 		
@@ -1234,17 +1278,16 @@ void gui_ProcessWidgets()
 				}
 			}
 			
-			
-			else if(cwidget->bm_flags & WIDGET_GRABBED_LEFT_BORDER)
+			if(cwidget->bm_flags & (WIDGET_GRABBED_LEFT_BORDER | WIDGET_GRABBED_RIGHT_BORDER))
 			{
 				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
 				{
-					cwidget->bm_flags &= ~WIDGET_GRABBED_LEFT_BORDER;
+					cwidget->bm_flags &= ~(WIDGET_GRABBED_LEFT_BORDER | WIDGET_GRABBED_RIGHT_BORDER);
 				}
 				else
 				{
 					old_d = cwidget->w;	
-					cwidget->w -= input.mouse_dx / x_scale;
+					cwidget->w += (input.mouse_dx / x_scale) * (1.0 - (2.0 * ((cwidget->bm_flags & WIDGET_GRABBED_LEFT_BORDER) && 1)));
 					dx = 0.0;
 					if(cwidget->w < MIN_WIDGET_WIDTH)
 					{
@@ -1254,52 +1297,27 @@ void gui_ProcessWidgets()
 					}
 					cwidget->x += ((input.mouse_dx * (1.0 - dx)) * 0.5) / x_scale;
 				}
-			}
-			
-			
-			
-			else if(cwidget->bm_flags & WIDGET_GRABBED_RIGHT_BORDER)
+			}		
+				
+			if(cwidget->bm_flags & (WIDGET_GRABBED_BOTTOM_BORDER | WIDGET_GRABBED_TOP_BORDER))
 			{
 				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
 				{
-					cwidget->bm_flags &= ~WIDGET_GRABBED_RIGHT_BORDER;
+					cwidget->bm_flags &= ~(WIDGET_GRABBED_BOTTOM_BORDER | WIDGET_GRABBED_TOP_BORDER);
 				}
-				else
+				
+				old_d = cwidget->h;	
+				cwidget->h += (input.mouse_dy / y_scale) * (1.0 - (2.0 * ((cwidget->bm_flags & WIDGET_GRABBED_BOTTOM_BORDER) && 1)));
+				dy = 0.0;
+				if(cwidget->h < MIN_WIDGET_HEIGHT)
 				{
-					old_d = cwidget->w;	
-					cwidget->w += input.mouse_dx / x_scale;
-					dx = 0.0;
-					if(cwidget->w < MIN_WIDGET_WIDTH)
-					{
-						dx = MIN_WIDGET_WIDTH - cwidget->w;
-						dx /= old_d - cwidget->w;
-						cwidget->w = MIN_WIDGET_WIDTH;
-					}
-					cwidget->x += ((input.mouse_dx * (1.0 - dx)) * 0.5) / x_scale;
+					dy = MIN_WIDGET_HEIGHT - cwidget->h;
+					dy /= old_d - cwidget->h;
+					cwidget->h = MIN_WIDGET_HEIGHT;
 				}
+				cwidget->y += ((input.mouse_dy * (1.0 - dy)) * 0.5) / y_scale;
 			}
 			
-			
-			if(cwidget->bm_flags & WIDGET_GRABBED_BOTTOM_BORDER)
-			{
-				if(!(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED))
-				{
-					cwidget->bm_flags &= ~WIDGET_GRABBED_BOTTOM_BORDER;
-				}
-				else
-				{
-					old_d = cwidget->h;	
-					cwidget->h -= input.mouse_dy / y_scale;
-					dy = 0.0;
-					if(cwidget->h < MIN_WIDGET_HEIGHT)
-					{
-						dy = MIN_WIDGET_HEIGHT - cwidget->h;
-						dy /= old_d - cwidget->h;
-						cwidget->h = MIN_WIDGET_HEIGHT;
-					}
-					cwidget->y += ((input.mouse_dy * (1.0 - dy)) * 0.5) / y_scale;
-				}
-			}
 		}
 		
 		x = cwidget->x;
@@ -1330,6 +1348,11 @@ void gui_ProcessWidgets()
 			rh = cswidget->h;
 			rw = cswidget->w;
 			
+			
+			/* if this subwidget is a drop down box and it's open,
+			increase its height and move its origin so the [-1.0, 1.0]
+			range spans across the whole widget. This allow correct relative
+			mouse position calculation regardless of it being open or closed... */
 			if(cswidget->type == WIDGET_DROP_DOWN)
 			{				
 				if(((wdropdown_t *)cswidget)->bm_flags & DROP_DOWN_DROPPED)
@@ -1338,6 +1361,10 @@ void gui_ProcessWidgets()
 					ry -= (OPTION_HEIGHT * ((wdropdown_t *)cswidget)->option_count) / 2.0;
 				}
 			}
+			/* if this subwidget is a slider increase its width
+			by half of its outer height. This allow correct
+			picking even if the cursor border spans out of the
+			subwidget boundaries... */
 			else if(cswidget->type == WIDGET_SLIDER)
 			{
 				rw += SLIDER_OUTER_HEIGHT / 2.0;
@@ -1351,20 +1378,24 @@ void gui_ProcessWidgets()
 			
 			//printf("%s  %f %f\n", cswidget->name, cswidget->relative_mouse_x, cswidget->relative_mouse_y);
 			
-			if(!active_swidget && cwidget->bm_flags & WIDGET_MOUSE_OVER && !(cwidget->bm_flags & (WIDGET_MOUSE_OVER_HEADER |
-																			   WIDGET_MOUSE_OVER_BOTTOM_BORDER|
-																			   WIDGET_MOUSE_OVER_TOP_BORDER|
-																			   WIDGET_MOUSE_OVER_LEFT_BORDER|
-																			   WIDGET_MOUSE_OVER_RIGHT_BORDER)) ||
-																			   (cwidget->bm_flags & WIDGET_NO_BORDERS))
+			if(/*(!active_swidget) && */(cwidget->bm_flags & WIDGET_MOUSE_OVER) && !(cwidget->bm_flags & (WIDGET_MOUSE_OVER_HEADER |
+																			   						  WIDGET_MOUSE_OVER_BOTTOM_BORDER|
+																			   						  WIDGET_MOUSE_OVER_TOP_BORDER|
+																			   						  WIDGET_MOUSE_OVER_LEFT_BORDER|
+																			   						  WIDGET_MOUSE_OVER_RIGHT_BORDER)) ||
+																			   						(cwidget->bm_flags & WIDGET_NO_BORDERS))
 			{
 				if(cswidget->relative_mouse_x <= 1.0 && cswidget->relative_mouse_x >= -1.0)
 				{
 					if(cswidget->relative_mouse_y <= 1.0 && cswidget->relative_mouse_y >= -1.0)
 					{
 						cswidget->bm_flags |= WIDGET_MOUSE_OVER;
-						input.bm_mouse |= MOUSE_OVER_WIDGET;
-						active_swidget = cswidget;
+						if(cwidget->bm_flags & WIDGET_IGNORE_MOUSE)
+						{
+							input.bm_mouse |= MOUSE_OVER_WIDGET;
+						}
+						
+						//active_swidget = cswidget;
 						//cwidget->active_swidget = cswidget;
 						
 						if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)

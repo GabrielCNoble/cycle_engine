@@ -281,7 +281,9 @@ enum DROP_DOWN_FLAGS
 	DROP_DOWN_NO_HEADER = 1 << 1,
 	DROP_DOWN_TITLE = 1 << 2,
 };
-#define WIDGET_NO_TEXTURE -1
+
+
+#define WIDGET_NO_TEXTURE 0xffffffff
 #define WIDGET_BORDER_PIXEL_WIDTH 8
 #define WIDGET_HEADER_PIXEL_HEIGHT 12
 
@@ -370,6 +372,7 @@ typedef struct widget_t
 	swidget_t *sub_widgets;
 	swidget_t *last_added;
 	swidget_t *active_swidget;
+	void (*widget_callback)(widget_t *);
 	char *name;
 	int bm_flags;
 	short type;
@@ -478,7 +481,7 @@ PEWAPI void gui_Init();
 
 PEWAPI void gui_Finish();
 
-PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused);
+PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused, void (*widget_callback)(widget_t *));
 
 PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_button_flags, float x, float y, float w, float h, float r, float g, float b, float a, void *data, void (*widget_callback)(swidget_t *, void *));
 

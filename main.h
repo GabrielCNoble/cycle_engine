@@ -33,7 +33,7 @@ void close_delete_menu();
 
 void draw_3d_handle(int mode);
 
-void check_3d_handle(int mode);
+void check_3d_handle(int mode, int x, int y);
 
 void init_3d_handle();
 

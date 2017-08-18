@@ -100,6 +100,8 @@ widget_t *delete_menu = NULL;
 
 widget_t *add_to_world_menu = NULL;
 
+widget_t *viewport;
+
 int max_records;
 int record_count;
 pick_record_t *selected_objects;
@@ -118,6 +120,42 @@ void resize_selection_list()
 	free(selection_list.selected);
 	selection_list.selected = p;
 	selection_list.max_selected += 8;	
+}
+
+void viewport_resize_fn(widget_t *widget)
+{
+	//printf("callback:\n");
+	int i = 0;
+	camera_t *active_camera = camera_GetActiveCamera();
+	if(widget->bm_flags & WIDGET_GRABBED_LEFT_BORDER)
+	{
+		//printf(" grabbed left border\n");
+		i = 1;
+	}
+	else if(widget->bm_flags & WIDGET_GRABBED_RIGHT_BORDER)
+	{
+		//printf(" grabbed right border\n");
+		i = 1;
+	}
+	else if(widget->bm_flags & WIDGET_GRABBED_TOP_BORDER)
+	{
+		//printf(" grabbed top border\n");
+		i = 1;
+	}
+	else if(widget->bm_flags & WIDGET_GRABBED_BOTTOM_BORDER)
+	{
+		//printf(" grabbed bottom border\n");
+		i = 1;
+	}
+	
+	if(i)
+	{
+		camera_SetCameraProjectionMatrix(active_camera, widget->w, widget->h, active_camera->frustum.znear, active_camera->frustum.zfar, 0.68);
+	}
+	
+	
+	
+	//printf("\n\n");
 }
 
 void add_selection(pick_record_t *pick)
@@ -358,12 +396,12 @@ void gmain(float delta_time)
 				
 				if(selected_position)
 				{
-					check_3d_handle(handle_3d_mode);
+					check_3d_handle(handle_3d_mode, (viewport->relative_mouse_x * 0.5 + 0.5) * renderer.width, (viewport->relative_mouse_y * 0.5 + 0.5) * renderer.height);
 				}
 				
 				if(!handle_3d_bm)
 				{
-					r = scenegraph_Pick(input.mouse_x, input.mouse_y);	
+					r = scenegraph_Pick((viewport->relative_mouse_x * 0.5 + 0.5) * renderer.width, (viewport->relative_mouse_y * 0.5 + 0.5) * renderer.height);	
 					switch(r.type)
 					{
 						case PICK_ENTITY:
@@ -996,7 +1034,7 @@ void create_option_dropdown()
 		gui_DeleteWidget(options);
 	}
 	
-	options = gui_CreateWidget("options", WIDGET_TRANSLUCENT, input.normalized_mouse_x * renderer.width * 0.5 + 100, input.normalized_mouse_y * renderer.height * 0.5 - 130, 200, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	options = gui_CreateWidget("options", WIDGET_TRANSLUCENT|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5 + 100, input.normalized_mouse_y * renderer.height * 0.5 - 130, 200, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
 	wdropdown_t *dd = gui_AddDropDown(options, "context_menu", DROP_DOWN_DROPPED, 0, 120, 190, NULL, NULL);
 	gui_AddOption(dd, "op0");
 	gui_AddOption(dd, "op1");
@@ -1025,7 +1063,7 @@ void open_add_to_world_menu()
 	
 	entity_def_list *def_list = entity_GetEntityDefList();
 	
-	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
 	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, NULL, NULL);
 	gui_AddOption(dd, "Lights");
 	gui_AddOption(dd, "Defs");
@@ -1085,7 +1123,7 @@ void open_delete_menu()
 	
 	i = rand()%2;
 	
-	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1);
+	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
 	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, &cr, delete_fn);
 	gui_AddOption(d, phrases[i]);
 }
@@ -1131,7 +1169,7 @@ void draw_3d_handle(int mode)
 	
 }
 
-void check_3d_handle(int mode)
+void check_3d_handle(int mode, int x, int y)
 {
 	
 	handle_3d_bm = 0;
@@ -1238,7 +1276,7 @@ void check_3d_handle(int mode)
 	
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, picking_buffer.id);
 	
-	glReadPixels(input.mouse_x, input.mouse_y, 1, 1, GL_RGB, GL_FLOAT, pixel);
+	glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, pixel);
 	
 	
 	if(pixel[0] > 0.0)
@@ -1731,10 +1769,11 @@ void ginit()
 //	stencil2ptr = model_GetMeshPtr("stencil2");
 //	holesptr = model_GetMeshPtr("holes");
 	
-	
+	widget_t *ppp;
+	wdropdown_t *dd;
 	float y = -renderer.height * 0.5 + 15;
 	
-	menu0 = gui_CreateWidget("mode", WIDGET_NO_BORDERS, 0, y ,100, 30, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1);
+	menu0 = gui_CreateWidget("mode", WIDGET_NO_BORDERS, 0, y ,100, 30, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1, NULL);
 	wtabbar_t *tabbar = gui_AddTabBar(menu0, "mode_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 100, 30, tabbar_fn);
 	gui_AddTab(tabbar, "T", TAB_NO_SUB_WIDGETS);
 	gui_AddTab(tabbar, "R", TAB_NO_SUB_WIDGETS);
@@ -1749,15 +1788,15 @@ void ginit()
 	gui_AddSliderToGroup(z, "slider4", 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);*/
 	
-	widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
-	wdropdown_t *dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 100, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 200, NULL, menu_fn);
+	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0, NULL);
+	dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 100, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 200, NULL, menu_fn);
 	gui_AddOption(dd, "Update static world");
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "Exit");
 	
 	
-	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0);
+	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0, NULL);
 	dd = gui_AddDropDown(ppp, "Snapping", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50 + 200, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, snapping_fn);
 	gui_AddOption(dd, "2.0");
 	gui_AddOption(dd, "1.0");
@@ -1768,21 +1807,21 @@ void ginit()
 	gui_AddOption(dd, "off");
 
 	
-	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	/*ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
 	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 3, NULL, slider_fn);
 	gui_AddSliderToGroup(z, "light_r", 0.0, 255.0, 0.0, 0, NULL, NULL);
 	gui_AddSliderToGroup(z, "light_g", 0.0, 255.0, 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "light_b", 0.0, 255.0, 0.0, 0, NULL, NULL);
+	gui_AddSliderToGroup(z, "light_b", 0.0, 255.0, 0.0, 0, NULL, NULL);*/
 	
 	
-	ppp = gui_CreateWidget("timers", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, -renderer.width / 2.0 + 150, 0, 300, 80, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
+	/*ppp = gui_CreateWidget("timers", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, -renderer.width / 2.0 + 150, 0, 300, 80, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
 	gui_AddVar(ppp, "gbuffer fill", 0, 0, VAR_FLOAT, 0.0, 30.0, 300.0, 20.0, &fill_gbuffer_time);
 	gui_AddVar(ppp, "gbuffer process", 0, 0, VAR_FLOAT, 0.0, 10.0, 300.0, 20.0, &process_gbuffer_time);
 	gui_AddVar(ppp, "shadow map generation", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &generate_shadow_map_time);
-	gui_AddVar(ppp, "gui", 0, 0, VAR_FLOAT, 0.0, -30.0, 300.0, 20.0, &gui_time);
+	gui_AddVar(ppp, "gui", 0, 0, VAR_FLOAT, 0.0, -30.0, 300.0, 20.0, &gui_time);*/
 	
-	ppp = gui_CreateWidget("test2", WIDGET_HIGHTLIGHT_BORDERS, 0, 0, renderer.width * 0.6, renderer.height * 0.6, 1.0, 1.0, 1.0, 1.0, WIDGET_NO_TEXTURE, 0);
-	gui_AddSurface(ppp, "surface_test", 0, 0, 0, renderer.width * 0.6, renderer.height * 0.6, final_buffer.color_out1, NULL);
+	viewport = gui_CreateWidget("test2", WIDGET_HIGHTLIGHT_BORDERS | WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width * 0.6, renderer.height * 0.6, 1.0, 1.0, 1.0, 1.0, final_buffer.color_out1, 0, viewport_resize_fn);
+	//gui_AddSurface(ppp, "surface_test", WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.width * 0.5, renderer.height * 0.5, final_buffer.color_out1, NULL);
 	
 	//gui_AddSliderToGroup(z, "parm", 0.0, 1.0, 0.0, 0, NULL, NULL);
 	//gui_AddSliderToGroup(z, "spot_angle", 0.0, 100.0, 1.0, 0, NULL, NULL);

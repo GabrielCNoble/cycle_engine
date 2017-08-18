@@ -313,11 +313,12 @@ void draw_debug_Draw()
 	glUseProgram(0);
 	
 	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
+	//glPushMatrix();
 	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
+	//glViewport(0, 0, active_camera->width, active_camera->height);
 	
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
+	//glPushMatrix();
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
 	
 	glEnable(GL_DEPTH_TEST);
@@ -1086,9 +1087,9 @@ void draw_debug_Draw()
 	draw_cmd_count = 0;
 	
 	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	//glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+	//glPopMatrix();
 	
 }
 

@@ -23,6 +23,8 @@ PEWAPI void camera_ResizeCameraArray(int new_size);
 
 PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation, float fovy, float width, float height, float znear, float zfar);
 
+PEWAPI void camera_SetCameraProjectionMatrix(camera_t *camera, float width, float height, float znear, float zfar, float fovy);
+
 PEWAPI int camera_CreateCameraFromData(camera_t *camera);
 
 PEWAPI void camera_SetCameraByIndex(int camera_index);
@@ -31,9 +33,9 @@ PEWAPI void camera_ComputeWorldToCameraMatrix(camera_t *camera);
 
 PEWAPI void camera_ResetWorldToCameraMatrix();
 
-PEWAPI void camera_SetCurrentCameraProjectionMatrix();
+//PEWAPI void camera_SetCurrentCameraProjectionMatrix();
 
-PEWAPI void camera_SetCameraProjectionMatrix(camera_t *camera);
+//PEWAPI void camera_SetCameraProjectionMatrix(camera_t *camera);
 
 PEWAPI void camera_TranslateCamera(camera_t *camera, vec3_t direction, float amount, int b_set);
 

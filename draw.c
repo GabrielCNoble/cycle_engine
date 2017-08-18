@@ -1093,6 +1093,9 @@ void draw_OpenFrame()
 	//framebuffer_BindFramebuffer(&debug_draw_buffer);
 	//glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	
+	framebuffer_BindFramebuffer(&backbuffer);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
 	framebuffer_BindFramebuffer(&right_buffer);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	
@@ -1102,7 +1105,10 @@ void draw_OpenFrame()
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glClearBufferfv(GL_COLOR, 2, c0);
 	
-	camera_SetCurrentCameraProjectionMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
+	
+	//camera_SetCurrentCameraProjectionMatrix();
 	
 	draw_calls = 0;
 	texture_binds = 0;
@@ -4656,9 +4662,8 @@ PEWAPI void draw_DrawWidgets()
 			b *= 0.8;
 		}
 		
-		if(cwidget->tex_handle > -1)
+		if(cwidget->tex_handle != WIDGET_NO_TEXTURE)
 		{
-			glDisable(GL_BLEND);
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, cwidget->tex_handle);

@@ -164,6 +164,13 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 	return camera_index;
 }
 
+PEWAPI void camera_SetCameraProjectionMatrix(camera_t *camera, float width, float height, float znear, float zfar, float fovy)
+{
+	CreatePerspectiveMatrix(&camera->projection_matrix, fovy, width/height, znear, zfar, &camera->frustum);
+	camera->width = width;
+	camera->height = height;
+}
+
 /*
 =============
 camera_CreateCamera
@@ -282,12 +289,12 @@ PEWAPI void camera_SetCurrentCameraProjectionMatrix()
 camera_SetCameraProjectionMatrix
 =============
 */
-PEWAPI void camera_SetCameraProjectionMatrix(camera_t *camera)
+/*PEWAPI void camera_SetCameraProjectionMatrix(camera_t *camera)
 {
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(&camera->projection_matrix.floats[0][0]);
 	glMatrixMode(GL_MODELVIEW);
-}
+}*/
 
 
 /*
