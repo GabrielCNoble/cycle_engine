@@ -57,14 +57,14 @@ PEWAPI void model_Init(char *path)
 	strcpy(mesh_path, path);
 	mesh_path_len = strlen(mesh_path);
 	
-	vdata_root = (vertex_data_t *)malloc(sizeof(vertex_data_t));
+	/*vdata_root = (vertex_data_t *)malloc(sizeof(vertex_data_t));
 	vdata_root->next = NULL;
 	vdata_root->indexes = NULL;
 	vdata_root->position = NULL;
 	vdata_root->normal = NULL;
 	vdata_root->tex_coord = NULL;
 	vdata_root->tangent = NULL;
-	vdata_last = vdata_root;
+	vdata_last = vdata_root;*/
 	
 	
 	/*draw_info_a.draw_infos=NULL;
@@ -95,6 +95,7 @@ PEWAPI void model_Finish()
 		n = p;
 	}*/
 	
+	
 	free(mesh_a.meshes);
 	while(q)
 	{
@@ -110,7 +111,6 @@ PEWAPI void model_Finish()
 		free(q);
 		q = t;
 	}
-	
 	//free(draw_info_a.draw_infos);
 	//free(mesh_a.meshes);
 	/* free(mesh_a.meshes); */

@@ -36,6 +36,7 @@ extern collider_array collider_a;
 //extern active_particle_system_array active_particle_system_a;
 extern light_array light_a;
 extern light_array active_light_a;
+extern int *active_light_indexes;
 extern affecting_lights_list affecting_lights;
 extern screen_tile_list screen_tiles;
 extern armature_list_t armature_list;
@@ -1105,6 +1106,7 @@ static void scenegraph_CullLights()
 	int s;
 	int k;
 	int l;
+	int m;
 	int samples;
 	vec3_t l_org3;
 	vec4_t l_org4;
@@ -1270,6 +1272,8 @@ static void scenegraph_CullLights()
 			memcpy(&active_light_a.shadow_data[active_light_a.light_count], &light_a.shadow_data[i], sizeof(light_data2));
 			memcpy(&active_light_a.extra_data[active_light_a.light_count], &light_a.extra_data[i], sizeof(light_data3));
 			memcpy(&active_light_a.params[active_light_a.light_count], &light_a.params[i], sizeof(light_data1));
+			
+			active_light_indexes[active_light_a.light_count] = light_a.position_data[i].light_index;
 			
 			//active_light_a.position_data[active_light_a.light_count]=light_a.position_data[i];
 			//active_light_a.shadow_data[active_light_a.light_count]=light_a.shadow_data[i];

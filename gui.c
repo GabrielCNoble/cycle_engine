@@ -421,11 +421,11 @@ PEWAPI void gui_AddOption(wdropdown_t *dropdown, char *name)
 		o->bm_flags = 0;
 		o->nested = NULL;
 		
-		if(!dropdown->option_count)
+		/*if(!dropdown->option_count)
 		{
 			dropdown->active_option = o;
 			dropdown->cur_option = 0;
-		}
+		}*/
 		
 		dropdown->option_count++;
 	}

@@ -216,19 +216,16 @@ typedef struct
 
 typedef struct
 {
-	vec3_t sysLightOrientation_r0;
-	float align0;
-	vec3_t sysLightOrientation_r1;
-	float align1;
-	vec3_t sysLightOrientation_r2;
-	float align2;
-	vec3_t sysLightPosition;
+	vec4_t sysLightColor;
+	
 	float sysLightRadius;
-	vec3_t sysLightColor;
-	float sysLightLinearAttenuation;
-	vec2_t sysLightShadowMapOrigin;
-	float sysLightQuadraticAttenuation;
-	float sysLightShadowMapSize;
+	float sysLightSpotCutoff;
+	float sysLightSpotCosCutoff;
+	float sysLightSpotBlend;
+	
+	float sysLightShadowV;
+	float sysLightShadowU;
+	float sysLightShadowSize;
 	int sysLightType;
 }gpu_lamp_t;
 

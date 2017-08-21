@@ -26,6 +26,8 @@
 #define light_SetLightType(x) glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, x)
 #define light_SetAreaType(x) glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, x)
 
+#define MAX_ACTIVE_LIGHTS 256
+
 
 /*#define light_CreateSpotLight(name, flags, position, orientation, color, distance, energy, spot_angle, spot_blend, lin_fallof, sqrd_fallof, scattering, volume_samples, shadow_map_res, tex_index) \
         light_CreateLight(name, (flags & (~(LIGHT_POINT | LIGHT_DIRECTIONAL))) | LIGHT_SPOT, position, orientation, color, distance, energy, spot_angle, spot_blend, lin_fallof, sqrd_fallof, scattering, volume_samples, MIN_VOLUME_SAMPLES, shadow_map_res, MIN_SHADOW_MAP_RES, 0, tex_index)
@@ -62,6 +64,8 @@ PEWAPI void light_UpdateLightFrustum(light_ptr light);
 PEWAPI void light_DestroyLight(light_ptr light);
 
 PEWAPI void light_UpdateGPULight(light_ptr light);
+
+void light_UploadLightIndexes();
 
 PEWAPI void light_BindLightCache();
 

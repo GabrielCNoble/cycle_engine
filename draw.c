@@ -1154,7 +1154,7 @@ void draw_CloseFrame()
 	//draw_debug_DrawVertexData(vec3(6.0, 0.0 ,0.0), model_GetVertexData("_convex_polygon_"));
 	//draw_debug_DrawVertexData(vec3(6.0, 0.0 ,0.0), model_GetVertexData("_cone_"));
 	//draw_test_DrawVertexData(vec3(-6.0, 0.0 ,0.0), model_GetVertexData("wow.obj"));
-	draw_debug_DrawVertexData(vec3(0.0, 0.0 ,-6.0), model_GetVertexData("stairs.obj"));
+	//draw_debug_DrawVertexData(vec3(0.0, 0.0 ,-6.0), model_GetVertexData("stairs.obj"));
 	
 	/*int i = text_GetFontIndex("consola");
 	font_t *f = &font_a.fonts[i];
@@ -2960,7 +2960,7 @@ void draw_ResolveGBuffer()
 				position = &active_light_a.position_data[i];				
 				glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 				
-				glUniform1iv(shader_a.shaders[stencil_lights_shader].sysLightIndexes, 1, &active_light_a.position_data[i].light_index);
+				glUniform1iv(shader_a.shaders[stencil_lights_shader].sysLightIndexes, 1, &position->light_index);
 				
 				//v[0] = 0;
 		 		//v[1] = 0;

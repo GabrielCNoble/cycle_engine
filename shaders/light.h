@@ -2,20 +2,26 @@
 #define LIGHT_SPOT 2
 #define LIGHT_DIRECTIONAL 4
 
-#define MAX_LIGHTS_PER_CALL 32
+#define MAX_ACTIVE_LIGHTS 4
 
 #extension GL_ARB_explicit_uniform_location : enable
 uniform int sysLightCount;
 
-uniform int sysLightIndexes[MAX_LIGHTS_PER_CALL];
+uniform int sysLightIndexes[MAX_ACTIVE_LIGHTS];
 
 struct sysLightParamsFields
 {
 	vec4 sysLightColor;
+	
 	float sysLightRadius;
 	float sysLightSpotCutoff;
 	float sysLightSpotCosCutoff;
 	float sysLightSpotBlend;
+	
+	float sysLightShadowV;
+	float sysLightShadowU;
+	float sysLightShadowSize;
+	int sysLightType;
 };
 
 
@@ -24,12 +30,12 @@ struct sysLightParamsFields
 
 layout (std140) uniform sysLightParamsUniformBlock
 {
-	sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
+	sysLightParamsFields sysLightParams[MAX_ACTIVE_LIGHTS];	
 };
 
 #else
 
-layout(std140) uniform sysLightParamsFields sysLightParams[MAX_LIGHTS_PER_CALL];	
+layout(std140) uniform sysLightParamsFields sysLightParams[MAX_ACTIVE_LIGHTS];	
 
 #endif
 
@@ -59,6 +65,11 @@ float sysSample2DShadowMap(float x, float y, float w, float h)
 float sysSample3DShadowMap(float x, float y, float w, float h)
 {
 	return 1.0;
+}
+
+ivec3 sysGetCluster(float x_coord, float y_coord, float view_z)
+{
+	return ivec3(0, 0, 0);
 }
 
 

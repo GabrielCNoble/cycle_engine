@@ -128,13 +128,11 @@ pew_Finish
 PEWAPI void pew_Finish()
 {
 	gui_Finish();
-	//physics_Finish();
 	armature_Finish();
 	camera_Finish();
 	scenegraph_Finish();
 	material_Finish();
 	vcache_Finish();
-	//particle_Finish();
 	texture_Finish();
 	shader_Finish();
 	light_Finish();

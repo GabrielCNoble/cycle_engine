@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "file.h"
 #include "macros.h"
+#include "light.h"
 
 //#define MAX_SHADER_COMPILE_TRIES 10
 
@@ -258,7 +259,7 @@ PEWAPI void shader_Init(char *path)
 		}
 		
 		
-		i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block);
+		/*i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block);
 		if(i != GL_INVALID_INDEX)
 		{
 			glGetActiveUniformBlockiv(init_shader->shader_ID, i, GL_UNIFORM_BLOCK_DATA_SIZE, &light_params_uniform_buffer_size);
@@ -267,14 +268,16 @@ PEWAPI void shader_Init(char *path)
 		{
 			printf("init shader appears to have problems! aborting...\n");
 			exit(-5);
-		}
+		}*/
 		
 		material_params_uniform_buffer_size = (material_params_uniform_buffer_size + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 	//	light_params_uniform_buffer_size = (light_params_uniform_buffer_size / 16 + uniform_buffer_alignment - 1) & (~(uniform_buffer_alignment - 1));
 		
 		
-		printf("%d %d\n", material_params_uniform_buffer_size, light_params_uniform_buffer_size);
-		light_params_uniform_buffer_size /= 32;
+		//light_params_uniform_buffer_size /= MAX_ACTIVE_LIGHTS;
+		
+		//printf("%d %d %d\n", material_params_uniform_buffer_size, sizeof(gpu_lamp_t) * MAX_ACTIVE_LIGHTS, light_params_uniform_buffer_size);
+		
 		
 	}
 	

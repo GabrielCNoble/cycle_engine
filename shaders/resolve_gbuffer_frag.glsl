@@ -20,7 +20,7 @@ uniform sampler2D sysTextureSampler2;
 #define SPOT_LIGHT_BIAS 0.0000009
 
 
-#define sysLightType int(gl_LightSource[1].spotCutoff)
+//#define sysLightType int(gl_LightSource[1].spotCutoff)
 //#define sysLightRadius gl_LightSource[0].diffuse.a
 #define sysUseShadows gl_LightSource[3].spotExponent
 #define sysProjectTexture gl_LightSource[4].spotExponent
@@ -380,11 +380,11 @@ void main()
 		light_pos = gl_LightSource[0].position.xyz;
 		light_vec = light_pos - p_texel.xyz;
 		
-		if(sysLightType == LIGHT_POINT)
+		if(sysLightParams[sysLightIndexes[0]].sysLightType == LIGHT_POINT)
 		{
 			intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndexes[0]].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 		}
-		else if(sysLightType == LIGHT_SPOT)
+		else if(sysLightParams[sysLightIndexes[0]].sysLightType == LIGHT_SPOT)
 		{
 			intensity = sysAttenuateSpot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, sysLightParams[sysLightIndexes[0]].sysLightSpotCosCutoff, sysLightParams[sysLightIndexes[0]].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
@@ -443,7 +443,7 @@ void main()
 		
 		shadow = 1.0;
 		
-		if(sysUseShadows)
+		/*if(sysUseShadows)
 		{
 			if(sysLightType == LIGHT_SPOT)
 			{
@@ -453,7 +453,7 @@ void main()
 			{
 				sample_3D_shadow_map(p_texel.xyz, n_texel.xyz, gl_LightSource[0].position.xyz, shadow);
 			}
-		}
+		}*/
 		
 		
 		//f_color = vec4(1.0) * ndf_ggx(n_texel.xyz, normalize(view_vec + light_vec), 0.5);
@@ -467,7 +467,7 @@ void main()
 
 	//}
 	
-	gl_FragColor = f_color;
+	gl_FragColor = f_color + vec4(0.0);
 }
 
 

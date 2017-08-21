@@ -12,6 +12,8 @@ extern renderer_t renderer;
 extern shader_array shader_a;
 light_array light_a;
 light_array active_light_a;
+
+int *active_light_indexes;
 extern camera_array camera_a;
 int max_lights_per_pass;
 
@@ -49,25 +51,10 @@ void light_Init()
 {
 	
 	mat3_t m;
-	
-	int i;
-	
-	
-	/*glGenTextures(1, &_512_extra_map);
-	glBindTexture(GL_TEXTURE_2D, _512_extra_map);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
- 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
- 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
- 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
- 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 512, 512, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);*/
  	
  	glGenFramebuffers(1, &extra_framebuffer);
- 	
-	//glGetIntegerv(GL_MAX_LIGHTS, &max_lights_per_pass);
 	
-	light_cache_size = 256;
+	light_cache_size = MAX_ACTIVE_LIGHTS;
 	cached_light_count = 0;
 	free_stack_top = -1;
 	free_stack = (int *)malloc(sizeof(int) * light_cache_size);
@@ -76,7 +63,7 @@ void light_Init()
 	{
 		glGenBuffers(1, &light_cache);
 		glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
-		glBufferData(GL_UNIFORM_BUFFER, light_params_uniform_buffer_size * light_cache_size, NULL, GL_DYNAMIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(gpu_lamp_t) * light_cache_size, NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 	
@@ -94,16 +81,18 @@ void light_Init()
 	light_a.stack_top = -1;
 	light_ResizeLightArray(&light_a, 8);
 	
-	affecting_lights.lights = NULL;
-	affecting_lights.count = 0;
-	light_ResizeAffectingLightList(16);
+	//affecting_lights.lights = NULL;
+	//affecting_lights.count = 0;
+	//light_ResizeAffectingLightList(16);
 	
 	active_light_a.shadow_data=NULL;
 	active_light_a.position_data=NULL;
 	active_light_a.extra_data=NULL;
 	active_light_a.params=NULL;
 	active_light_a.light_count=0;
-	light_ResizeLightArray(&active_light_a, 8);
+	light_ResizeLightArray(&active_light_a, MAX_ACTIVE_LIGHTS);
+	
+	active_light_indexes = (int *)malloc(sizeof(int) * MAX_ACTIVE_LIGHTS);
 	
 	
 	m=mat3_t_id();
@@ -160,6 +149,8 @@ void light_Finish()
 	free(active_light_a.position_data);
 	free(active_light_a.extra_data);
 	free(active_light_a.params);
+	
+	free(active_light_indexes);
 	return;
 }
 
@@ -580,6 +571,12 @@ void light_SortLights()
 	return;
 }
 
+void light_UploadLightIndexes()
+{
+	//glUniform1iv(shader_a.shaders[renderer.active_shader_index].sysLightIndexes, active_light_a.light_count, active_light_indexes);
+	glUniform1i(shader_a.shaders[renderer.active_shader_index].sysLightCount, active_light_a.light_count);
+}
+
 PEWAPI void light_BindLightCache()
 {
 	//glUniformBlockBinding(shader_a.shaders[renderer.active_shader_index].shader_ID, 1, LIGHT_PARAMS_BINDING);
@@ -596,6 +593,7 @@ PEWAPI void light_UpdateGPULight(light_ptr light)
 {
 	int index;
 	void *p;
+	gpu_lamp_t *lamp;
 	
 	if(!(light.position_data->bm_flags & LIGHT_CACHED))
 	{
@@ -622,52 +620,20 @@ PEWAPI void light_UpdateGPULight(light_ptr light)
 	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
 	p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	
-	p = (char *)p + light_params_uniform_buffer_size * index;
+	lamp = (gpu_lamp_t *)((char *)p + sizeof(gpu_lamp_t) * index);
 	
-	/*memcpy(p, &light.extra_data->light_projection_matrix.floats[0][0], sizeof(mat4_t));
+	lamp->sysLightColor.r = (float)light.params->r / 255.0;
+	lamp->sysLightColor.g = (float)light.params->g / 255.0;
+	lamp->sysLightColor.b = (float)light.params->b / 255.0;
+	lamp->sysLightColor.a = 1.0;
 	
-	p = ((char *)p) + type_offsets[OFFSET_MAT4];*/
-	
-	/*((vec4_t *)p)->x = light.position_data->world_orientation.floats[0][0];
-	((vec4_t *)p)->y = light.position_data->world_orientation.floats[0][1];
-	((vec4_t *)p)->z = light.position_data->world_orientation.floats[0][2];
-	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	((vec4_t *)p)->x = light.position_data->world_orientation.floats[1][0];
-	((vec4_t *)p)->y = light.position_data->world_orientation.floats[1][1];
-	((vec4_t *)p)->z = light.position_data->world_orientation.floats[1][2];
-	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	((vec4_t *)p)->x = light.position_data->world_orientation.floats[2][0];
-	((vec4_t *)p)->y = light.position_data->world_orientation.floats[2][1];
-	((vec4_t *)p)->z = light.position_data->world_orientation.floats[2][2];
-	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	((vec3_t *)p)->x = light.position_data->world_position.x;
-	((vec3_t *)p)->y = light.position_data->world_position.y;
-	((vec3_t *)p)->z = light.position_data->world_position.z;
-	p = ((char *)p) + sizeof(float) * 3;*/
+	lamp->sysLightRadius = light.position_data->radius;
+	lamp->sysLightSpotCutoff = (float)light.position_data->spot_co;
+	lamp->sysLightSpotCosCutoff = cos(DegToRad(((float)light.position_data->spot_co)));	
+	lamp->sysLightSpotBlend = (float)light.params->spot_e;
 	
 	
-	((vec3_t *)p)->r = (float)light.params->r / 255.0;
-	((vec3_t *)p)->g = (float)light.params->g / 255.0;
-	((vec3_t *)p)->b = (float)light.params->b / 255.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	*((float *)p) = light.position_data->radius;	
-	p = ((char *)p) + sizeof(float);
-	
-	*((float *)p) = (float)light.position_data->spot_co;
-	p = ((char *)p) + sizeof(float);
-	
-	*((float *)p) = cos(DegToRad(((float)light.position_data->spot_co)));	
-	p = ((char *)p) + sizeof(float);
-	
-	*((float *)p) = (float)light.params->spot_e;	
-	p = ((char *)p) + sizeof(float);
+	lamp->sysLightType = light.position_data->bm_flags & (LIGHT_POINT | LIGHT_SPOT | LIGHT_DIRECTIONAL);
 	
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
@@ -676,6 +642,7 @@ void light_CacheGPULight(light_ptr light)
 {
 	int index;
 	void *p;
+	gpu_lamp_t *lamp;
 	if(free_stack_top >= 0)
 	{
 		index = free_stack[free_stack_top--];
@@ -686,54 +653,24 @@ void light_CacheGPULight(light_ptr light)
 	}
 	
 	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
+	//lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	
+	//lamp += index;
 	p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	
-	p = (char *)p + light_params_uniform_buffer_size * index;
+	lamp = (gpu_lamp_t *)((char *)p + sizeof(gpu_lamp_t) * index);
 	
-	/*memcpy(p, &light.extra_data->light_projection_matrix.floats[0][0], sizeof(mat4_t));
+	lamp->sysLightColor.r = (float)light.params->r / 255.0;
+	lamp->sysLightColor.g = (float)light.params->g / 255.0;
+	lamp->sysLightColor.b = (float)light.params->b / 255.0;
+	lamp->sysLightColor.a = 1.0;
 	
-	p = ((char *)p) + type_offsets[OFFSET_MAT4];*/
+	lamp->sysLightRadius = light.position_data->radius;
+	lamp->sysLightSpotCutoff = (float)light.position_data->spot_co;
+	lamp->sysLightSpotCosCutoff = cos(DegToRad(((float)light.position_data->spot_co)));	
+	lamp->sysLightSpotBlend = (float)light.params->spot_e;
 	
-	/*((vec4_t *)p)->x = light.position_data->world_orientation.floats[0][0];
-	((vec4_t *)p)->y = light.position_data->world_orientation.floats[0][1];
-	((vec4_t *)p)->z = light.position_data->world_orientation.floats[0][2];
-	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	((vec4_t *)p)->x = light.position_data->world_orientation.floats[1][0];
-	((vec4_t *)p)->y = light.position_data->world_orientation.floats[1][1];
-	((vec4_t *)p)->z = light.position_data->world_orientation.floats[1][2];
-	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	((vec4_t *)p)->x = light.position_data->world_orientation.floats[2][0];
-	((vec4_t *)p)->y = light.position_data->world_orientation.floats[2][1];
-	((vec4_t *)p)->z = light.position_data->world_orientation.floats[2][2];
-	((vec4_t *)p)->w = 0.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	((vec3_t *)p)->x = light.position_data->world_position.x;
-	((vec3_t *)p)->y = light.position_data->world_position.y;
-	((vec3_t *)p)->z = light.position_data->world_position.z;
-	p = ((char *)p) + sizeof(float) * 3;*/
-	
-	
-	((vec3_t *)p)->r = (float)light.params->r / 255.0;
-	((vec3_t *)p)->g = (float)light.params->g / 255.0;
-	((vec3_t *)p)->b = (float)light.params->b / 255.0;
-	p = ((char *)p) + sizeof(float) * 4;
-	
-	*((float *)p) = light.position_data->radius;	
-	p = ((char *)p) + sizeof(float);
-	
-	*((float *)p) = (float)light.position_data->spot_co;
-	p = ((char *)p) + sizeof(float);
-	
-	*((float *)p) = cos(DegToRad(((float)light.position_data->spot_co)));	
-	p = ((char *)p) + sizeof(float);
-	
-	*((float *)p) = (float)light.params->spot_e;	
-	p = ((char *)p) + sizeof(float);
+	lamp->sysLightType = light.position_data->bm_flags & (LIGHT_POINT | LIGHT_SPOT | LIGHT_DIRECTIONAL);
 	
 	light.position_data->cache_index = index;
 	light.position_data->bm_flags |= LIGHT_CACHED;
@@ -749,7 +686,7 @@ void light_DropGPULight(light_ptr light)
 	{
 		free_stack_top++;
 		free_stack[free_stack_top] = light.position_data->cache_index;
-		light.position_data->bm_flags &= ~MATERIAL_Cached;
+		light.position_data->bm_flags &= ~LIGHT_CACHED;
 	}
 	
 }

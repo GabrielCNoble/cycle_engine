@@ -258,11 +258,11 @@ void add_to_world_fn(swidget_t *swidget, void *data, int i)
 		switch(i)
 		{
 			case 0:
-				light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 50.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+				light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.3, 0.4, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 			break;
 			
 			case 1:
-				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 2.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 2.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 			break;
 		}
 	}
@@ -316,11 +316,11 @@ void add_light(swidget_t *swidget, void *data, int i)
 	switch(i)
 	{
 		case 0:
-			light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 50.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+			light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.2, 0.3, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		break;
 			
 		case 1:
-			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS | LIGHT_DRAW_VOLUME, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 25.0, 0.01, 0.002, 0.000, 0.01, 4, 256, -1);
+			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 25.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		break;	
 	}
 }
@@ -1083,14 +1083,6 @@ void open_add_to_world_menu()
 	gui_AddOption(test, "Cube");
 	gui_AddOption(test, "Cylinder");
 
-	
-	/*wdropdown_t *test2 = gui_NestleDropDown(test, 2, "test1", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 200, NULL, NULL);
-	gui_AddOption(test2, "op8");
-	gui_AddOption(test2, "op9");
-	gui_AddOption(test2, "op10");
-	gui_AddOption(test2, "op11");
-	gui_AddOption(test2, "op12");
-	gui_AddOption(test2, "op13");*/
 }
 
 void close_add_to_world_menu()
@@ -2107,7 +2099,7 @@ void ginit()
 	{	
 		//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 6.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 30.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 6.0, 0.0, 1.0), &id, vec3(1.0, 0.5, 0.5), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
@@ -2120,10 +2112,10 @@ void ginit()
 		//light_CreatePointLight("lightwow4", LIGHT_GENERATE_SHADOWS, vec4(0.0, -2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 	}
 	
-	mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
+	/*mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,2.0), BRUSH_CUBE, material_GetMaterialIndex("red"), 0);
 	
-	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 2.0 ,1.0), BRUSH_CUBE, material_GetMaterialIndex("blue"), 0);
+	brush_CreateBrush("brush", vec3(0.0, 0.0, 0.0), &id, vec3(1.0, 2.0 ,1.0), BRUSH_CUBE, material_GetMaterialIndex("blue"), 0);*/
 	
 	/*brush_CreateBrush("brush2", vec3(5.0, 0.0, 0.0), &id, vec3(1.0, 1.0 ,1.0), BRUSH_CUBE, 0);*/
 	
