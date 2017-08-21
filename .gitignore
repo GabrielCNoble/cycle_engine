@@ -1,6 +1,7 @@
 *.o
 *.exe
 *.gch
+
 models2/
 textures2/
 
