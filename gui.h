@@ -9,147 +9,6 @@
 #include "gmath/vector.h"
 #include "gmath/matrix.h"
 
-/*enum WINDOW_FLAGS
-{
-	WINDOW_STATIC_SIZE=1,					
-	WINDOW_HAS_HEADER=2,
-	WINDOW_TRANSPARENT=4,	
-};*/
-
-/*enum WINDOW_STATUS
-{
-	WINDOW_VISIBLE=1,
-	WINDOW_SHOULD_CLOSE=2,
-	WINDOW_MOUSE_OVER=4,
-	WINDOW_MOUSE_OVER_HEADER=8,
-	WINDOW_WINDOW_GRABBED=16
-};*/
-
-/*enum WINDOW_VAR_TYPE
-{
-	VAR_CHAR=0,
-	VAR_SHORT=1,
-	VAR_INT=2,
-	VAR_FLOAT=3,
-	VAR_PTR=4
-};*/
-
-
-	
-
-/*typedef struct window_node_t
-{
-	int type;
-	struct window_node_t *parent;
-	void (*node_fn)(struct window_node_t *, void *);
-	int max_children;
-	int child_count;
-	struct node_t *children;
-}window_node_t;*/
-
-
-
-/*typedef struct int_var_t
-{
-	int value;
-}int_var_t;
-
-typedef struct float_var_t
-{
-	float value;
-}float_var_t;
-
-typedef struct ptr_var_t
-{
-	void *value;
-}ptr_var_t;
-
-typedef union var_t_value
-{
-	int i_val;
-	float f_val;
-	void *ptr_val;
-}var_t_value;
-
-typedef struct var_t
-{
-	char *name;
-	int type;
-	var_t_value value;
-}var_t;*/
-
-/*typedef struct gvar_t
-{
-	char *name;
-	int type;
-	void *addr;
-}gvar_t;*/
-
-/*typedef struct window_class
-{
-	short bm_flags;
-	char *class_name;
-	int var_count;
-	int *var_types;
-}window_class;*/
-
-
-/*typedef struct window_t
-{
-	void (*win_fn)(struct window_t *);
-	float rmouse_x;
-	float rmouse_y;
-	float x;
-	float y;
-	float width;
-	float height;
-	float alpha;
-	short bm_status;
-	short bm_flags;
-	int max_vars;
-	int var_count;
-	char *name;
-}window_t;*/
-
-/*typedef struct gelem_t
-{
-	float rmouse_x;
-	float rmouse_y;
-	float x;
-	float y;
-	float width;
-	float height;
-	float alpha;
-	int max_gvar_count;
-	int gvar_count;
-	char *name;
-	gvar_t *gvars;				
-	int vars_stack_size;
-	void *vars_stack;			
-	void (*gelem_proc_fn)(struct gelem_t *);		
-	void (*gelem_strt_fn)(struct gelem_t *);		
-	short bm_status;
-	short bm_flags;
-}gelem_t;*/
-
-
-
-/*typedef struct gelem_array
-{
-	int array_size;
-	int gelem_count;
-	gelem_t *gelems;
-}gelem_array;*/
-
-
-/*typedef struct window_class_array
-{
-	int array_size;
-	int class_count;
-	window_class *classes;
-}window_class_array;*/
-
-
 
 enum WIDGET_TYPES
 {
@@ -194,29 +53,40 @@ enum WIDGET_FLAGS
 	WIDGET_RECEIVED_RIGHT_BUTTON_DOWN = 1<<20,
 	WIDGET_RECEIVED_RIGHT_BUTTON_UP = 1<<21,
 	
-	WIDGET_HIGHTLIGHT_BORDERS = 1<<22,			/* whether the borders of the widget should be highlighted when the mouse 
-												   hovers over it */
+	//WIDGET_HIGHTLIGHT_BORDERS = 1<<22,			/* whether the borders of the widget should be highlighted when the mouse 
+												   //hovers over it */
 												   
 	WIDGET_IGNORE_MOUSE = 1<<23,				/* wheter this widget should block any mouse action upon the world when
 												   the cursor is within its limits... */
 												   
-	WIDGET_KEEP_RELATIVE_Y_POSITION = 1<<24,		/* wheter the subwidget should keep its relative position within the widget or not.
-												   The relative position depends on the dimensions of the widget. If the subwidget
-												   keeps relative instead of absolute position within the widget, it will 'slide'
-												   when the widget gets resized instead of remaining 'stuck' to its original
-												   position... */
-	WIDGET_KEEP_RELATIVE_X_POSITION = 1<<25,											   
+	//WIDGET_KEEP_RELATIVE_Y_POSITION = 1<<24,		/* wheter the subwidget should keep its relative position within the widget or not.
+												   //The relative position depends on the dimensions of the widget. If the subwidget
+												  // keeps relative instead of absolute position within the widget, it will 'slide'
+												 //  when the widget gets resized instead of remaining 'stuck' to its original
+												 //  position... */
+	//WIDGET_KEEP_RELATIVE_X_POSITION = 1<<25,											   
 												   			
 												   
-	WIDGET_LOCK_X_SCALE = 1 << 26,
-	WIDGET_LOCK_Y_SCALE = 1 << 27,
+	//WIDGET_LOCK_X_SCALE = 1 << 26,
+	//WIDGET_LOCK_Y_SCALE = 1 << 27,
 	WIDGET_NO_BORDERS = 1 << 28,			/* this forces the engine to ignore when the mouse goes over headers and borders (to allow
 											   subwidgets to fit perfectly within widgets... */
 											   
 	WIDGET_DELETE = 1 << 29,			
-	WIDGET_LEFT_BUTTON_DOWN = 1 << 30,							   
-												   
-												   											   								   											   
+	WIDGET_LEFT_BUTTON_DOWN = 1 << 30,			
+	//WIDGET_HORIZONTAL_BORDERS_SHARED = 1 << 22,
+	//WIDGET_VERTICAL_BORDERS_SHARED = 1 << 31,
+					   											 										   											   								   											   
+};
+
+enum WIDGET_BORDERS
+{
+	WIDGET_LEFT_BORDER = 1,
+	WIDGET_RIGHT_BORDER = 1 << 1,
+	WIDGET_TOP_BORDER = 1 << 2,
+	WIDGET_BOTTOM_BORDER = 1 << 3,
+	WIDGET_HORIZONTAL_BORDERS = 1 << 4,
+	WIDGET_VERTICAL_BORDERS = 1 << 5,
 };
 
 
@@ -327,10 +197,8 @@ typedef struct swidget_t
 	
 	float relative_mouse_x;
 	float relative_mouse_y;
-	float r;					//
-	float g;					//
-	float b;					//
-	float a;					// those could be chars...
+	int bm_border_hooks;		/* to which borders this subwidget is hooked... */
+	
 	char *name;
 	int type;
 	int bm_flags;
@@ -350,24 +218,28 @@ typedef struct widget_t
 
 	float cw;
 	float ch;
-	//float relative_x;
-	//float relative_y;
-	//float relative_w;
-	//float relative_h;
 	
 	/* values within the range [-1.0, 1.0] are inside the widget, 
 	regardless its dimensions... */
 	float relative_mouse_x;
 	float relative_mouse_y;
+	float hx;
+	float lx;
+	float hy;
+	float ly;
 	
 	float r;
 	float g;
 	float b;
 	float a;
-	//wcolor_t color;
+	
 	unsigned int tex_handle;			/* if this handle is different from -1, the engine will use as a GL texture handle. */
 	struct widget_t *next;
 	struct widget_t *prev;
+	struct widget_t *left_border;		/* those will be different from NULL in case they share an border... */
+	struct widget_t *right_border;
+	struct widget_t *top_border;
+	struct widget_t *bottom_border;
 	int sub_widgets_count;
 	swidget_t *sub_widgets;
 	swidget_t *last_added;
@@ -375,6 +247,7 @@ typedef struct widget_t
 	void (*widget_callback)(widget_t *);
 	char *name;
 	int bm_flags;
+	int active_borders;
 	short type;
 	short widget_count;
 	char *text_buffer;
@@ -483,11 +356,13 @@ PEWAPI void gui_Finish();
 
 PEWAPI widget_t *gui_CreateWidget(char *name, int bm_flags, float x, float y, float w, float h, float r, float g, float b, float a, unsigned int tex_handle, int b_focused, void (*widget_callback)(widget_t *));
 
+PEWAPI void gui_ShareBorders(widget_t *a, widget_t *b, int a_border, int b_border);
+
 PEWAPI void gui_AddButton(widget_t *widget, char *name, int bm_flags, int bm_button_flags, float x, float y, float w, float h, float r, float g, float b, float a, void *data, void (*widget_callback)(swidget_t *, void *));
 
 PEWAPI void gui_AddVar(widget_t *widget, char *name, int bm_flags, int var_flags, int type, float x, float y, float w, float h,  void *var);
 
-PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, float x, float y, float w, void *data, void (*dropdown_callback)(swidget_t *, void *, int));
+PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, int bm_border_hooks, float x_offset, float y_offset, float w, void *data, void (*dropdown_callback)(swidget_t *, void *, int));
 
 PEWAPI void gui_AddOption(wdropdown_t *dropdown, char *name);
 
@@ -497,7 +372,7 @@ PEWAPI void gui_AddSeparator(wdropdown_t *dropdown, char *name);
 
 //PEWAPI widget_t *gui_AddNestedDropDown(wdropdown_t *dropdown, int option_index, float width);
 
-PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, float x, float y, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int));
+PEWAPI wtabbar_t *gui_AddTabBar(widget_t *widget, char *name, int bm_flags, int bm_border_hooks, float x_offset, float y_offset, float w, float h, void (*tabbar_callback)(swidget_t *, void *, int));
 
 PEWAPI int gui_AddTab(wtabbar_t *tabbar, char *name, int tab_flags);
 

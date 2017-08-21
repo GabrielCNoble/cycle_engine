@@ -33,6 +33,8 @@ extern widget_t *widgets;
 extern widget_t *top_widget;
 extern int widget_count;
 
+extern swidget_t *active_swidget;
+
 extern unsigned int screen_area_mesh_gpu_buffer;
 
 //extern float screen_quad[3 * 4];
@@ -4689,7 +4691,7 @@ PEWAPI void draw_DrawWidgets()
 		
 		}
 		
-		if(cwidget->bm_flags & WIDGET_HIGHTLIGHT_BORDERS)
+		if(!(cwidget->bm_flags & WIDGET_NO_BORDERS))
 		{
 			sh0 = y + hh;
 			sh1 = y - hh;
@@ -4751,6 +4753,15 @@ PEWAPI void draw_DrawWidgets()
 			//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			//if(stencil_val == 255) stencil_val--;
 			//draw_DrawString(ui_font, 16, 0, 0, 500, vec3(1.0, 1.0, 1.0), "test");
+			
+			/*if(cswidget == active_swidget)
+			{
+				glDisable(GL_STENCIL_TEST);
+			}
+			else
+			{
+				glEnable(GL_STENCIL_TEST);
+			}*/
 			
 			_draw_nested_swidgets:
 			
@@ -5154,19 +5165,31 @@ PEWAPI void draw_DrawWidgets()
 					hw = dropdown->swidget.w / 2.0;
 					hh = OPTION_HEIGHT / 2.0;
 					
-					
-					//glStencilFunc(GL_EQUAL, base_stencil, 0xff);
-					//glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
-					
-					//option_height = dropdown->swidget.h / (float)dropdown->option_count;
-					
 					x0 = dropdown->swidget.x + x - hw;
 					x1 = dropdown->swidget.x + x + hw;
 					
 					
 					if(!(dropdown->bm_flags & DROP_DOWN_NO_HEADER))
 					{
-						glColor3f(0.3, 0.3, 0.3);
+						
+						if(active_swidget == cswidget)
+						{
+							glDisable(GL_STENCIL_TEST);
+						}
+						
+						if(dropdown->swidget.bm_flags & WIDGET_MOUSE_OVER)
+						{
+							r = 0.4;
+							g = 0.4;
+							b = 0.4;
+						}
+						else
+						{
+							r = 0.3;
+							g = 0.3;
+							b = 0.3;
+						}
+						glColor3f(r, g, b);
 						
 						y0 = dropdown->swidget.y + y - hh;
 						y1 = dropdown->swidget.y + y + hh;
@@ -5177,6 +5200,12 @@ PEWAPI void draw_DrawWidgets()
 						
 						glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+						
+						
+						glColor3f(r * 0.5, g * 0.5, b * 0.5);
+						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+						glRectf(x0 + 1.0, y0 + 1.0, x1, y1);
+						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 						
 						if(dropdown->bm_flags & DROP_DOWN_TITLE)
 						{
@@ -5206,15 +5235,15 @@ PEWAPI void draw_DrawWidgets()
 							{
 								if(dropdown->options[i].bm_flags & OPTION_MOUSE_OVER)
 								{
-									r = 0.5;
-									g = 0.5;
-									b = 0.5;
-								}
-								else
-								{
 									r = 0.4;
 									g = 0.4;
 									b = 0.4;
+								}
+								else
+								{
+									r = 0.3;
+									g = 0.3;
+									b = 0.3;
 								}
 								glColor3f(r, g, b);
 								
@@ -5222,12 +5251,19 @@ PEWAPI void draw_DrawWidgets()
 								glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 								glRectf(x0, y0 - y1 - OPTION_HEIGHT, x1, y0 - y1);
 								
+								glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
+								glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+								
+								glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+								glColor3f(0.15, 0.15, 0.15);
+								glRectf(x0, y0 - y1 - OPTION_HEIGHT, x1, y0 - y1);
+								glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+								glColor3f(r, g, b);
+								
 								
 								
 								if(dropdown->options[i].nested)
 								{
-									glDisable(GL_STENCIL_TEST);
-									
 									if(dropdown->options[i].bm_flags & OPTION_MOUSE_OVER)
 									{
 										glColor3f(1.0, 1.0, 1.0);
@@ -5237,21 +5273,14 @@ PEWAPI void draw_DrawWidgets()
 										glColor3f(r - 0.08, g - 0.08, b - 0.08);
 									}
 									
-									
-									//glColor3f(0.1, 0.1, 0.1);
-									
 									glBegin(GL_TRIANGLES);
 									glVertex3f(x1 - 10, y0 - y1 - 5, 0.0);
 									glVertex3f(x1 - 10, y0 - y1 - OPTION_HEIGHT + 5, 0.0);
 									glVertex3f(x1, y0 - y1 - OPTION_HEIGHT / 2.0, 0.0);
 									glEnd();
 									glColor3f(r, g, b);
-									glEnable(GL_STENCIL_TEST);
 								}
 								
-								
-								glStencilFunc(GL_EQUAL, base_stencil + 1, 0xff);
-								glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 								
 								draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y0 - y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->options[i].name);
 								y1 += OPTION_HEIGHT;
@@ -5279,6 +5308,7 @@ PEWAPI void draw_DrawWidgets()
 					{
 						draw_DrawString(ui_font, 16, x0 + renderer.screen_width * 0.5 + 1,  (y1) + renderer.screen_height * 0.5 - 2, 500, vec3(1.0, 1.0, 1.0), "%s", dropdown->active_option->name);
 					}*/
+					glEnable(GL_STENCIL_TEST);
 					
 					if(dropdown->options[dropdown->cur_option].nested && dropdown->bm_flags & DROP_DOWN_DROPPED)
 					{

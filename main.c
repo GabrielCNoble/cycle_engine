@@ -101,6 +101,11 @@ widget_t *delete_menu = NULL;
 widget_t *add_to_world_menu = NULL;
 
 widget_t *viewport;
+widget_t *top_menu;
+widget_t *t_widget;
+widget_t *l_widget;
+widget_t *r_widget;
+widget_t *b_widget;
 
 int max_records;
 int record_count;
@@ -374,360 +379,354 @@ void gmain(float delta_time)
 	{
 		editor_state = "editing";
 		
-		if(input_GetKeyStatus(SDL_SCANCODE_SPACE) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
+		//if(viewport->bm_flags & WIDGET_MOUSE_OVER)
 		{
-			open_add_to_world_menu();
-			close_delete_menu();
-		}
-		else if(input_GetKeyStatus(SDL_SCANCODE_D) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
-		{
-			close_delete_menu();
-			close_add_to_world_menu();
-			
-			copy_selection();
-		}
-		else if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
-		{
-			close_add_to_world_menu();
-			close_delete_menu();
-			
-			if(!(input.bm_mouse & MOUSE_OVER_WIDGET))
+			if(input_GetKeyStatus(SDL_SCANCODE_SPACE) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
 			{
-				
-				if(selected_position)
-				{
-					check_3d_handle(handle_3d_mode, (viewport->relative_mouse_x * 0.5 + 0.5) * renderer.width, (viewport->relative_mouse_y * 0.5 + 0.5) * renderer.height);
-				}
-				
-				if(!handle_3d_bm)
-				{
-					r = scenegraph_Pick((viewport->relative_mouse_x * 0.5 + 0.5) * renderer.width, (viewport->relative_mouse_y * 0.5 + 0.5) * renderer.height);	
-					switch(r.type)
-					{
-						case PICK_ENTITY:
-							e = entity_GetEntityByIndex(r.index);
-							selected_position = &e.position_data->world_position;
-							selected_orientation = &e.position_data->world_orientation;
-							selected_name = e.extra_data->name;
-							
-							cr = r;
-							
-						goto _add_selection;
-						
-						case PICK_LIGHT:
-							l = light_GetLightByIndex(r.index);
-							selected_position = &l.position_data->world_position.vec3;
-							selected_orientation = &l.position_data->world_orientation;
-							selected_name = l.extra_data->name;
-							
-							cr = r;
-							
-						goto _add_selection;
-						
-						case PICK_BMODEL:
-							b = brush_GetBrushByIndex(r.index);
-							selected_position = &b.position_data->position;
-							selected_orientation = &b.position_data->orientation;
-							selected_name = b.position_data->name;
-							
-							cr = r;
-						
-						goto _add_selection;
-						
-						case 0xffffffff:
-							_add_selection:
-							
-							if(!(input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED))
-							{
-								clear_selection_list();							
-							}
-							
-							add_selection(&cr);	
-								
-						break;
-					}
-				}
+				open_add_to_world_menu();
+				close_delete_menu();
 			}
-			
-			//destroy_option_dropdown();
-			//close_add_to_world_menu();
-			
-		}
-		/*else if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
-		{
-			create_option_dropdown();
-		}*/
-		else if(input.bm_mouse & MOUSE_MIDDLE_BUTTON_CLICKED)
-		{
-			ginput(delta_time);
-		}
-		else if(input_GetKeyStatus(SDL_SCANCODE_A) & KEY_JUST_PRESSED)
-		{
-			
-			clear_selection_list();
-			
-			selected_position = NULL;
-			selected_orientation = NULL;
-			selected_name = NULL;
-			handle_3d_bm = 0;
-			cr.index = -1;
-			cr.type = 0;
-		}
-		else if(input_GetKeyStatus(SDL_SCANCODE_DELETE) & KEY_JUST_PRESSED)
-		{
-			if(cr.type > 0)
+			else if(input_GetKeyStatus(SDL_SCANCODE_D) & KEY_JUST_PRESSED && input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED)
+			{
+				close_delete_menu();
+				close_add_to_world_menu();
+				copy_selection();
+			}
+			else if(input_GetMouseButton(SDL_BUTTON_LEFT) & MOUSE_LEFT_BUTTON_JUST_CLICKED)
 			{
 				close_add_to_world_menu();
-				open_delete_menu();
+				close_delete_menu();
+				
+				if(!(input.bm_mouse & MOUSE_OVER_WIDGET))
+				{
+					
+					if(selected_position)
+					{
+						check_3d_handle(handle_3d_mode, (viewport->relative_mouse_x * 0.5 + 0.5) * renderer.width, (viewport->relative_mouse_y * 0.5 + 0.5) * renderer.height);
+					}
+					
+					if(!handle_3d_bm)
+					{
+						r = scenegraph_Pick((viewport->relative_mouse_x * 0.5 + 0.5) * renderer.width, (viewport->relative_mouse_y * 0.5 + 0.5) * renderer.height);	
+						switch(r.type)
+						{
+							case PICK_ENTITY:
+								e = entity_GetEntityByIndex(r.index);
+								selected_position = &e.position_data->world_position;
+								selected_orientation = &e.position_data->world_orientation;
+								selected_name = e.extra_data->name;
+								
+								cr = r;
+								
+							goto _add_selection;
+							
+							case PICK_LIGHT:
+								l = light_GetLightByIndex(r.index);
+								selected_position = &l.position_data->world_position.vec3;
+								selected_orientation = &l.position_data->world_orientation;
+								selected_name = l.extra_data->name;
+								
+								cr = r;
+								
+							goto _add_selection;
+							
+							case PICK_BMODEL:
+								b = brush_GetBrushByIndex(r.index);
+								selected_position = &b.position_data->position;
+								selected_orientation = &b.position_data->orientation;
+								selected_name = b.position_data->name;
+								
+								cr = r;
+							
+							goto _add_selection;
+							
+							case 0xffffffff:
+								_add_selection:
+								
+								if(!(input_GetKeyStatus(SDL_SCANCODE_LSHIFT) & KEY_PRESSED))
+								{
+									clear_selection_list();							
+								}
+								
+								add_selection(&cr);	
+									
+							break;
+						}
+					}
+				}
+				
+			}
+			
+			else if(input.bm_mouse & MOUSE_MIDDLE_BUTTON_CLICKED)
+			{
+				ginput(delta_time);
+			}
+			else if(input_GetKeyStatus(SDL_SCANCODE_A) & KEY_JUST_PRESSED)
+			{
+				
+				clear_selection_list();
+				
 				selected_position = NULL;
 				selected_orientation = NULL;
 				selected_name = NULL;
 				handle_3d_bm = 0;
+				cr.index = -1;
+				cr.type = 0;
 			}
-		}
-		
-		if(selected_position)
-		{	
-		
-			if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED && handle_3d_bm)
+			else if(input_GetKeyStatus(SDL_SCANCODE_DELETE) & KEY_JUST_PRESSED)
 			{
-				p.x = selected_position->x;
-				p.y = selected_position->y;
-				p.z = selected_position->z;
-				p.w = 1.0;
-				
-				mat4_t_mult_fast(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
-				
-				MultiplyVector4(&model_view_projection_matrix, &p);
-				
-				
-				
-				//mat4_t_vec4_t_mult(&model_view_projection_matrix, &p);
-				
-				p.x /= p.w;
-				p.y /= p.w;
-				
-				screen_x = p.x;
-				screen_y = p.y;
-				
-				mouse_x = input.normalized_mouse_x;
-				mouse_y = input.normalized_mouse_y;
-				
-				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+				if(cr.type > 0)
 				{
-					grab_offset_x = mouse_x - screen_x;
-					grab_offset_y = mouse_y - screen_y;
-					cur_grab_offset_x = grab_offset_x;
-					cur_grab_offset_y = grab_offset_y; 
-					last_grab_offset_x = grab_offset_x;
-					last_grab_offset_y = grab_offset_y; 
-					
+					close_add_to_world_menu();
+					open_delete_menu();
+					selected_position = NULL;
+					selected_orientation = NULL;
+					selected_name = NULL;
+					handle_3d_bm = 0;
 				}
-				
-				delta_x = (mouse_x - screen_x - grab_offset_x) * p.z;
-				delta_y = (mouse_y - screen_y - grab_offset_y) * p.z;
-				
-				//p.z /= p.w;
-				
-				
-				
-				switch(handle_3d_mode)
-				{
-					case HANDLE_3D_TRANSLATION:
-					case HANDLE_3D_SCALE:
-						if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
-						{
-							v = vec3(1.0, 0.0, 0.0);
-						}
-						if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
-						{
-							v = vec3(0.0, 1.0, 0.0);
-						}
-						if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
-						{
-							v = vec3(0.0, 0.0, 1.0);
-						}
-						
-						p = vec4(v.x, v.y, v.z, 0.0);
-						MultiplyVector4(&active_camera->world_to_camera_matrix, &p);
-						//mat4_t_vec4_t_mult(&active_camera->world_to_camera_matrix, &p);
-						f = sqrt(p.x * p.x + p.y * p.y);
-						p.x /= f;
-						p.y /= f;
-						f = p.x * delta_x + p.y * delta_y;
-						
-						if(fabs(f) >= snap_offset)
-						{
-							if(snap_offset > 0.0)
-							{
-								f *= snap_offset / fabs(f);
-							}
-							
-							if(handle_3d_mode == HANDLE_3D_TRANSLATION)
-							{
-								if(cr.type == PICK_ENTITY)
-								{
-									entity_TranslateEntity(e, v, f, 0);
-								}
-								else if(cr.type == PICK_LIGHT)
-								{
-									light_TranslateLight(l, v, f, 0);
-								}
-								else
-								{
-									v.x *= f;
-									v.y *= f;
-									v.z *= f;
-									brush_TranslateBrush(b, v);
-								}
-							}
-							else
-							{
-								if(cr.type == PICK_BMODEL)
-								{
-									brush_ScaleBrush(b, v, f);
-									grab_offset_x = mouse_x - screen_x;
-									grab_offset_y = mouse_y - screen_y;
-								}
-							}
-							
-							
-						}
-						
-					break;
-					
-					case HANDLE_3D_ROTATION:
-						
-						//delta_y /= sqrt(delta_x * delta_x + delta_y * delta_y);
-						
-						//printf("%f\n", delta_y);
-						//delta_angle = 0.0;
-						/*f = asin(delta_y);
-						
-						
-						delta_angle = f - last_delta;
-						last_delta = f;
-						
-						printf("%f\n", delta_angle);*/
-						
-						cur_grab_offset_x = mouse_x - screen_x;
-						cur_grab_offset_y = mouse_y - screen_y;
-								
-						f = sqrt(cur_grab_offset_x * cur_grab_offset_x + cur_grab_offset_y * cur_grab_offset_y);
-								
-						cur_grab_offset_x /= f;
-						cur_grab_offset_y /= f;
-						
-						
-						if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
-						{
-							last_grab_offset_x = cur_grab_offset_x;
-							last_grab_offset_y = cur_grab_offset_y;
-						}
-						
-						
+			}
 			
-						//delta_angle = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
+			if(selected_position)
+			{	
+			
+				if(input.bm_mouse & MOUSE_LEFT_BUTTON_CLICKED && handle_3d_bm)
+				{
+					p.x = selected_position->x;
+					p.y = selected_position->y;
+					p.z = selected_position->z;
+					p.w = 1.0;
+					
+					mat4_t_mult_fast(&model_view_projection_matrix, &active_camera->world_to_camera_matrix, &active_camera->projection_matrix);
+					
+					MultiplyVector4(&model_view_projection_matrix, &p);
+					
+					p.x /= p.w;
+					p.y /= p.w;
+					
+					screen_x = p.x;
+					screen_y = p.y;
+	
+					mouse_x = viewport->relative_mouse_x;
+					mouse_y = viewport->relative_mouse_y;
+					
+					if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+					{
+						grab_offset_x = mouse_x - screen_x;
+						grab_offset_y = mouse_y - screen_y;
+						cur_grab_offset_x = grab_offset_x;
+						cur_grab_offset_y = grab_offset_y; 
+						last_grab_offset_x = grab_offset_x;
+						last_grab_offset_y = grab_offset_y; 
 						
-						f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x) / (3.14159265);
-						
-						//printf("%f   %f   %f   %f %f \n", f, delta_angle, f / delta_angle, cur_grab_offset_x, cur_grab_offset_y);
-						
-						//f = 0.0;
-						
-						if(fabs(f) > snap_offset)
-						{
-							if(snap_offset > 0.0)
+					}
+					
+					delta_x = (mouse_x - screen_x - grab_offset_x) * p.z;
+					delta_y = (mouse_y - screen_y - grab_offset_y) * p.z;
+					
+					//p.z /= p.w;
+					
+					
+					
+					switch(handle_3d_mode)
+					{
+						case HANDLE_3D_TRANSLATION:
+						case HANDLE_3D_SCALE:
+							if(handle_3d_bm & HANDLE_3D_GRABBED_X_AXIS)
 							{
-								f *= snap_offset / fabs(f);
+								v = vec3(1.0, 0.0, 0.0);
 							}
-							printf("%f\n", f);
-							
-							switch(handle_3d_bm)
+							if(handle_3d_bm & HANDLE_3D_GRABBED_Y_AXIS)
 							{
-								case HANDLE_3D_GRABBED_X_AXIS:
-									v = vec3(1.0, 0.0, 0.0);
-								break;
-								
-								case HANDLE_3D_GRABBED_Y_AXIS:
-									v = vec3(0.0, 1.0, 0.0);
-								break;
-								
-								case HANDLE_3D_GRABBED_Z_AXIS:
-									v = vec3(0.0, 0.0, 1.0);
-								break;
+								v = vec3(0.0, 1.0, 0.0);
+							}
+							if(handle_3d_bm & HANDLE_3D_GRABBED_Z_AXIS)
+							{
+								v = vec3(0.0, 0.0, 1.0);
 							}
 							
 							p = vec4(v.x, v.y, v.z, 0.0);
 							MultiplyVector4(&active_camera->world_to_camera_matrix, &p);
 							//mat4_t_vec4_t_mult(&active_camera->world_to_camera_matrix, &p);
-							if(p.z < 0.0) f = -f;
+							f = sqrt(p.x * p.x + p.y * p.y);
+							p.x /= f;
+							p.y /= f;
+							f = p.x * delta_x + p.y * delta_y;
 							
-							if(cr.type == PICK_ENTITY)
+							if(fabs(f) >= snap_offset)
 							{
-								entity_RotateEntity(e, v, -f, 0);
-							}
-							else if(cr.type == PICK_LIGHT)
-							{
-								light_RotateLight(l, v, -f, 0);
-							}
-							else
-							{
-								brush_RotateBrush(b, v, -f);
+								if(snap_offset > 0.0)
+								{
+									f *= snap_offset / fabs(f);
+								}
+								
+								if(handle_3d_mode == HANDLE_3D_TRANSLATION)
+								{
+									if(cr.type == PICK_ENTITY)
+									{
+										entity_TranslateEntity(e, v, f, 0);
+									}
+									else if(cr.type == PICK_LIGHT)
+									{
+										light_TranslateLight(l, v, f, 0);
+									}
+									else
+									{
+										v.x *= f;
+										v.y *= f;
+										v.z *= f;
+										brush_TranslateBrush(b, v);
+									}
+								}
+								else
+								{
+									if(cr.type == PICK_BMODEL)
+									{
+										brush_ScaleBrush(b, v, f);
+										grab_offset_x = mouse_x - screen_x;
+										grab_offset_y = mouse_y - screen_y;
+									}
+								}
+								
+								
 							}
 							
-							
-							last_grab_offset_x = cur_grab_offset_x;
-							last_grab_offset_y = cur_grab_offset_y;
-							//last_angle = f;
-						}
+						break;
 						
-						
-					break;
-				}
-			}
-			else
-			{
-				handle_3d_bm = 0;
-			}
-			
-			
-			for(i = 0; i < selection_list.selected_count; i++)
-			{
-				index = selection_list.selected[i].index;
-				type = selection_list.selected[i].type;
+						case HANDLE_3D_ROTATION:
+							
+							//delta_y /= sqrt(delta_x * delta_x + delta_y * delta_y);
+							
+							//printf("%f\n", delta_y);
+							//delta_angle = 0.0;
+							/*f = asin(delta_y);
+							
+							
+							delta_angle = f - last_delta;
+							last_delta = f;
+							
+							printf("%f\n", delta_angle);*/
+							
+							cur_grab_offset_x = mouse_x - screen_x;
+							cur_grab_offset_y = mouse_y - screen_y;
+									
+							f = sqrt(cur_grab_offset_x * cur_grab_offset_x + cur_grab_offset_y * cur_grab_offset_y);
+									
+							cur_grab_offset_x /= f;
+							cur_grab_offset_y /= f;
+							
+							
+							if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+							{
+								last_grab_offset_x = cur_grab_offset_x;
+								last_grab_offset_y = cur_grab_offset_y;
+							}
+							
+							
 				
-				if(index == cr.index && type == cr.type) continue;
-
-				switch(selection_list.selected[i].type)
-				{
-					case PICK_ENTITY:
-						draw_debug_DrawOutline(entity_a.position_data[index].world_position, &entity_a.position_data[index].world_orientation, entity_a.draw_data[index].mesh, vec3(0.5, 0.25, 0.0), 4.0, 0);
-					break;
-					
-					case PICK_BMODEL:
-						bt = brush_GetBrushByIndex(index);
-						draw_debug_DrawBrushOutline(bt, vec3(0.0, 0.0, 0.5));
-					break;
+							//delta_angle = cur_grab_offset_x * last_grab_offset_x + cur_grab_offset_y * last_grab_offset_y;
+							
+							f = asin(cur_grab_offset_x * last_grab_offset_y - cur_grab_offset_y * last_grab_offset_x) / (3.14159265);
+							
+							//printf("%f   %f   %f   %f %f \n", f, delta_angle, f / delta_angle, cur_grab_offset_x, cur_grab_offset_y);
+							
+							//f = 0.0;
+							
+							if(fabs(f) > snap_offset)
+							{
+								if(snap_offset > 0.0)
+								{
+									f *= snap_offset / fabs(f);
+								}
+								//printf("%f\n", f);
+								
+								switch(handle_3d_bm)
+								{
+									case HANDLE_3D_GRABBED_X_AXIS:
+										v = vec3(1.0, 0.0, 0.0);
+									break;
+									
+									case HANDLE_3D_GRABBED_Y_AXIS:
+										v = vec3(0.0, 1.0, 0.0);
+									break;
+									
+									case HANDLE_3D_GRABBED_Z_AXIS:
+										v = vec3(0.0, 0.0, 1.0);
+									break;
+								}
+								
+								p = vec4(v.x, v.y, v.z, 0.0);
+								MultiplyVector4(&active_camera->world_to_camera_matrix, &p);
+								//mat4_t_vec4_t_mult(&active_camera->world_to_camera_matrix, &p);
+								if(p.z < 0.0) f = -f;
+								
+								if(cr.type == PICK_ENTITY)
+								{
+									entity_RotateEntity(e, v, -f, 0);
+								}
+								else if(cr.type == PICK_LIGHT)
+								{
+									light_RotateLight(l, v, -f, 0);
+								}
+								else
+								{
+									brush_RotateBrush(b, v, -f);
+								}
+								
+								
+								last_grab_offset_x = cur_grab_offset_x;
+								last_grab_offset_y = cur_grab_offset_y;
+								//last_angle = f;
+							}
+							
+							
+						break;
+					}
 				}
+				else
+				{
+					handle_3d_bm = 0;
+				}
+				
+				
+				for(i = 0; i < selection_list.selected_count; i++)
+				{
+					index = selection_list.selected[i].index;
+					type = selection_list.selected[i].type;
+					
+					if(index == cr.index && type == cr.type) continue;
+	
+					switch(selection_list.selected[i].type)
+					{
+						case PICK_ENTITY:
+							draw_debug_DrawOutline(entity_a.position_data[index].world_position, &entity_a.position_data[index].world_orientation, entity_a.draw_data[index].mesh, vec3(0.5, 0.25, 0.0), 4.0, 0);
+						break;
+						
+						case PICK_BMODEL:
+							bt = brush_GetBrushByIndex(index);
+							draw_debug_DrawBrushOutline(bt, vec3(0.0, 0.0, 0.5));
+						break;
+					}
+				}
+				
+				if(cr.type == PICK_ENTITY)
+				{
+					draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.5, 0.0), 4.0, 0);
+				}
+				else if(cr.type == PICK_BMODEL)
+				{
+					draw_debug_DrawBrushOutline(b, vec3(0.1, 0.3, 1.0));
+				}
+				
+				//handle_3d_pos = selected.position_data->world_position;
+				handle_3d_pos = *selected_position;
+				selected_pos = handle_3d_pos;
+				selected_rot = *selected_orientation;
+				selected_name = selected_name;
+				draw_3d_handle(handle_3d_mode);
 			}
-			
-			if(cr.type == PICK_ENTITY)
-			{
-				draw_debug_DrawOutline(e.position_data->world_position, &e.position_data->world_orientation, e.draw_data->mesh, vec3(1.0, 0.5, 0.0), 4.0, 0);
-			}
-			else if(cr.type == PICK_BMODEL)
-			{
-				draw_debug_DrawBrushOutline(b, vec3(0.1, 0.3, 1.0));
-			}
-			
-			//handle_3d_pos = selected.position_data->world_position;
-			handle_3d_pos = *selected_position;
-			selected_pos = handle_3d_pos;
-			selected_rot = *selected_orientation;
-			selected_name = selected_name;
-			draw_3d_handle(handle_3d_mode);
 		}
+
+		
 		
 	}
 	else
@@ -1035,7 +1034,7 @@ void create_option_dropdown()
 	}
 	
 	options = gui_CreateWidget("options", WIDGET_TRANSLUCENT|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5 + 100, input.normalized_mouse_y * renderer.height * 0.5 - 130, 200, 300, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
-	wdropdown_t *dd = gui_AddDropDown(options, "context_menu", DROP_DOWN_DROPPED, 0, 120, 190, NULL, NULL);
+	wdropdown_t *dd = gui_AddDropDown(options, "context_menu", DROP_DOWN_DROPPED, 0, 0, 120, 190, NULL, NULL);
 	gui_AddOption(dd, "op0");
 	gui_AddOption(dd, "op1");
 	gui_AddOption(dd, "op2");
@@ -1063,8 +1062,8 @@ void open_add_to_world_menu()
 	
 	entity_def_list *def_list = entity_GetEntityDefList();
 	
-	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
-	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, NULL, NULL);
+	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
+	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, WIDGET_TOP_BORDER, renderer.width * (input.normalized_mouse_x * 0.5 + 0.5), renderer.height * (1.0 - (input.normalized_mouse_y * 0.5 + 0.5)), 200, NULL, NULL);
 	gui_AddOption(dd, "Lights");
 	gui_AddOption(dd, "Defs");
 	gui_AddOption(dd, "Brush");
@@ -1123,8 +1122,8 @@ void open_delete_menu()
 	
 	i = rand()%2;
 	
-	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, input.normalized_mouse_x * renderer.width * 0.5, input.normalized_mouse_y * renderer.height * 0.5, 1600, 800, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
-	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, 0, 200, &cr, delete_fn);
+	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
+	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, WIDGET_TOP_BORDER, renderer.width * (input.normalized_mouse_x * 0.5 + 0.5), renderer.height * (1.0 - (input.normalized_mouse_y * 0.5 + 0.5)), 200, &cr, delete_fn);
 	gui_AddOption(d, phrases[i]);
 }
 
@@ -1136,6 +1135,220 @@ void close_delete_menu()
 		delete_menu = NULL;
 	}
 }
+
+void enable_shadow_mapping(swidget_t *sub_widget, void *data)
+{
+	wbutton_t *button = (wbutton_t *)sub_widget;
+	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+	{
+		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_USE_SHADOW_MAPS);
+	}
+	else
+	{
+		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_USE_SHADOW_MAPS));
+	}
+}
+
+void enable_volumetric_lights(swidget_t *sub_widget, void *data)
+{
+	wbutton_t *button = (wbutton_t *)sub_widget;
+	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+	{
+		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_DRAW_LIGHT_VOLUMES);
+	}
+	else
+	{
+		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_DRAW_LIGHT_VOLUMES));
+	}
+}
+
+void enable_bloom(swidget_t *sub_widget, void *data)
+{
+	wbutton_t *button = (wbutton_t *)sub_widget;
+	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
+	{
+		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_USE_BLOOM);
+	}
+	else
+	{
+		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_USE_BLOOM));
+	}
+}
+
+void exit_engine(swidget_t *sub_widget, void *data)
+{
+	pew_Exit();
+}
+
+void set_handle_mode(swidget_t *sub_widget, void *data)
+{
+	int mode = (int )data;
+	switch(mode)
+	{
+		case HANDLE_3D_ROTATION:
+		case HANDLE_3D_TRANSLATION:
+		case HANDLE_3D_SCALE:
+			handle_3d_mode = mode;
+		break;
+	}
+}
+
+void tabbar_fn(swidget_t *sub_widget, void *data, int tab_index)
+{
+	switch(tab_index)
+	{
+		case 0:
+			handle_3d_mode = HANDLE_3D_TRANSLATION;
+		break;
+		
+		case 1:
+			handle_3d_mode = HANDLE_3D_ROTATION;
+		break;
+		
+		case 2:
+			handle_3d_mode = HANDLE_3D_SCALE;
+		break;
+	}
+	//printf("tab %d is active\n", tab_index);
+}
+
+void dropdown_fn(swidget_t *sub_widget, void *data, int option_index)
+{
+	switch(option_index)
+	{
+		case 0:
+			draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
+		break;
+		
+		case 1:
+			draw_SetRenderDrawMode(RENDER_DRAWMODE_FLAT);
+		break;
+		
+		case 2:
+			draw_SetRenderDrawMode(RENDER_DRAWMODE_WIREFRAME);
+		break;
+	}
+}
+
+void slider_fn(swidget_t *sub_widget, void *data, int i)
+{
+	wslidergroup_t *slider_group = (wslidergroup_t *) sub_widget;
+	wslider_t *slider;
+	float r;
+	if(cr.type == PICK_LIGHT)
+	{
+		if(cr.index >= 0)
+		{
+			
+			if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+			{
+				slider = slider_group->sliders;
+				slider->pos = (float)l.params->r / slider->max;
+				slider = (wslider_t *)slider->swidget.next;
+			
+				slider->pos = (float)l.params->g / slider->max;
+				slider = (wslider_t *)slider->swidget.next;
+			
+				slider->pos = (float)l.params->b / slider->max;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				/*slider->pos = (float)l.params->spot_e / 255.0;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				if(l.position_data->bm_flags & LIGHT_SPOT)
+				{
+					slider->pos = (float)l.position_data->spot_co / 90.0;
+				}
+				else
+				{
+					slider->pos = (float)l.position_data->radius / 100.0;
+				}*/
+				
+			}
+			else
+			{
+				slider = slider_group->sliders;
+				l.params->r = slider->max * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				l.params->g = slider->max * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				l.params->b = slider->max * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				/*l.params->spot_e = 255 * slider->pos;
+				slider = (wslider_t *)slider->swidget.next;
+				
+				if(l.position_data->bm_flags & LIGHT_SPOT)
+				{
+					l.position_data->spot_co = slider->pos * 90;
+				}
+				else
+				{
+					l.position_data->radius = slider->pos * 100;
+				}*/
+				
+				
+				
+				light_UpdateLightFrustum(l);
+				
+				light_UpdateGPULight(l);
+			}
+			
+			
+		}
+	}
+}
+
+void menu_fn(swidget_t *swidget, void *data, int option)
+{
+	switch(option)
+	{
+		case 0:
+			physics_UpdateStaticWorld();
+		break;
+		
+		case 3:
+			pew_Exit();
+		break;
+	}
+}
+
+void snapping_fn(swidget_t *swidget, void *data, int option)
+{
+	switch(option)
+	{
+		case 0:
+			snap_offset = 2.0;
+		break;
+		
+		case 1:
+			snap_offset = 1.0;
+		break;
+		
+		case 2:
+			snap_offset = 0.5;
+		break;
+		
+		case 3:
+			snap_offset = 0.25;
+		break;
+		
+		case 4:
+			snap_offset = 0.125;
+		break;
+		
+		case 5:
+			snap_offset = 0.0625;
+		break;
+		
+		case 6:
+			snap_offset = 0.0;
+		break;	
+	}
+}
+
 
 void draw_3d_handle(int mode)
 {
@@ -1343,6 +1556,52 @@ void init_3d_handle()
 	
 }
 
+void init_gui()
+{
+	top_menu = gui_CreateWidget("Top menu", WIDGET_NO_BORDERS, 0, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, renderer.width, OPTION_HEIGHT, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1, NULL);
+	
+	wdropdown_t *dd;
+	
+	dd = gui_AddDropDown(top_menu, "File", DROP_DOWN_TITLE, WIDGET_TOP_BORDER, 5, 5, 200, NULL, menu_fn);
+	gui_AddOption(dd, "Update static world");
+	gui_AddOption(dd, "...");
+	gui_AddOption(dd, "...");
+	gui_AddOption(dd, "Exit");
+	
+	dd = gui_AddDropDown(top_menu, "Snapping", DROP_DOWN_TITLE, WIDGET_TOP_BORDER, 210, 5, 100, NULL, snapping_fn);
+	gui_AddOption(dd, "2.0");
+	gui_AddOption(dd, "1.0");
+	gui_AddOption(dd, "0.5");
+	gui_AddOption(dd, "0.25");
+	gui_AddOption(dd, "0.125");
+	gui_AddOption(dd, "0.0625");
+	gui_AddOption(dd, "off");
+
+	
+	r_widget = gui_CreateWidget("Right widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
+	l_widget = gui_CreateWidget("Left widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, -renderer.width / 2 + 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
+	t_widget = gui_CreateWidget("Top widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, 0, renderer.height / 2 - OPTION_HEIGHT * 2.0, renderer.width, 20, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
+	b_widget = gui_CreateWidget("bottom", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, 0, -renderer.height / 2 - OPTION_HEIGHT * 2.0, renderer.width, 20, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
+	
+	viewport = gui_CreateWidget("viewport", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width * 0.6, renderer.height * 0.6, 1.0, 1.0, 1.0, 1.0, final_buffer.color_out1, 0, viewport_resize_fn);
+	gui_ShareBorders(viewport, r_widget, WIDGET_RIGHT_BORDER, WIDGET_LEFT_BORDER);
+	gui_ShareBorders(viewport, l_widget, WIDGET_LEFT_BORDER, WIDGET_RIGHT_BORDER);
+	gui_ShareBorders(viewport, t_widget, WIDGET_TOP_BORDER, WIDGET_BOTTOM_BORDER);
+	gui_ShareBorders(viewport, b_widget, WIDGET_BOTTOM_BORDER, WIDGET_TOP_BORDER);
+	
+	gui_ShareBorders(t_widget, r_widget, WIDGET_BOTTOM_BORDER, WIDGET_TOP_BORDER);
+	gui_ShareBorders(t_widget, l_widget, WIDGET_BOTTOM_BORDER, WIDGET_TOP_BORDER);
+	
+	gui_ShareBorders(b_widget, r_widget, WIDGET_TOP_BORDER, WIDGET_BOTTOM_BORDER);
+	gui_ShareBorders(b_widget, l_widget, WIDGET_TOP_BORDER, WIDGET_BOTTOM_BORDER);
+	
+	//*menu0 = gui_CreateWidget("mode", WIDGET_NO_BORDERS, 0, y ,100, 30, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1, NULL);
+	wtabbar_t *tabbar = gui_AddTabBar(viewport, "mode_tab", 0, WIDGET_BOTTOM_BORDER | WIDGET_LEFT_BORDER, 0, 0, 100, 20, tabbar_fn);
+	gui_AddTab(tabbar, "T", TAB_NO_SUB_WIDGETS);
+	gui_AddTab(tabbar, "R", TAB_NO_SUB_WIDGETS);
+	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
+} 
+
 void init_editor()
 {
 
@@ -1351,6 +1610,9 @@ void init_editor()
 	selection_list.selected = (pick_record_t *)malloc(sizeof(pick_record_t) * selection_list.max_selected);
 	
 	init_3d_handle();
+	
+	init_gui();
+	
 }
 
 void widget_cb(swidget_t *sub_widget, void *data)
@@ -1359,214 +1621,7 @@ void widget_cb(swidget_t *sub_widget, void *data)
 	//printf("clicked on subwidget %s!\n", sub_widget->name);
 }
 
-void enable_shadow_mapping(swidget_t *sub_widget, void *data)
-{
-	wbutton_t *button = (wbutton_t *)sub_widget;
-	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
-	{
-		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_USE_SHADOW_MAPS);
-	}
-	else
-	{
-		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_USE_SHADOW_MAPS));
-	}
-}
 
-void enable_volumetric_lights(swidget_t *sub_widget, void *data)
-{
-	wbutton_t *button = (wbutton_t *)sub_widget;
-	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
-	{
-		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_DRAW_LIGHT_VOLUMES);
-	}
-	else
-	{
-		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_DRAW_LIGHT_VOLUMES));
-	}
-}
-
-void enable_bloom(swidget_t *sub_widget, void *data)
-{
-	wbutton_t *button = (wbutton_t *)sub_widget;
-	if(button->button_flags & BUTTON_CHECK_BOX_CHECKED)
-	{
-		draw_SetRenderFlags(renderer.renderer_flags | RENDERFLAG_USE_BLOOM);
-	}
-	else
-	{
-		draw_SetRenderFlags(renderer.renderer_flags & (~RENDERFLAG_USE_BLOOM));
-	}
-}
-
-void exit_engine(swidget_t *sub_widget, void *data)
-{
-	pew_Exit();
-}
-
-void set_handle_mode(swidget_t *sub_widget, void *data)
-{
-	int mode = (int )data;
-	switch(mode)
-	{
-		case HANDLE_3D_ROTATION:
-		case HANDLE_3D_TRANSLATION:
-		case HANDLE_3D_SCALE:
-			handle_3d_mode = mode;
-		break;
-	}
-}
-
-void tabbar_fn(swidget_t *sub_widget, void *data, int tab_index)
-{
-	switch(tab_index)
-	{
-		case 0:
-			handle_3d_mode = HANDLE_3D_TRANSLATION;
-		break;
-		
-		case 1:
-			handle_3d_mode = HANDLE_3D_ROTATION;
-		break;
-		
-		case 2:
-			handle_3d_mode = HANDLE_3D_SCALE;
-		break;
-	}
-	//printf("tab %d is active\n", tab_index);
-}
-
-void dropdown_fn(swidget_t *sub_widget, void *data, int option_index)
-{
-	switch(option_index)
-	{
-		case 0:
-			draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
-		break;
-		
-		case 1:
-			draw_SetRenderDrawMode(RENDER_DRAWMODE_FLAT);
-		break;
-		
-		case 2:
-			draw_SetRenderDrawMode(RENDER_DRAWMODE_WIREFRAME);
-		break;
-	}
-}
-
-void slider_fn(swidget_t *sub_widget, void *data, int i)
-{
-	wslidergroup_t *slider_group = (wslidergroup_t *) sub_widget;
-	wslider_t *slider;
-	float r;
-	if(cr.type == PICK_LIGHT)
-	{
-		if(cr.index >= 0)
-		{
-			
-			if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
-			{
-				slider = slider_group->sliders;
-				slider->pos = (float)l.params->r / slider->max;
-				slider = (wslider_t *)slider->swidget.next;
-			
-				slider->pos = (float)l.params->g / slider->max;
-				slider = (wslider_t *)slider->swidget.next;
-			
-				slider->pos = (float)l.params->b / slider->max;
-				slider = (wslider_t *)slider->swidget.next;
-				
-				/*slider->pos = (float)l.params->spot_e / 255.0;
-				slider = (wslider_t *)slider->swidget.next;
-				
-				if(l.position_data->bm_flags & LIGHT_SPOT)
-				{
-					slider->pos = (float)l.position_data->spot_co / 90.0;
-				}
-				else
-				{
-					slider->pos = (float)l.position_data->radius / 100.0;
-				}*/
-				
-			}
-			else
-			{
-				slider = slider_group->sliders;
-				l.params->r = slider->max * slider->pos;
-				slider = (wslider_t *)slider->swidget.next;
-				
-				l.params->g = slider->max * slider->pos;
-				slider = (wslider_t *)slider->swidget.next;
-				
-				l.params->b = slider->max * slider->pos;
-				slider = (wslider_t *)slider->swidget.next;
-				
-				/*l.params->spot_e = 255 * slider->pos;
-				slider = (wslider_t *)slider->swidget.next;
-				
-				if(l.position_data->bm_flags & LIGHT_SPOT)
-				{
-					l.position_data->spot_co = slider->pos * 90;
-				}
-				else
-				{
-					l.position_data->radius = slider->pos * 100;
-				}*/
-				
-				
-				
-				light_UpdateLightFrustum(l);
-				
-				light_UpdateGPULight(l);
-			}
-			
-			
-		}
-	}
-}
-
-void menu_fn(swidget_t *swidget, void *data, int option)
-{
-	switch(option)
-	{
-		case 0:
-			physics_UpdateStaticWorld();
-		break;
-	}
-}
-
-void snapping_fn(swidget_t *swidget, void *data, int option)
-{
-	switch(option)
-	{
-		case 0:
-			snap_offset = 2.0;
-		break;
-		
-		case 1:
-			snap_offset = 1.0;
-		break;
-		
-		case 2:
-			snap_offset = 0.5;
-		break;
-		
-		case 3:
-			snap_offset = 0.25;
-		break;
-		
-		case 4:
-			snap_offset = 0.125;
-		break;
-		
-		case 5:
-			snap_offset = 0.0625;
-		break;
-		
-		case 6:
-			snap_offset = 0.0;
-		break;	
-	}
-}
 
 void ginit()
 {
@@ -1770,115 +1825,14 @@ void ginit()
 //	holesptr = model_GetMeshPtr("holes");
 	
 	widget_t *ppp;
+	widget_t *w1;
+	widget_t *w2;
+	widget_t *w3;
+	
+	
 	wdropdown_t *dd;
 	float y = -renderer.height * 0.5 + 15;
 	
-	menu0 = gui_CreateWidget("mode", WIDGET_NO_BORDERS, 0, y ,100, 30, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1, NULL);
-	wtabbar_t *tabbar = gui_AddTabBar(menu0, "mode_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, 100, 30, tabbar_fn);
-	gui_AddTab(tabbar, "T", TAB_NO_SUB_WIDGETS);
-	gui_AddTab(tabbar, "R", TAB_NO_SUB_WIDGETS);
-	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
-	
-	
-	/*widget_t *ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2.0 - 80, 0, 100, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
-	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 5, NULL, slider_fn);
-	gui_AddSliderToGroup(z, "slider1", 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "slider2", 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "slider3", 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "slider4", 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "slider5", 0.0, 0, NULL, NULL);*/
-	
-	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0, NULL);
-	dd = gui_AddDropDown(ppp, "File", DROP_DOWN_TITLE, -renderer.width / 2.0 + 100, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 200, NULL, menu_fn);
-	gui_AddOption(dd, "Update static world");
-	gui_AddOption(dd, "...");
-	gui_AddOption(dd, "...");
-	gui_AddOption(dd, "Exit");
-	
-	
-	ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 0, NULL);
-	dd = gui_AddDropDown(ppp, "Snapping", DROP_DOWN_TITLE, -renderer.width / 2.0 + 50 + 200, renderer.height / 2.0 - OPTION_HEIGHT / 2.0, 100, NULL, snapping_fn);
-	gui_AddOption(dd, "2.0");
-	gui_AddOption(dd, "1.0");
-	gui_AddOption(dd, "0.5");
-	gui_AddOption(dd, "0.25");
-	gui_AddOption(dd, "0.125");
-	gui_AddOption(dd, "0.0625");
-	gui_AddOption(dd, "off");
-
-	
-	/*ppp = gui_CreateWidget("test", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
-	wslidergroup_t * z = gui_AddSliderGroup(ppp, "slider_group", 0, 0, 0, 80, 3, NULL, slider_fn);
-	gui_AddSliderToGroup(z, "light_r", 0.0, 255.0, 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "light_g", 0.0, 255.0, 0.0, 0, NULL, NULL);
-	gui_AddSliderToGroup(z, "light_b", 0.0, 255.0, 0.0, 0, NULL, NULL);*/
-	
-	
-	/*ppp = gui_CreateWidget("timers", WIDGET_TRANSLUCENT | WIDGET_NO_BORDERS, -renderer.width / 2.0 + 150, 0, 300, 80, 0.3, 0.3, 0.3, 0.5, WIDGET_NO_TEXTURE, 0);
-	gui_AddVar(ppp, "gbuffer fill", 0, 0, VAR_FLOAT, 0.0, 30.0, 300.0, 20.0, &fill_gbuffer_time);
-	gui_AddVar(ppp, "gbuffer process", 0, 0, VAR_FLOAT, 0.0, 10.0, 300.0, 20.0, &process_gbuffer_time);
-	gui_AddVar(ppp, "shadow map generation", 0, 0, VAR_FLOAT, 0.0, -10.0, 300.0, 20.0, &generate_shadow_map_time);
-	gui_AddVar(ppp, "gui", 0, 0, VAR_FLOAT, 0.0, -30.0, 300.0, 20.0, &gui_time);*/
-	
-	viewport = gui_CreateWidget("test2", WIDGET_HIGHTLIGHT_BORDERS | WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width * 0.6, renderer.height * 0.6, 1.0, 1.0, 1.0, 1.0, final_buffer.color_out1, 0, viewport_resize_fn);
-	//gui_AddSurface(ppp, "surface_test", WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.width * 0.5, renderer.height * 0.5, final_buffer.color_out1, NULL);
-	
-	//gui_AddSliderToGroup(z, "parm", 0.0, 1.0, 0.0, 0, NULL, NULL);
-	//gui_AddSliderToGroup(z, "spot_angle", 0.0, 100.0, 1.0, 0, NULL, NULL);
-	/*wdropdown_t *qq = gui_NestleDropDown(dd, 0, "nestled test", DROP_DOWN_DROPPED, 200, NULL, NULL);
-	gui_AddOption(qq, "op4");
-	gui_AddOption(qq, "op5");
-	gui_AddOption(qq, "op6");
-	gui_AddOption(qq, "op7");
-	gui_AddOption(qq, "op8");
-	gui_AddOption(qq, "op9");
-	gui_AddOption(qq, "op10");
-	gui_AddOption(qq, "op11");*/
-	
-	
-	
-	
-	/*gui_AddOption(dd, "name3");
-	gui_AddOption(dd, "name4");
-	gui_AddOption(dd, "name5");
-	gui_AddOption(dd, "name6");
-	gui_AddOption(dd, "name7");
-	gui_AddOption(dd, "name8");
-	gui_AddOption(dd, "name9");
-	gui_AddOption(dd, "name10");
-	gui_AddOption(dd, "name11");*/
-	
-	
-	/*menu0 = gui_CreateWidget("test0", WIDGET_TRANSLUCENT, renderer.width / 2.0 - 350 / 2.0, 0.0, 350, renderer.height, 0.3, 0.3, 0.3, 0.7, WIDGET_NO_TEXTURE, 0);
-	gui_AddButton(menu0, "Exit", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, 0, renderer.height * 0.5 - 20, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, exit_engine);
-	gui_AddButton(menu0, "Enable shadow mapping", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 40, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_shadow_mapping);
-	gui_AddButton(menu0, "Enable volumetric lights", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX|BUTTON_CHECK_BOX_CHECKED, 0, renderer.height * 0.5 - 60, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_volumetric_lights);
-	gui_AddButton(menu0, "Enable bloom", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, BUTTON_CHECK_BOX, 0, renderer.height * 0.5 - 80, 330, 15.0, 1.0, 1.0, 1.0, 1.0, NULL, enable_bloom);
-	
-	gui_AddVar(menu0, "Draw calls", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 100, 330, 15.0, &draw_calls);
-	gui_AddVar(menu0, "Shader swaps", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_INT_32, 0, renderer.height * 0.5 - 120, 330, 15.0, &shader_swaps);
-	gui_AddVar(menu0, "Selected name", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 140, 330, 15.0, &selected_name);
-	gui_AddVar(menu0, "Selected pos", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_VEC3T, 0, renderer.height * 0.5 - 160, 330, 15.0, &selected_pos);
-	gui_AddVar(menu0, "Engine state", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_STR, 0, renderer.height * 0.5 - 180, 330, 15.0, &editor_state);
-	wtabbar_t *tabbar = gui_AddTabBar(menu0, "test_tab", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, renderer.height * 0.5 - 200, 330, 20.0, tabbar_fn);
-	gui_AddTab(tabbar, "Translation", TAB_NO_SUB_WIDGETS);
-	int tbb = gui_AddTab(tabbar, "Rotation", 0);
-	
-	gui_AddVarToTab(tabbar, tbb, "Selected rot", WIDGET_LOCK_Y_SCALE | WIDGET_KEEP_RELATIVE_X_POSITION, 0, VAR_MAT3T, 0, -82, 330, 60.0, &selected_rot);*/
-
-	
-
-	
-	
-	
-	//ma.texture=-1;
-	//ma.name="red";
-	//ma.shader_index=shader_GetShaderIndex("lit");
-	//ma.bm_flags=0;
-	
-	//printf("%d\n", ma.shader_index);
-	//material_CreateMaterialFromData(&ma);
-	//tif.diff_tex_count = 1;
 	tif.diff_tex = (short)texture_GetTextureIndex("rock4_d");
 	tif.norm_tex = (short)texture_GetTextureIndex("rock4_n");
 	tif.gloss_tex = -1;
@@ -1973,29 +1927,6 @@ void ginit()
 	tif.diff_tex = (short)texture_GetTextureIndex("vending_machine_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("vending_machine_normal");
 	material_CreateMaterial("vending_machine", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
-	
-	/*tif.diff_tex = (short)texture_GetTextureIndex("brick_d");
-	tif.norm_tex = (short)texture_GetTextureIndex("brick_n");
-	
-	material_CreateMaterial("translucent1", 512, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, MATERIAL_Translucent, &tif);
-	material_CreateMaterial("translucent2", 512, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, MATERIAL_Translucent, NULL);
-	material_CreateMaterial("translucent3", 512, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, MATERIAL_Translucent, NULL);*/
-	
-	//tif.diff_tex = (short) texture_GetTextureIndex("skydome");
-	//material_CreateMaterial("skydome", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ,0.0, 0.0, MATERIAL_DiffuseTexture|MATERIAL_Shadeless, &tif);
-	
-	//tif.diff_tex = (short) texture_GetTextureIndex("pew");
-	//material_CreateMaterial("pew", 512, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 1.0, 0.0, MATERIAL_FrontAndBack|MATERIAL_Translucent, &tif);
-
-	
-	//camera_CreateCamera("camera0", vec3(0.0, 1.5, 0.0), &id, 0.68, (float) renderer.width, (float) renderer.height, 0.1, 1000.0);
-	
-	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 1.0, 1);
-	
-	//camera_SetCameraByIndex(camera_CreateCamera("camera0", vec3(0.0, 0.5, 0.0), &id, 0.68, (float) renderer.width, (float) renderer.height, 0.1, 1000.0));
-	
-	//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), -0.5, 1);
-	//entity_CreateEntity("piramid", ENTITY_DYNAMIC, 0, vec3(0.0, 1.0, 3.0), &id, 2.0 ,model_GetMeshPtr("piramid"), material_GetMaterialIndex("red"), 1);
 	
 	id = mat3_t_id();
 	
