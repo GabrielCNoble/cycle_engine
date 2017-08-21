@@ -1063,7 +1063,7 @@ void open_add_to_world_menu()
 	entity_def_list *def_list = entity_GetEntityDefList();
 	
 	add_to_world_menu = gui_CreateWidget("add to world", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
-	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, WIDGET_TOP_BORDER, renderer.width * (input.normalized_mouse_x * 0.5 + 0.5), renderer.height * (1.0 - (input.normalized_mouse_y * 0.5 + 0.5)), 200, NULL, NULL);
+	wdropdown_t *dd = gui_AddDropDown(add_to_world_menu, "add to world", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, renderer.width * input.normalized_mouse_x * 0.5, renderer.height * input.normalized_mouse_y * 0.5, 200, NULL, NULL);
 	gui_AddOption(dd, "Lights");
 	gui_AddOption(dd, "Defs");
 	gui_AddOption(dd, "Brush");
@@ -1123,7 +1123,7 @@ void open_delete_menu()
 	i = rand()%2;
 	
 	delete_menu = gui_CreateWidget("delete", WIDGET_TRANSLUCENT|WIDGET_NO_BORDERS|WIDGET_IGNORE_MOUSE, 0, 0, renderer.width, renderer.height, 0.3, 0.3, 0.3, 0.0, WIDGET_NO_TEXTURE, 1, NULL);
-	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, WIDGET_TOP_BORDER, renderer.width * (input.normalized_mouse_x * 0.5 + 0.5), renderer.height * (1.0 - (input.normalized_mouse_y * 0.5 + 0.5)), 200, &cr, delete_fn);
+	wdropdown_t *d = gui_AddDropDown(delete_menu, "delete", DROP_DOWN_DROPPED|DROP_DOWN_NO_HEADER, 0, renderer.width * input.normalized_mouse_x * 0.5, renderer.height * input.normalized_mouse_y * 0.5, 200, &cr, delete_fn);
 	gui_AddOption(d, phrases[i]);
 }
 
@@ -1568,14 +1568,14 @@ void init_gui()
 	gui_AddOption(dd, "...");
 	gui_AddOption(dd, "Exit");
 	
-	dd = gui_AddDropDown(top_menu, "Snapping", DROP_DOWN_TITLE, WIDGET_TOP_BORDER, 210, 5, 100, NULL, snapping_fn);
+	/*dd = gui_AddDropDown(top_menu, "Snapping", DROP_DOWN_TITLE, WIDGET_TOP_BORDER, 210, 5, 100, NULL, snapping_fn);
 	gui_AddOption(dd, "2.0");
 	gui_AddOption(dd, "1.0");
 	gui_AddOption(dd, "0.5");
 	gui_AddOption(dd, "0.25");
 	gui_AddOption(dd, "0.125");
 	gui_AddOption(dd, "0.0625");
-	gui_AddOption(dd, "off");
+	gui_AddOption(dd, "off");*/
 
 	
 	r_widget = gui_CreateWidget("Right widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
@@ -1595,11 +1595,23 @@ void init_gui()
 	gui_ShareBorders(b_widget, r_widget, WIDGET_TOP_BORDER, WIDGET_BOTTOM_BORDER);
 	gui_ShareBorders(b_widget, l_widget, WIDGET_TOP_BORDER, WIDGET_BOTTOM_BORDER);
 	
-	//*menu0 = gui_CreateWidget("mode", WIDGET_NO_BORDERS, 0, y ,100, 30, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 1, NULL);
 	wtabbar_t *tabbar = gui_AddTabBar(viewport, "mode_tab", 0, WIDGET_BOTTOM_BORDER | WIDGET_LEFT_BORDER, 0, 0, 100, 20, tabbar_fn);
 	gui_AddTab(tabbar, "T", TAB_NO_SUB_WIDGETS);
 	gui_AddTab(tabbar, "R", TAB_NO_SUB_WIDGETS);
 	gui_AddTab(tabbar, "S", TAB_NO_SUB_WIDGETS);
+	
+	dd = gui_AddDropDown(viewport, "Snapping", 0, WIDGET_BOTTOM_BORDER | WIDGET_LEFT_BORDER, 100, 0, 100, NULL, snapping_fn);
+	gui_AddOption(dd, "2.0");
+	gui_AddOption(dd, "1.0");
+	gui_AddOption(dd, "0.5");
+	gui_AddOption(dd, "0.25");
+	gui_AddOption(dd, "0.125");
+	gui_AddOption(dd, "0.0625");
+	gui_AddOption(dd, "off");
+	
+	dd = gui_AddDropDown(viewport, "Transform", 0, WIDGET_BOTTOM_BORDER | WIDGET_LEFT_BORDER, 201, 0, 100, NULL, NULL);
+	gui_AddOption(dd, "World");
+	gui_AddOption(dd, "Local");
 } 
 
 void init_editor()
@@ -1648,29 +1660,7 @@ void ginit()
 	input_RegisterKey(SDL_SCANCODE_LSHIFT);
 	input_RegisterKey(SDL_SCANCODE_DELETE);
 	input_RegisterKey(SDL_SCANCODE_KP_MEMADD);
-	input_RegisterKey(SDL_SCANCODE_KP_MEMSUBTRACT);
-	//init_3d_handle();
-	
-//	TwInit(TW_OPENGL, NULL);
-	//TwWindowSize(renderer.screen_width, renderer.screen_height);
-	//TwBar *bar = TwNewBar("test");
-	
-	
-	//typedef enum {BAZ, BAR, FOO} test_enum;
-	//test_enum tt = BAZ;
-	
-	//TwEnumVal tests[] = {{BAZ, "BAZ"}, {BAR, "BAR"}, {FOO, "FOO"}};
-	
-	//TwType test_type = TwDefineEnum("test_enum", tests, 3);
-	
-	//TwAddVarRW(bar, "test_enum", test_type, &tt, NULL);
-	
-	//TwAddButton(bar, "button", cb, NULL, "key=c");
-	//TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with SDL and OpenGL.\nPress [Space] to toggle fullscreen.' ");
-	
-	//TwAddVarRO(bar, "frame", TW_TYPE_INT32, &renderer.frame_count, NULL);
-               
-    //TwAddVarRW(bar, "count", TW_TYPE_INT32, &p, " min=1 max=100 keyIncr=c keyDecr=f ");           
+	input_RegisterKey(SDL_SCANCODE_KP_MEMSUBTRACT);        
 	
 	mesh_t *sphereptr;
 	mesh_t *planeptr;

@@ -350,12 +350,25 @@ PEWAPI wdropdown_t *gui_AddDropDown(widget_t *widget, char *name, int bm_flags, 
 			t->swidget.y = y_offset;
 		}
 		
-		t->swidget.x = -(widget->w / 2.0) + (t->swidget.w / 2.0) + x_offset;
+		if(bm_border_hooks & WIDGET_LEFT_BORDER)
+		{
+			t->swidget.x = (-widget->w / 2.0) + (t->swidget.w / 2.0) + x_offset;
+			t->swidget.cw = (-widget->w / 2.0) - t->swidget.x;
+		}
+		else if(bm_border_hooks & WIDGET_RIGHT_BORDER)
+		{
+			t->swidget.x = (widget->w / 2.0) - (t->swidget.w / 2.0) - x_offset;
+			t->swidget.cw = (widget->w / 2.0) - t->swidget.x;
+		}
+		else
+		{
+			t->swidget.x = x_offset;
+		}
 		
 		
 		t->swidget.cx = t->swidget.x;
 		t->swidget.cy = t->swidget.y;
-		t->swidget.cw = w;
+		//t->swidget.cw = w;
 		//t->swidget.ch = OPTION_HEIGHT;
 		
 		t->swidget.type = WIDGET_DROP_DOWN;
@@ -403,10 +416,18 @@ PEWAPI void gui_AddOption(wdropdown_t *dropdown, char *name)
 			dropdown->max_options += 4;
 		}
 		
-		o = &dropdown->options[dropdown->option_count++];		
+		o = &dropdown->options[dropdown->option_count];		
 		o->name = strdup(name);
 		o->bm_flags = 0;
 		o->nested = NULL;
+		
+		if(!dropdown->option_count)
+		{
+			dropdown->active_option = o;
+			dropdown->cur_option = 0;
+		}
+		
+		dropdown->option_count++;
 	}
 }
 
