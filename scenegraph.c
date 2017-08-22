@@ -37,6 +37,7 @@ extern collider_array collider_a;
 extern light_array light_a;
 extern light_array active_light_a;
 extern int *active_light_indexes;
+extern mat4_t *active_light_transforms;
 extern affecting_lights_list affecting_lights;
 extern screen_tile_list screen_tiles;
 extern armature_list_t armature_list;
@@ -1129,6 +1130,7 @@ static void scenegraph_CullLights()
 	vec4_t corners[8];
 	vec3_t vecs[4];
 	vec3_t le_vec;
+	vec3_t *row;
 	
 	vec4_t light_origin;
 	float l_rad;
@@ -1267,13 +1269,15 @@ static void scenegraph_CullLights()
 		if(likely(active_light_a.light_count<active_light_a.array_size))
 		{
 			_add:
-				
-			memcpy(&active_light_a.position_data[active_light_a.light_count], &light_a.position_data[i], sizeof(light_data0));
-			memcpy(&active_light_a.shadow_data[active_light_a.light_count], &light_a.shadow_data[i], sizeof(light_data2));
-			memcpy(&active_light_a.extra_data[active_light_a.light_count], &light_a.extra_data[i], sizeof(light_data3));
-			memcpy(&active_light_a.params[active_light_a.light_count], &light_a.params[i], sizeof(light_data1));
 			
-			active_light_indexes[active_light_a.light_count] = light_a.position_data[i].light_index;
+			m = active_light_a.light_count;
+				
+			memcpy(&active_light_a.position_data[m], &light_a.position_data[i], sizeof(light_data0));
+			memcpy(&active_light_a.shadow_data[m], &light_a.shadow_data[i], sizeof(light_data2));
+			memcpy(&active_light_a.extra_data[m], &light_a.extra_data[i], sizeof(light_data3));
+			memcpy(&active_light_a.params[m], &light_a.params[i], sizeof(light_data1));
+			
+			//active_light_indexes[active_light_a.light_count] = light_a.position_data[i].cache_index;
 			
 			//active_light_a.position_data[active_light_a.light_count]=light_a.position_data[i];
 			//active_light_a.shadow_data[active_light_a.light_count]=light_a.shadow_data[i];
@@ -1284,6 +1288,31 @@ static void scenegraph_CullLights()
 			
 			//light_vec = sub3(l_org3, cpos);
 			//l_org4 = MultiplyVector4(&active_camera->world_to_camera_matrix, light_a.position_data[i].world_position);
+			
+			/* this could be made faster with sse... */
+			for(l = 0; l < 3; l++)
+			{
+				row = (vec3_t *)&active_light_a.position_data[m].world_orientation.floats[l][0];
+			
+				l_org3.x = row->x * active_camera->world_to_camera_matrix.floats[0][0] + 
+						   row->y * active_camera->world_to_camera_matrix.floats[1][0] + 
+						   row->z * active_camera->world_to_camera_matrix.floats[2][0];
+				
+				l_org3.y = row->x * active_camera->world_to_camera_matrix.floats[0][1] + 
+						   row->y * active_camera->world_to_camera_matrix.floats[1][1] + 
+						   row->z * active_camera->world_to_camera_matrix.floats[2][1];
+						   
+				l_org3.z = row->x * active_camera->world_to_camera_matrix.floats[0][2] + 
+						   row->y * active_camera->world_to_camera_matrix.floats[1][2] + 
+						   row->z * active_camera->world_to_camera_matrix.floats[2][2];
+						   
+				active_light_transforms[m].floats[l][0] = l_org3.x;
+				active_light_transforms[m].floats[l][1] = l_org3.y;
+				active_light_transforms[m].floats[l][2] = l_org3.z;
+				active_light_transforms[m].floats[l][3] = 0.0;
+			}
+			
+
 			l_org3.x = l_org4.x * active_camera->world_to_camera_matrix.floats[0][0] + 
 					   l_org4.y * active_camera->world_to_camera_matrix.floats[1][0] + 
 					   l_org4.z * active_camera->world_to_camera_matrix.floats[2][0] + 
@@ -1297,7 +1326,13 @@ static void scenegraph_CullLights()
 			l_org3.z = l_org4.x * active_camera->world_to_camera_matrix.floats[0][2] + 
 					   l_org4.y * active_camera->world_to_camera_matrix.floats[1][2] + 
 					   l_org4.z * active_camera->world_to_camera_matrix.floats[2][2] + 
-					   active_camera->world_to_camera_matrix.floats[3][2];		   
+					   active_camera->world_to_camera_matrix.floats[3][2];	
+					   	   
+					   
+			active_light_transforms[m].floats[3][0] = l_org3.x;
+			active_light_transforms[m].floats[3][1] = l_org3.y;
+			active_light_transforms[m].floats[3][2] = l_org3.z;
+			active_light_transforms[m].floats[3][3] = 1.0;		   
 			
 			/*light_vec = l_org3;*/
 			
@@ -1402,11 +1437,15 @@ static void scenegraph_CullLights()
 		}
 		else
 		{
-			light_ResizeLightArray(&active_light_a, active_light_a.array_size<<1);
-			goto _add;
+			/* max active lights already cached, gtfo... */
+			break;
+			//light_ResizeLightArray(&active_light_a, active_light_a.array_size<<1);
+		//	goto _add;
 		}
 			
 	}
+	
+	light_UploadLightTransforms();
 	//printf("\n");
 	//printf("%d\n", active_light_a.light_count);
 }

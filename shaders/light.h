@@ -2,15 +2,20 @@
 #define LIGHT_SPOT 2
 #define LIGHT_DIRECTIONAL 4
 
-#define MAX_ACTIVE_LIGHTS 4
+#define MAX_ACTIVE_LIGHTS 32
+#define CLUSTER_SIZE 32
 
 #extension GL_ARB_explicit_uniform_location : enable
 uniform int sysLightCount;
-
-uniform int sysLightIndexes[MAX_ACTIVE_LIGHTS];
+uniform int sysLightIndex;
+uniform sampler3D sysClusterTexture;
 
 struct sysLightParamsFields
 {
+	vec4 sysLightRightVector;
+	vec4 sysLightUpVector;
+	vec4 sysLightForwardVector;
+	vec4 sysLightPosition;
 	vec4 sysLightColor;
 	
 	float sysLightRadius;
@@ -67,9 +72,13 @@ float sysSample3DShadowMap(float x, float y, float w, float h)
 	return 1.0;
 }
 
-ivec3 sysGetCluster(float x_coord, float y_coord, float view_z)
+ivec3 sysGetCluster(float x_coord, float y_coord, float view_z, float z_near)
 {
-	return ivec3(0, 0, 0);
+	ivec3 pos;
+	pos.x = int(x_coord / CLUSTER_SIZE);
+	pos.y = int(y_coord / CLUSTER_SIZE);
+	pos.z = int(log(-view_z / z_near) / log(1.0 + (2.0 * tan(0.68)) / CLUSTER_SIZE));
+	return pos;
 }
 
 

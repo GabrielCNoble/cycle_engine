@@ -216,6 +216,10 @@ typedef struct
 
 typedef struct
 {
+	vec4_t sysLightRightVector;
+	vec4_t sysLightUpVector;
+	vec4_t sysLightForwardVector;
+	vec4_t sysLightPosition;
 	vec4_t sysLightColor;
 	
 	float sysLightRadius;

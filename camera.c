@@ -131,9 +131,11 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 	camera->assigned_node=scenegraph_AddNode(NODE_CAMERA, camera_index, -1, camera->name);
 	camera_ComputeWorldToCameraMatrix(camera);
 	
+	clusters_per_row = renderer.width / CLUSTER_WIDTH;
+	clusters_rows = renderer.height / CLUSTER_HEIGHT;
 	
-	clusters_per_row = width / CLUSTER_WIDTH;
-	cluster_rows = height / CLUSTER_WIDTH;
+	//clusters_per_row = width / CLUSTER_WIDTH;
+	//cluster_rows = height / CLUSTER_WIDTH;
 	z_divs = log(zfar / znear) / log(1.0 + (2.0 * (tan((fovy * (width / height)) / 2.0) / CLUSTER_WIDTH)));
 	
 	

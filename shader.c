@@ -679,7 +679,8 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	}
 	
 	shader->sysLightCount = glGetUniformLocation(shader_prog, "sysLightCount");
-	shader->sysLightIndexes = glGetUniformLocation(shader_prog, "sysLightIndexes");
+	shader->sysLightIndex = glGetUniformLocation(shader_prog, "sysLightIndex");
+	shader->sysClusterTexture = glGetUniformLocation(shader_prog, "sysClusterTexture");
 	
 	//printf("%d %d\n", shader->sysLightCount, shader->sysLightIndexes);
 	

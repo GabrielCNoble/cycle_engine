@@ -8,6 +8,38 @@
 #include "macros.h"
 
 
+/*enum RENDERER_RESOLUTIONS
+{
+	RENDERER_1920x1080=0,
+	RENDERER_1600x900,
+	RENDERER_1366x768,
+	RENDERER_1280x1024,
+	RENDERER_1280x960,
+	RENDERER_1024x768,
+	RENDERER_800x600,
+};*/
+
+enum CLUSTER_TEXTURE_RESOLUTIONS
+{
+	CLUSTER_64x36 = 0,					/* 30 x 30 clusters */
+	//CLUSTER_64x36,						/* 25 x 25 clusters */
+	CLUSTER_30x32,						/* ~46 x 24 clusters */
+	CLUSTER_64x64,						/* 20 x 16 clusters */
+	CLUSTER_LAST,
+};
+
+
+/*float cluster_resolutions[CLUSTER_LAST][2] = 
+{
+	64, 36,
+	64, 36,
+	30, 32,
+	64, 64,
+};*/
+
+
+
+
 extern renderer_t renderer;
 extern shader_array shader_a;
 light_array light_a;
@@ -16,6 +48,8 @@ light_array active_light_a;
 int *active_light_indexes;
 extern camera_array camera_a;
 int max_lights_per_pass;
+
+mat4_t *active_light_transforms;
 
 affecting_lights_list affecting_lights;
 //extern framebuffer_t shadow_buffer;
@@ -36,6 +70,7 @@ static int cached_light_count;
 static int free_stack_top;
 static int *free_stack;
 static unsigned int light_cache;
+static unsigned int cluster_texture;
 
 extern int bm_extensions;
 
@@ -67,6 +102,24 @@ void light_Init()
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 	
+	glGenTextures(1, &cluster_texture);
+	glBindTexture(GL_TEXTURE_3D, cluster_texture);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
+	
+	//while(glGetError() != GL_NO_ERROR);
+	
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 32, 32, 16, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+	
+	//printf("%x\n", glGetError());
+	
+	glBindTexture(GL_TEXTURE_3D, 0);
+	
 	
 	
 	
@@ -93,6 +146,7 @@ void light_Init()
 	light_ResizeLightArray(&active_light_a, MAX_ACTIVE_LIGHTS);
 	
 	active_light_indexes = (int *)malloc(sizeof(int) * MAX_ACTIVE_LIGHTS);
+	active_light_transforms = (mat4_t *)malloc(sizeof(mat4_t) * MAX_ACTIVE_LIGHTS);
 	
 	
 	m=mat3_t_id();
@@ -573,8 +627,54 @@ void light_SortLights()
 
 void light_UploadLightIndexes()
 {
+	glBindTexture(GL_TEXTURE_3D, cluster_texture);
+	
+	glBindTexture(GL_TEXTURE_3D, 0);
+	
 	//glUniform1iv(shader_a.shaders[renderer.active_shader_index].sysLightIndexes, active_light_a.light_count, active_light_indexes);
-	glUniform1i(shader_a.shaders[renderer.active_shader_index].sysLightCount, active_light_a.light_count);
+	//glUniform1i(shader_a.shaders[renderer.active_shader_index].sysLightCount, active_light_a.light_count);
+}
+
+void light_UploadLightTransforms()
+{
+	int i;
+	int c = active_light_a.light_count;
+	int light_index;
+	gpu_lamp_t *lamp;
+	
+	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
+	lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	
+	for(i = 0; i < c; i++)
+	{
+		light_index = active_light_a.position_data[i].cache_index;
+		
+		memcpy(&lamp[light_index], &active_light_transforms[i], sizeof(mat4_t));
+		
+		/*lamp[light_index].sysLightRightVector.x = active_light_transforms[i].floats[0][0];
+		lamp[light_index].sysLightRightVector.y = active_light_transforms[i].floats[0][1];
+		lamp[light_index].sysLightRightVector.z = active_light_transforms[i].floats[0][2];
+		lamp[light_index].sysLightRightVector.w = active_light_transforms[i].floats[0][3];
+		
+		lamp[light_index].sysLightUpVector.x = active_light_transforms[i].floats[1][0];
+		lamp[light_index].sysLightUpVector.y = active_light_transforms[i].floats[1][1];
+		lamp[light_index].sysLightUpVector.z = active_light_transforms[i].floats[1][2];
+		lamp[light_index].sysLightUpVector.w = active_light_transforms[i].floats[1][3];
+		
+		lamp[light_index].sysLightForwardVector.x = active_light_transforms[i].floats[2][0];
+		lamp[light_index].sysLightForwardVector.y = active_light_transforms[i].floats[2][1];
+		lamp[light_index].sysLightForwardVector.z = active_light_transforms[i].floats[2][2];
+		lamp[light_index].sysLightForwardVector.w = active_light_transforms[i].floats[2][3];
+		
+		lamp[light_index].sysLightPosition.x = active_light_transforms[i].floats[3][0];
+		lamp[light_index].sysLightPosition.y = active_light_transforms[i].floats[3][1];
+		lamp[light_index].sysLightPosition.z = active_light_transforms[i].floats[3][2];
+		lamp[light_index].sysLightPosition.w = active_light_transforms[i].floats[3][3];*/
+	}
+	
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	
 }
 
 PEWAPI void light_BindLightCache()

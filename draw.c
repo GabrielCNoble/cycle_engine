@@ -2958,9 +2958,9 @@ void draw_ResolveGBuffer()
 			for(i = 0; i < c; i++)
 			{
 				position = &active_light_a.position_data[i];				
-				glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
+				//glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 				
-				glUniform1iv(shader_a.shaders[stencil_lights_shader].sysLightIndexes, 1, &position->light_index);
+				glUniform1i(shader_a.shaders[stencil_lights_shader].sysLightIndex, position->cache_index);
 				
 				//v[0] = 0;
 		 		//v[1] = 0;
@@ -2968,22 +2968,22 @@ void draw_ResolveGBuffer()
 		 		//v[3] = position->radius;
 				//glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
 				
-				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
+				//glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
 				
-		 		v[0] = position->world_orientation.floats[0][0];
-				v[1] = position->world_orientation.floats[0][1];
-				v[2] = position->world_orientation.floats[0][2];
-				glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
+		 		//v[0] = position->world_orientation.floats[0][0];
+				//v[1] = position->world_orientation.floats[0][1];
+				//v[2] = position->world_orientation.floats[0][2];
+				//glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
 				
-				v[0] = position->world_orientation.floats[1][0];
-				v[1] = position->world_orientation.floats[1][1];
-				v[2] = position->world_orientation.floats[1][2];
-				glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
+				//v[0] = position->world_orientation.floats[1][0];
+				//v[1] = position->world_orientation.floats[1][1];
+				//v[2] = position->world_orientation.floats[1][2];
+				//glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
 				
-				v[0] = position->world_orientation.floats[2][0];
-				v[1] = position->world_orientation.floats[2][1];
-				v[2] = position->world_orientation.floats[2][2];
-				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
+				//v[0] = position->world_orientation.floats[2][0];
+				//v[1] = position->world_orientation.floats[2][1];
+				//v[2] = position->world_orientation.floats[2][2];
+				//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
 				
 				
 				if(position->bm_flags&LIGHT_SPOT)
@@ -3081,27 +3081,27 @@ void draw_ResolveGBuffer()
 		 		//mat4_t_mult(&model_view_matrix, &light_transform, &active_camera->world_to_camera_matrix);
 		 		//glLoadMatrixf(&model_view_matrix.floats[0][0]);
 		 		
-		 		glUniform1iv(shader_a.shaders[deferred_process_shader_index].sysLightIndexes, 1, &active_light_a.position_data[i].light_index);
+		 		glUniform1i(shader_a.shaders[deferred_process_shader_index].sysLightIndex, position->cache_index);
 		 		
 		 		glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 		 		
 		 		/* right vector */
-		 		v[0] = position->world_orientation.floats[0][0];
-				v[1] = position->world_orientation.floats[0][1];
-				v[2] = position->world_orientation.floats[0][2];
-				glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
+		 		//v[0] = position->world_orientation.floats[0][0];
+				//v[1] = position->world_orientation.floats[0][1];
+				//v[2] = position->world_orientation.floats[0][2];
+				//glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
 				
 				/* up vector */
-				v[0] = position->world_orientation.floats[1][0];
-				v[1] = position->world_orientation.floats[1][1];
-				v[2] = position->world_orientation.floats[1][2];
-				glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
+			//	v[0] = position->world_orientation.floats[1][0];
+			//	v[1] = position->world_orientation.floats[1][1];
+			//	v[2] = position->world_orientation.floats[1][2];
+			//	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
 				
 				/* forward vector */
-				v[0] = position->world_orientation.floats[2][0];
-				v[1] = position->world_orientation.floats[2][1];
-				v[2] = position->world_orientation.floats[2][2];
-				glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
+			//	v[0] = position->world_orientation.floats[2][0];
+			//	v[1] = position->world_orientation.floats[2][1];
+			//	v[2] = position->world_orientation.floats[2][2];
+			//	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
 		 		
 		 		
 		 		//v[0] = (float)params->r / 255.0;
@@ -3111,8 +3111,8 @@ void draw_ResolveGBuffer()
 				//glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
 				
 				
-				glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
-				glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, params->spot_e);
+				//glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
+				//glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, params->spot_e);
 				glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)params->lin_fallof/0xffff);
 				glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)params->sqr_fallof/0xffff);
 				
@@ -3173,8 +3173,8 @@ void draw_ResolveGBuffer()
 						break;
 					}		
 
-					mat4_t_mult(&camera_to_light_matrix, &camera_to_world_matrix, &extra->world_to_light_matrix);
-					mat4_t_mult(&camera_to_light_projection_matrix, &camera_to_light_matrix, &extra->light_projection_matrix);
+					mat4_t_mult_fast(&camera_to_light_matrix, &camera_to_world_matrix, &extra->world_to_light_matrix);
+					mat4_t_mult_fast(&camera_to_light_projection_matrix, &camera_to_light_matrix, &extra->light_projection_matrix);
 
 					shader_SetCurrentShaderUniform1f(UNIFORM_LightZNear, shadow->znear);
 					shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, shadow->zfar);

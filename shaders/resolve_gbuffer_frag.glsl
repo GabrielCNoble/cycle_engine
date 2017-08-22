@@ -352,7 +352,7 @@ void main()
     //vec4 lcolor = gl_LightSource[0].diffuse;
     //vec3 light_color = gl_LightSource[0].diffuse.rgb;
     //vec3 light_color = vec3(1.0);
-    vec3 light_color = sysLightParams[sysLightIndexes[0]].sysLightColor.rgb;
+    vec3 light_color = sysLightParams[sysLightIndex].sysLightColor.rgb;
     float diff;
     float intensity=1.0;
     float spec;
@@ -377,16 +377,17 @@ void main()
 	//{
 		view_vec = -p_texel.xyz;
 
-		light_pos = gl_LightSource[0].position.xyz;
+		//light_pos = gl_LightSource[0].position.xyz;
+		light_pos = sysLightParams[sysLightIndex].sysLightPosition.xyz;
 		light_vec = light_pos - p_texel.xyz;
 		
-		if(sysLightParams[sysLightIndexes[0]].sysLightType == LIGHT_POINT)
+		if(sysLightParams[sysLightIndex].sysLightType == LIGHT_POINT)
 		{
-			intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndexes[0]].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndex].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 		}
-		else if(sysLightParams[sysLightIndexes[0]].sysLightType == LIGHT_SPOT)
+		else if(sysLightParams[sysLightIndex].sysLightType == LIGHT_SPOT)
 		{
-			intensity = sysAttenuateSpot(light_vec, gl_LightSource[2].spotDirection, sysLightParams[sysLightIndexes[0]].sysLightRadius, sysLightParams[sysLightIndexes[0]].sysLightSpotCosCutoff, sysLightParams[sysLightIndexes[0]].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+			intensity = sysAttenuateSpot(light_vec, sysLightParams[sysLightIndex].sysLightForwardVector /*gl_LightSource[2].spotDirection*/, sysLightParams[sysLightIndex].sysLightRadius, sysLightParams[sysLightIndex].sysLightSpotCosCutoff, sysLightParams[sysLightIndex].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);
@@ -467,7 +468,18 @@ void main()
 
 	//}
 	
-	gl_FragColor = f_color + vec4(0.0);
+	/*vec4 c_color;
+	
+	if(sysGetCluster(gl_FragCoord.x, gl_FragCoord.y, p_texel.z, 0.1).xy == ivec2(41, 0))
+	{
+		c_color = vec4(0.5);
+	}
+	else
+	{
+		c_color = vec4(0);
+	}*/
+	
+	gl_FragColor = f_color/* + c_color*/;
 }
 
 
