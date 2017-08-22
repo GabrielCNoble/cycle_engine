@@ -8,7 +8,7 @@
 #include "framebuffer.h"
 
 
-typedef struct
+/*typedef struct
 {
 	int offset;
 	int count;
@@ -24,7 +24,7 @@ typedef struct
 {
 	cluster_ll_t *light_lists;
 	cluster_aabb_t *aabbs;
-}cluster_list_t;
+}cluster_list_t;*/
 
 typedef struct camera_t
 {
@@ -51,7 +51,7 @@ typedef struct
 	int array_size;
 	int camera_count;
 	camera_t *cameras;
-	cluster_list_t *clusters;
+	//cluster_list_t *clusters;
 	//cluster_ll_t **clusters_light_lists;
 	//cluster_aabb_t **clusters_aabbs;
 }camera_array;

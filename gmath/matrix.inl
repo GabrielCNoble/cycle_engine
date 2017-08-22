@@ -146,14 +146,6 @@ PEWAPI void mat4_t_vec4_t_mult(mat4_t *mat, vec4_t *vec)
 		
 		"movups xmm0, [edi]\n"
 		
-		/*"movups (%%esi), %%xmm2\n"
-		"movups 16(%%esi), %%xmm3\n"
-		"movups 32(%%esi), %%xmm4\n"
-		"movups 48(%%esi), %%xmm5\n"
-		
-		
-		"movups (%%edi), %%xmm0\n"*/
-		
 		"movups xmm1, xmm0\n"
 		
 		"shufps xmm0, xmm0, 0\n"

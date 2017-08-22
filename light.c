@@ -6,6 +6,7 @@
 #include "vector.h"
 //#include "framebuffer.h"
 #include "macros.h"
+#include "draw_debug.h"
 
 
 /*enum RENDERER_RESOLUTIONS
@@ -19,23 +20,30 @@
 	RENDERER_800x600,
 };*/
 
-enum CLUSTER_TEXTURE_RESOLUTIONS
-{
-	CLUSTER_64x36 = 0,					/* 30 x 30 clusters */
+//enum CLUSTER_TEXTURE_RESOLUTIONS
+//{
+//	CLUSTER_64x36 = 0,					/* 30 x 30 clusters */
 	//CLUSTER_64x36,						/* 25 x 25 clusters */
-	CLUSTER_30x32,						/* ~46 x 24 clusters */
-	CLUSTER_64x64,						/* 20 x 16 clusters */
+//	CLUSTER_30x32,						/* ~46 x 24 clusters */
+//	CLUSTER_64x64,						/* 20 x 16 clusters */
+//	CLUSTER_LAST,
+//};
+
+enum CLUSTER_RESOLUTIONS
+{
+	CLUSTER_1920x1080 = 0,
+	CLUSTER_1600x900,
+	CLUSTER_1366x768,
 	CLUSTER_LAST,
 };
 
 
-/*float cluster_resolutions[CLUSTER_LAST][2] = 
+int cluster_texture_resolutions[CLUSTER_LAST][2] = 
 {
-	64, 36,
-	64, 36,
-	30, 32,
-	64, 64,
-};*/
+	60, 34,
+	50, 29,
+	44, 24,
+};
 
 
 
@@ -50,6 +58,8 @@ extern camera_array camera_a;
 int max_lights_per_pass;
 
 mat4_t *active_light_transforms;
+
+unsigned int *clusters; 
 
 affecting_lights_list affecting_lights;
 //extern framebuffer_t shadow_buffer;
@@ -70,7 +80,7 @@ static int cached_light_count;
 static int free_stack_top;
 static int *free_stack;
 static unsigned int light_cache;
-static unsigned int cluster_texture;
+unsigned int cluster_texture;
 
 extern int bm_extensions;
 
@@ -96,10 +106,14 @@ void light_Init()
 	
 	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
+		//while(glGetError() != GL_NO_ERROR);
 		glGenBuffers(1, &light_cache);
 		glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(gpu_lamp_t) * light_cache_size, NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		
+		//printf("%x\n", glGetError());
+		
 	}
 	
 	glGenTextures(1, &cluster_texture);
@@ -114,7 +128,7 @@ void light_Init()
 	
 	//while(glGetError() != GL_NO_ERROR);
 	
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 32, 32, 16, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, cluster_texture_resolutions[renderer.selected_resolution][0], cluster_texture_resolutions[renderer.selected_resolution][1], 16, 0, GL_RED, GL_UNSIGNED_INT, NULL);
 	
 	//printf("%x\n", glGetError());
 	
@@ -122,7 +136,7 @@ void light_Init()
 	
 	
 	
-	
+	clusters = (unsigned int *)malloc(sizeof(int) * cluster_texture_resolutions[renderer.selected_resolution][0] * cluster_texture_resolutions[renderer.selected_resolution][1] * CLUSTER_Z_DIVS);
 	
 	
 	
@@ -145,7 +159,7 @@ void light_Init()
 	active_light_a.light_count=0;
 	light_ResizeLightArray(&active_light_a, MAX_ACTIVE_LIGHTS);
 	
-	active_light_indexes = (int *)malloc(sizeof(int) * MAX_ACTIVE_LIGHTS);
+	//active_light_indexes = (int *)malloc(sizeof(int) * MAX_ACTIVE_LIGHTS);
 	active_light_transforms = (mat4_t *)malloc(sizeof(mat4_t) * MAX_ACTIVE_LIGHTS);
 	
 	
@@ -204,7 +218,8 @@ void light_Finish()
 	free(active_light_a.extra_data);
 	free(active_light_a.params);
 	
-	free(active_light_indexes);
+	//free(active_light_indexes);
+	free(active_light_transforms);
 	return;
 }
 
@@ -239,12 +254,14 @@ void light_ResizeLightArray(light_array *larray, int new_size)
 	
 	//larray->world_data=wtemp;
 	//larray->local_data=ltemp;
-	larray->shadow_data=stemp;
-	larray->position_data=ctemp;
-	larray->extra_data=etemp;
-	larray->params=ptemp;
-	larray->array_size=new_size;
+	larray->shadow_data = stemp;
+	larray->position_data = ctemp;
+	larray->extra_data = etemp;
+	larray->params = ptemp;
+	larray->array_size = new_size;
 	larray->free_stack = temp;
+	
+	//free(active_light_transforms);
 	return;
 	
 }
@@ -649,9 +666,9 @@ void light_UploadLightTransforms()
 	{
 		light_index = active_light_a.position_data[i].cache_index;
 		
-		memcpy(&lamp[light_index], &active_light_transforms[i], sizeof(mat4_t));
+		//memcpy(&lamp[light_index], &active_light_transforms[i], sizeof(mat4_t));
 		
-		/*lamp[light_index].sysLightRightVector.x = active_light_transforms[i].floats[0][0];
+		lamp[light_index].sysLightRightVector.x = active_light_transforms[i].floats[0][0];
 		lamp[light_index].sysLightRightVector.y = active_light_transforms[i].floats[0][1];
 		lamp[light_index].sysLightRightVector.z = active_light_transforms[i].floats[0][2];
 		lamp[light_index].sysLightRightVector.w = active_light_transforms[i].floats[0][3];
@@ -669,7 +686,7 @@ void light_UploadLightTransforms()
 		lamp[light_index].sysLightPosition.x = active_light_transforms[i].floats[3][0];
 		lamp[light_index].sysLightPosition.y = active_light_transforms[i].floats[3][1];
 		lamp[light_index].sysLightPosition.z = active_light_transforms[i].floats[3][2];
-		lamp[light_index].sysLightPosition.w = active_light_transforms[i].floats[3][3];*/
+		lamp[light_index].sysLightPosition.w = active_light_transforms[i].floats[3][3];
 	}
 	
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -677,10 +694,232 @@ void light_UploadLightTransforms()
 	
 }
 
+void light_AssignLightsToClusters()
+{
+	int i;
+	int c = active_light_a.light_count;
+	camera_t *active_camera = camera_GetActiveCamera();
+	
+	int j;
+	
+	int x;
+	int y;
+	int z;
+	
+	//mat4_t *projection_matrix = &active_camera->projection_matrix;
+	
+	vec4_t corners[8];
+	vec3_t light_origin;
+	float light_radius;
+	
+	float nzfar = -active_camera->frustum.zfar;
+	float nznear = -active_camera->frustum.znear;
+	float ntop = active_camera->frustum.top;
+	float nright = active_camera->frustum.right;
+	
+	float x_max;
+	float x_min;
+	float y_max;
+	float y_min;
+	float d;
+	
+	int cluster_min_x;
+	int cluster_min_y;
+	int cluster_min_z;
+	int cluster_max_x;
+	int cluster_max_y;
+	int cluster_max_z;
+	
+	
+	d = log(1.0 + (2.0 * tan(0.68)) / CLUSTER_SIZE);
+	
+	
+	/*for(z = 0; z < CLUSTER_Z_DIVS; z++)
+	{
+		for(y = 0; y < cluster_texture_resolutions[renderer.selected_resolution][1]; y++)
+		{
+			for(x = 0; x < cluster_texture_resolutions[renderer.selected_resolution][0]; x++)
+			{
+				clusters[z * cluster_texture_resolutions[renderer.selected_resolution][0] * 
+							 cluster_texture_resolutions[renderer.selected_resolution][1] + 
+							 y * cluster_texture_resolutions[renderer.selected_resolution][0] + 
+							 x] = 0;
+			}
+				
+		}
+	}*/
+	
+	
+	for(y = 0; y < cluster_texture_resolutions[renderer.selected_resolution][1]; y++)
+	{
+		for(x = 0; x < cluster_texture_resolutions[renderer.selected_resolution][0]; x++)
+		{
+			clusters[y * cluster_texture_resolutions[renderer.selected_resolution][0] + x] = 0;
+		}
+			
+	}
+
+	
+	
+	
+	
+	for(i = 0; i < c; i++)
+	{
+		
+		//light_origin = active_light_a.position_data[i].world_position.vec3;
+		light_origin = vec3(active_light_transforms[i].floats[3][0], active_light_transforms[i].floats[3][1], active_light_transforms[i].floats[3][2]);
+		light_radius = active_light_a.position_data[i].radius;
+		
+		corners[0].x = light_origin.x - light_radius;
+		corners[0].y = light_origin.y + light_radius;
+		corners[0].z = light_origin.z + light_radius;
+		//corners[0].w = 1.0;
+		
+		corners[1].x = light_origin.x - light_radius;
+		corners[1].y = light_origin.y - light_radius;
+		corners[1].z = light_origin.z - light_radius;
+		//corners[1].w = 1.0;
+		
+		corners[2].x = light_origin.x + light_radius;
+		corners[2].y = light_origin.y - light_radius;
+		//corners[2].z = light_origin.z + light_radius;
+		//corners[2].w = 1.0;
+		
+		corners[3].x = light_origin.x + light_radius;
+		corners[3].y = light_origin.y + light_radius;
+		//corners[3].z = light_origin.z + light_radius;
+		//corners[3].w = 1.0;
+		
+		corners[4].x = light_origin.x - light_radius;
+		corners[4].y = light_origin.y + light_radius;
+		//corners[4].z = light_origin.z - light_radius;
+		//corners[4].w = 1.0;
+		
+		corners[5].x = light_origin.x - light_radius;
+		corners[5].y = light_origin.y - light_radius;
+		//corners[5].z = light_origin.z - light_radius;
+		//corners[5].w = 1.0;
+		
+		corners[6].x = light_origin.x + light_radius;
+		corners[6].y = light_origin.y - light_radius;
+		//corners[6].z = light_origin.z - light_radius;
+		//corners[6].w = 1.0;
+		
+		corners[7].x = light_origin.x + light_radius;
+		corners[7].y = light_origin.y + light_radius;
+		//corners[7].z = light_origin.z - light_radius;
+		//corners[7].w = 1.0;
+		
+		
+		x_max = -999.999;
+		x_min = 999.999;
+		y_max = -999.999;
+		y_min = 999.999;
+		
+		for(j = 0; j < 4; j++)
+		{
+			corners[j].x = ((nznear / nright) * corners[j].x) / corners[0].z;
+			corners[j].y = ((nznear / ntop) * corners[j].y) / corners[0].z;
+			
+			
+			if(corners[j].x > x_max) x_max = corners[j].x;
+			if(corners[j].x < x_min) x_min = corners[j].x;
+			
+			if(corners[j].y > y_max) y_max = corners[j].y;
+			if(corners[j].y < y_min) y_min = corners[j].y;
+			
+			//draw_debug_DrawPoint(vec3(corners[j].x, corners[j].y, -0.5), vec3(1.0, 1.0, 1.0), 8.0, 1);
+		}
+				
+		for(; j < 8; j++)
+		{
+			corners[j].x = ((nznear / nright) * corners[j].x) / corners[1].z;
+			corners[j].y = ((nznear / ntop) * corners[j].y) / corners[1].z;
+			
+			if(corners[j].x > x_max) x_max = corners[j].x;
+			if(corners[j].x < x_min) x_min = corners[j].x;
+			
+			if(corners[j].y > y_max) y_max = corners[j].y;
+			if(corners[j].y < y_min) y_min = corners[j].y;
+			
+			//draw_debug_DrawPoint(vec3(corners[j].x, corners[j].y, -0.5), vec3(1.0, 1.0, 1.0), 8.0, 1);
+		}
+		
+		if(x_min < -1.0) x_min = -1.0;
+		if(y_min < -1.0) y_min = -1.0;
+		if(x_max > 1.0) x_max = 1.0;
+		if(y_max > 1.0) y_max = 1.0;
+		
+		
+		x_min = x_min * 0.5 + 0.5;
+		y_min = y_min * 0.5 + 0.5;
+		
+		x_max = x_max * 0.5 + 0.5;
+		y_max = y_max * 0.5 + 0.5;
+		
+		//printf("%f %f %f %f\n", x_min, y_min, x_max, y_max);
+		
+		cluster_min_x = (renderer.width * x_min) / CLUSTER_SIZE;
+		cluster_min_y = (renderer.height * y_min) / CLUSTER_SIZE;
+		
+		cluster_max_x = (renderer.width * x_max) / CLUSTER_SIZE;
+		cluster_max_y = (renderer.height * y_max) / CLUSTER_SIZE;
+		
+		cluster_min_z = int(log((-corners[0].z) / (-nznear)) / d) / CLUSTER_Z_DIVS;
+		cluster_max_z = int(log((-corners[1].z) / (-nznear)) / d) / CLUSTER_Z_DIVS;
+		
+		if(cluster_min_z < 0) cluster_min_z = 0;
+		if(cluster_max_z > CLUSTER_Z_DIVS) cluster_max_z = CLUSTER_Z_DIVS;
+		
+		
+		for(y = cluster_min_y; y < cluster_max_y; y++)
+		{
+			for(x = cluster_min_x; x < cluster_max_x; x++)
+			{
+				clusters[y * cluster_texture_resolutions[renderer.selected_resolution][0] + x] = 0xffffffff;
+			}
+			
+		}
+		
+		
+		/*for(z = cluster_min_z; z < cluster_max_z; z++)
+		{
+			for(y = cluster_min_y; y < cluster_max_y; y++)
+			{
+				for(x = cluster_min_x; x < cluster_max_x; x++)
+				{
+					clusters[z * cluster_texture_resolutions[renderer.selected_resolution][0] * 
+								 cluster_texture_resolutions[renderer.selected_resolution][1] + 
+								 y * cluster_texture_resolutions[renderer.selected_resolution][0] + 
+								 x] = 0xffffffff;
+				}
+				
+			}
+		}*/
+		
+		
+		//printf("%d %d %d %d %d %d\n", cluster_min_x, cluster_min_y, cluster_max_x, cluster_max_y, cluster_min_z, cluster_max_z);
+		
+		
+		/*draw_debug_DrawLine(vec3(x_min, y_max, -0.5), vec3(x_min, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_min, y_min, -0.5), vec3(x_max, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_max, y_min, -0.5), vec3(x_max, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_max, y_max, -0.5), vec3(x_min, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);*/
+	}
+	
+	glBindTexture(GL_TEXTURE_3D, cluster_texture);
+	glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, cluster_texture_resolutions[renderer.selected_resolution][0], 
+											cluster_texture_resolutions[renderer.selected_resolution][1], 
+											CLUSTER_Z_DIVS, GL_RED, GL_UNSIGNED_INT, clusters);
+											
+	glBindTexture(GL_TEXTURE_3D, 0);											
+	
+}
+
 PEWAPI void light_BindLightCache()
 {
 	//glUniformBlockBinding(shader_a.shaders[renderer.active_shader_index].shader_ID, 1, LIGHT_PARAMS_BINDING);
-	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
+	//glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
 	glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_PARAMS_BINDING, light_cache);
 }
 
@@ -718,9 +957,9 @@ PEWAPI void light_UpdateGPULight(light_ptr light)
 	
 	
 	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
-	p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	
-	lamp = (gpu_lamp_t *)((char *)p + sizeof(gpu_lamp_t) * index);
+	lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	lamp += index;
 	
 	lamp->sysLightColor.r = (float)light.params->r / 255.0;
 	lamp->sysLightColor.g = (float)light.params->g / 255.0;
@@ -736,6 +975,7 @@ PEWAPI void light_UpdateGPULight(light_ptr light)
 	lamp->sysLightType = light.position_data->bm_flags & (LIGHT_POINT | LIGHT_SPOT | LIGHT_DIRECTIONAL);
 	
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void light_CacheGPULight(light_ptr light)
@@ -753,12 +993,11 @@ void light_CacheGPULight(light_ptr light)
 	}
 	
 	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
-	//lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	lamp += index;
+	//p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	
-	//lamp += index;
-	p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-	
-	lamp = (gpu_lamp_t *)((char *)p + sizeof(gpu_lamp_t) * index);
+	//lamp = (gpu_lamp_t *)((char *)p + sizeof(gpu_lamp_t) * index);
 	
 	lamp->sysLightColor.r = (float)light.params->r / 255.0;
 	lamp->sysLightColor.g = (float)light.params->g / 255.0;
@@ -776,6 +1015,7 @@ void light_CacheGPULight(light_ptr light)
 	light.position_data->bm_flags |= LIGHT_CACHED;
 	
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	
 }
 

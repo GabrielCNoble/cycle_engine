@@ -259,6 +259,8 @@ PEWAPI void shader_Init(char *path)
 		}
 		
 		
+		//glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &i);
+		
 		/*i = glGetUniformBlockIndex(init_shader->shader_ID, light_params_uniform_block);
 		if(i != GL_INVALID_INDEX)
 		{
@@ -278,34 +280,10 @@ PEWAPI void shader_Init(char *path)
 		
 		//printf("%d %d %d\n", material_params_uniform_buffer_size, sizeof(gpu_lamp_t) * MAX_ACTIVE_LIGHTS, light_params_uniform_buffer_size);
 		
+		//printf("%d %d\n", i, sizeof(gpu_lamp_t) * MAX_ACTIVE_LIGHTS);
+		
 		
 	}
-	
-
-	
-	
-	//glGetUniformIndices(init_shader->shader_ID, OFFSET_TYPE_COUNT, (const char **)offset_uniform_fields, indexes);
-	//glGetActiveUniformsiv(init_shader->shader_ID, OFFSET_TYPE_COUNT, indexes, GL_UNIFORM_OFFSET, (int *)type_offsets);
-	
-	
-	//glGetUniformIndices(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, (const char **)material_params_uniform_fields, indexes);
-	//glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)material_params_uniform_offsets);
-	//glGetActiveUniformsiv(init_shader->shader_ID, MATERIAL_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)material_params_uniform_types);
-		
-	
-	//glGetUniformIndices(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, (const char **)light_params_uniform_fields, indexes);
-	//glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_OFFSET, (int *)light_params_uniform_offsets);
-	//glGetActiveUniformsiv(init_shader->shader_ID, LIGHT_PARAMS_FIELDS, indexes, GL_UNIFORM_TYPE, (int *)light_params_uniform_types);
-	
-	
-	
-	
-	
-	//else
-	//{
-	//	
-	//}
-	
 	
 	
 	shader_DeleteShaderByIndex(init_shader_index);

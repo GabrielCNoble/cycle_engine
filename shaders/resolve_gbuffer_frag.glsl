@@ -468,9 +468,21 @@ void main()
 
 	//}
 	
-	/*vec4 c_color;
+	vec4 c_color = vec4(0.0);
+	unsigned int kl;
 	
-	if(sysGetCluster(gl_FragCoord.x, gl_FragCoord.y, p_texel.z, 0.1).xy == ivec2(41, 0))
+	
+	ivec3 cluster_position = sysGetCluster(gl_FragCoord.x, gl_FragCoord.y, p_texel.z, 0.1);
+	
+	kl = texelFetch(sysClusterTexture, ivec3(cluster_position.xy, 0), 0).r;
+	
+	if(kl != 0)
+	{
+		c_color = vec4(0.05);
+	}
+	
+	
+	/*if(sysGetCluster(gl_FragCoord.x, gl_FragCoord.y, p_texel.z, 0.1).xy == ivec2(41, 0))
 	{
 		c_color = vec4(0.5);
 	}
@@ -479,7 +491,7 @@ void main()
 		c_color = vec4(0);
 	}*/
 	
-	gl_FragColor = f_color/* + c_color*/;
+	gl_FragColor = f_color + c_color;
 }
 
 

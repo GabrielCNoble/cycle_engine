@@ -134,9 +134,9 @@ typedef struct
 	//int v_color;
 	unsigned int shader_ID;
 	unsigned short *default_uniforms;
-	unsigned char sysLightCount;
-	unsigned char sysLightIndex;
-	unsigned char sysClusterTexture;
+	unsigned short sysLightCount;
+	unsigned short sysLightIndex;
+	unsigned short sysClusterTexture;
 	char *name;
 	
 }shader_t;

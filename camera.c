@@ -37,7 +37,7 @@ PEWAPI void camera_Init()
 	//camera_RotateCamera(&default_camera, vec3(1.0, 0.0, 0.0), -0.02, 0);
 	
 	//camera_CreateCamera(&default_camera);
-	camera_CreateCamera("default_camera", vec3(0.0, 1.5, 0.0), &orientation, 0.68 , (float) renderer.width, (float) renderer.height, 0.1, 1000.0);
+	camera_CreateCamera("default_camera", vec3(0.0, 1.5, 0.0), &orientation, 0.68, (float) renderer.width, (float) renderer.height, 0.1, 1000.0);
 	camera_SetCameraByIndex(0);	
 	
 	return;
@@ -54,12 +54,12 @@ PEWAPI void camera_Finish()
 	int i;
 	free(camera_a.cameras);
 	
-	for(i = 0; i < camera_a.camera_count; i++)
+	/*for(i = 0; i < camera_a.camera_count; i++)
 	{
 		free(camera_a.clusters[i].aabbs);
 		free(camera_a.clusters[i].light_lists);
 	}
-	free(camera_a.clusters);
+	free(camera_a.clusters);*/
 	
 	//free(camera_a.clusters_light_lists);
 	//free(camera_a.clusters_aabbs);
@@ -75,22 +75,22 @@ camera_ResizeCameraArray
 PEWAPI void camera_ResizeCameraArray(int new_size)
 {
 	camera_t *temp=(camera_t *)calloc(new_size, sizeof(camera_t));
-	cluster_list_t *c = (cluster_list_t *)malloc(new_size * sizeof(cluster_list_t));
+	//cluster_list_t *c = (cluster_list_t *)malloc(new_size * sizeof(cluster_list_t));
 	//cluster_ll_t **a = (cluster_ll_t **)malloc(new_size * sizeof(cluster_ll_t *));
 	//cluster_aabb_t **b = (cluster_aabb_t **)malloc(new_size * sizeof(cluster_aabb_t *));
 	if(camera_a.cameras)
 	{
 		memcpy(temp, camera_a.cameras, sizeof(camera_t)*camera_a.camera_count);
-		memcpy(c, camera_a.clusters, sizeof(cluster_list_t) * camera_a.camera_count);
+		//memcpy(c, camera_a.clusters, sizeof(cluster_list_t) * camera_a.camera_count);
 		//memcpy(a, camera_a.clusters_light_lists, sizeof(cluster_ll_t *) * camera_a.camera_count);
 		//memcpy(b, camera_a.clusters_aabbs, sizeof(cluster_aabb_t *) * camera_a.camera_count);
 		free(camera_a.cameras);
-		free(camera_a.clusters);
+		//free(camera_a.clusters);
 		//free(camera_a.clusters_light_lists);
 		//free(camera_a.clusters_aabbs);
 	}
 	camera_a.cameras = temp;
-	camera_a.clusters = c;
+	//camera_a.clusters = c;
 	//camera_a.clusters_light_lists = a;
 	//camera_a.clusters_aabbs = b;
 	camera_a.array_size = new_size;
@@ -115,9 +115,9 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 	}
 	
 	camera_t *camera = &camera_a.cameras[camera_index];
-	cluster_list_t *clusters = &camera_a.clusters[camera_index];
-	cluster_ll_t *cll;
-	cluster_aabb_t *caabb;
+	//cluster_list_t *clusters = &camera_a.clusters[camera_index];
+	//cluster_ll_t *cll;
+	//cluster_aabb_t *caabb;
 	
 	camera->name = strdup(name);
 	camera->local_position = position;
@@ -131,24 +131,24 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 	camera->assigned_node=scenegraph_AddNode(NODE_CAMERA, camera_index, -1, camera->name);
 	camera_ComputeWorldToCameraMatrix(camera);
 	
-	clusters_per_row = renderer.width / CLUSTER_WIDTH;
-	clusters_rows = renderer.height / CLUSTER_HEIGHT;
+	//clusters_per_row = renderer.width / CLUSTER_WIDTH;
+	//cluster_rows = renderer.height / CLUSTER_WIDTH;
 	
 	//clusters_per_row = width / CLUSTER_WIDTH;
 	//cluster_rows = height / CLUSTER_WIDTH;
-	z_divs = log(zfar / znear) / log(1.0 + (2.0 * (tan((fovy * (width / height)) / 2.0) / CLUSTER_WIDTH)));
+	//z_divs = log(zfar / znear) / log(1.0 + (2.0 * (tan((fovy * (width / height)) / 2.0) / CLUSTER_WIDTH)));
 	
 	
 	
-	clusters->light_lists = (cluster_ll_t *)malloc(sizeof(cluster_ll_t) * clusters_per_row * cluster_rows * z_divs);
-	clusters->aabbs = (cluster_aabb_t *)malloc(sizeof(cluster_aabb_t ) * clusters_per_row * cluster_rows * z_divs);
+	//clusters->light_lists = (cluster_ll_t *)malloc(sizeof(cluster_ll_t) * clusters_per_row * cluster_rows * z_divs);
+	//clusters->aabbs = (cluster_aabb_t *)malloc(sizeof(cluster_aabb_t ) * clusters_per_row * cluster_rows * z_divs);
 	
-	cll = clusters->light_lists;
-	caabb = clusters->aabbs;
+	//cll = clusters->light_lists;
+	//caabb = clusters->aabbs;
 	
 	//printf("%d\n", z_divs);
 	
-	for(k = 0; k < z_divs; k++)
+	/*for(k = 0; k < z_divs; k++)
 	{
 		for(i = 0; i < clusters_per_row; i++)
 		{
@@ -157,7 +157,7 @@ PEWAPI int camera_CreateCamera(char *name, vec3_t position, mat3_t *orientation,
 				
 			}
 		}
-	}
+	}*/
 		
 	
 	

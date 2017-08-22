@@ -27,6 +27,8 @@
 #define light_SetAreaType(x) glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, x)
 
 #define MAX_ACTIVE_LIGHTS 32
+#define CLUSTER_SIZE 32
+#define CLUSTER_Z_DIVS 16
 
 #ifdef __cplusplus
 extern "C"
@@ -60,6 +62,8 @@ PEWAPI void light_UpdateGPULight(light_ptr light);
 void light_UploadLightIndexes();
 
 void light_UploadLightTransforms();
+
+void light_AssignLightsToClusters();
 
 PEWAPI void light_BindLightCache();
 
