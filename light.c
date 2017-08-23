@@ -710,6 +710,8 @@ void light_AssignLightsToClusters()
 	
 	vec4_t corners[8];
 	vec3_t light_origin;
+	vec3_t cam_vec;
+	vec3_t p;
 	float light_radius;
 	
 	float nzfar = -active_camera->frustum.zfar;
@@ -769,8 +771,15 @@ void light_AssignLightsToClusters()
 		//light_origin = active_light_a.position_data[i].world_position.vec3;
 		light_origin = vec3(active_light_transforms[i].floats[3][0], active_light_transforms[i].floats[3][1], active_light_transforms[i].floats[3][2]);
 		light_radius = active_light_a.position_data[i].radius;
+		cam_vec = normalize3(vec3(-light_origin.x, -light_origin.y, -light_origin.z));
 		
-		corners[0].x = light_origin.x - light_radius;
+		//p = mul3(cam_vec, light_radius);
+		
+		corners[0].x = cam_vec.x * light_radius - light_radius;
+		corners[0].y = p.y + light_radius;
+		corners[0].z = p.z;
+		
+	/*	corners[0].x = light_origin.x - light_radius;
 		corners[0].y = light_origin.y + light_radius;
 		corners[0].z = light_origin.z + light_radius;
 		//corners[0].w = 1.0;
@@ -828,6 +837,8 @@ void light_AssignLightsToClusters()
 			if(corners[j].y > y_max) y_max = corners[j].y;
 			if(corners[j].y < y_min) y_min = corners[j].y;
 			
+			//printf("[%f %f]\n", corners[j].x, corners[j].y);
+			
 			//draw_debug_DrawPoint(vec3(corners[j].x, corners[j].y, -0.5), vec3(1.0, 1.0, 1.0), 8.0, 1);
 		}
 				
@@ -842,13 +853,22 @@ void light_AssignLightsToClusters()
 			if(corners[j].y > y_max) y_max = corners[j].y;
 			if(corners[j].y < y_min) y_min = corners[j].y;
 			
+			//printf("[%f %f]\n", corners[j].x, corners[j].y);
+			
 			//draw_debug_DrawPoint(vec3(corners[j].x, corners[j].y, -0.5), vec3(1.0, 1.0, 1.0), 8.0, 1);
 		}
+		
+		//printf("\n\n");
 		
 		if(x_min < -1.0) x_min = -1.0;
 		if(y_min < -1.0) y_min = -1.0;
 		if(x_max > 1.0) x_max = 1.0;
 		if(y_max > 1.0) y_max = 1.0;
+		
+		draw_debug_DrawLine(vec3(x_min, y_max, -0.5), vec3(x_min, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_min, y_min, -0.5), vec3(x_max, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_max, y_min, -0.5), vec3(x_max, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_max, y_max, -0.5), vec3(x_min, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
 		
 		
 		x_min = x_min * 0.5 + 0.5;
@@ -857,7 +877,6 @@ void light_AssignLightsToClusters()
 		x_max = x_max * 0.5 + 0.5;
 		y_max = y_max * 0.5 + 0.5;
 		
-		//printf("%f %f %f %f\n", x_min, y_min, x_max, y_max);
 		
 		cluster_min_x = (renderer.width * x_min) / CLUSTER_SIZE;
 		cluster_min_y = (renderer.height * y_min) / CLUSTER_SIZE;
@@ -879,7 +898,7 @@ void light_AssignLightsToClusters()
 				clusters[y * cluster_texture_resolutions[renderer.selected_resolution][0] + x] = 0xffffffff;
 			}
 			
-		}
+		}*/
 		
 		
 		/*for(z = cluster_min_z; z < cluster_max_z; z++)

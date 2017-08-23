@@ -80,7 +80,11 @@ ivec3 sysGetCluster(float x_coord, float y_coord, float view_z, float z_near)
 	pos.y = int(y_coord) / CLUSTER_SIZE;
 	pos.z = int(log(-view_z / -z_near) / log(1.0 + (2.0 * tan(0.68)) / CLUSTER_SIZE)) / CLUSTER_Z_DIVS;
 	
-	pos.z = clamp(pos.z, 0, CLUSTER_Z_DIVS);
+	//pos.z = clamp(pos.z, 0, CLUSTER_Z_DIVS);
+	//pos.z = min(max(pos.z, 0), CLUSTER_Z_DIVS);
+	
+	if(pos.z > CLUSTER_Z_DIVS) pos.z = CLUSTER_Z_DIVS;
+	else if(pos.z < 0) pos.z = 0;
 	
 	return pos;
 }
