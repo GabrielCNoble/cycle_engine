@@ -40,18 +40,17 @@ void main()
 	
 	if(sysLightParams[sysLightIndex].sysLightType == LIGHT_POINT)
 	{
-		p = vec4(gl_NormalMatrix * (p.xyz * sysLightParams[sysLightIndex].sysLightRadius * 1.08) + sysLightParams[sysLightIndex].sysLightPosition.xyz/*gl_LightSource[0].position.xyz*/, 1.0);
+		p = vec4(gl_NormalMatrix * (p.xyz * sysLightParams[sysLightIndex].sysLightRadius * 1.08) + sysLightParams[sysLightIndex].sysLightPosition.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}
 	else if(sysLightParams[sysLightIndex].sysLightType == LIGHT_SPOT)
 	{
 		p.xy *= tan(((3.14159265 * sysLightParams[sysLightIndex].sysLightSpotCutoff)/180.0)) * sysLightParams[sysLightIndex].sysLightRadius * 1.15;
 		p.z *= sysLightParams[sysLightIndex].sysLightRadius;
-		p = vec4(l_rot * p.xyz  + sysLightParams[sysLightIndex].sysLightPosition.xyz/*gl_LightSource[0].position.xyz*/, 1.0);
+		p = vec4(l_rot * p.xyz  + sysLightParams[sysLightIndex].sysLightPosition.xyz, 1.0);
 		p = gl_ProjectionMatrix * p;
 	}
 
-	//inverse_projection_matrix = inverse(sysCameraProjectionMatrix);
 	inverse_projection_matrix = gl_ProjectionMatrixInverse;
 	
     gl_Position = p;

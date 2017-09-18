@@ -90,7 +90,7 @@ int draw_FillAndDispatchShadowCommandBuffer(int vert_count, short material_index
 
 
 
-
+PEWAPI void draw_SetRenderer(int renderer_mode);
 
 PEWAPI void draw_SetRenderDrawMode(int draw_mode);
 
@@ -120,7 +120,11 @@ void draw_DrawEmissive();
 
 void draw_DrawTranslucent();
 
-void draw_ResolveGBuffer();
+void draw_ShadeDeferredClustered();
+
+void draw_ShadeDeferredClassic();
+
+void draw_FillStencil();
 
 void draw_ResolveTranslucent();
 
@@ -129,6 +133,8 @@ void draw_DrawShadowMaps();
 void draw_DrawLightVolumes();
 
 void draw_DrawBloom();
+
+
 
 
 void draw_AutoAdjust();
@@ -146,7 +152,7 @@ void draw_ComposeNoVolNoBloom();
 
 
 
-void draw_FillStencilBuffer();
+
 
 void draw_BlitToScreen();
 

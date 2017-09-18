@@ -30,6 +30,11 @@
 #define CLUSTER_SIZE 32
 #define CLUSTER_Z_DIVS 16
 
+
+#define SHADOW_MAP_MAX_RES 2048
+#define SHADOW_MAP_MIN_RES 32
+#define SHADOW_MAP_RES_STEP 32
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -42,6 +47,10 @@ void light_Finish();
 void light_ResizeLightArray(light_array *larray, int new_size);
 
 void light_ResizeAffectingLightList(int new_size);
+
+void light_FitLights();
+
+void light_ResizeShadowMemory(int width, int height);
 
 //PEWAPI int light_CreateLight(light_t *light);
 

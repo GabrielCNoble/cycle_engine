@@ -65,6 +65,8 @@ int uniform_buffer_alignment;
 													
 
 static char *light_params_uniform_block = {"sysLightParamsUniformBlock"};
+static char *cluster_uniform_block = {"sysClusterUniformBlock"};
+
 static char *light_params_uniform_name = {"sysLightParams"};
 
 static char *light_params_uniform_fields[MATERIAL_PARAMS_MAX_NAME_LEN] = {
@@ -99,7 +101,7 @@ static char tangent_capture_string[] = "varying vec3 _tcap_;";
 static char *uniforms[64] = {"sysTime",
 							 "sysRenderTargetWidth",
 							 "sysRenderTargetHeight",
-							 "sysShadowMapSize",
+							 //"sysShadowMapSize",
 							 "sysTextureSampler0",
 							 "sysTextureSampler1",
 							 "sysTextureSampler2",
@@ -112,31 +114,31 @@ static char *uniforms[64] = {"sysTime",
 							 "sysTextureSamplerCube4",
 							 "sysDepthSampler",
 							 "sys2DShadowSampler",
-							 "sys3DShadowSampler",
+							 //"sys3DShadowSampler",
 							 "sysTextureLayer0",
 							 "sysZNear",
 							 "sysZFar",
-							 "sysLightZNear",
-							 "sysLightZFar",
-							 "sysLightType",
+							 //"sysLightZNear",
+							 //"sysLightZFar",
+							 //"sysLightType",
 							 "sysLightCount",
-							 "sysMaterialFlags",
-							 "sysFlagShadeless",
-							 "sysFlagDiffuseTexture",
-							 "sysFlagNormalTexture",
-							 "sysFlagGlossTexture",
-							 "sysFlagMetallicTexture",
-							 "sysFlagHeightTexture",
-							 "sysFlagFrontAndBack",
+							 //"sysMaterialFlags",
+							 //"sysFlagShadeless",
+							 //"sysFlagDiffuseTexture",
+							 //"sysFlagNormalTexture",
+							 //"sysFlagGlossTexture",
+							 //"sysFlagMetallicTexture",
+							 //"sysFlagHeightTexture",
+							 //"sysFlagFrontAndBack",
 						 	 "sysBloomRadius",
 							 "sysBloomIntensity",
 							 "sysExposure",
 							 "sysRenderDrawMode",
 							 "sysCameraToWorldMatrix",
-							 "sysWorldToLightMatrix",
-							 "sysCameraToLightProjectionMatrix",
-							 "sysLightProjectionMatrix",
-							 "sysLightModelViewMatrix",
+							 //"sysWorldToLightMatrix",
+							 //"sysCameraToLightProjectionMatrix",
+							 //"sysLightProjectionMatrix",
+							 //"sysLightModelViewMatrix",
 							 "sysCameraProjectionMatrix"};
 
 
@@ -161,7 +163,8 @@ shader_array shader_a;
 
 extern int screen_quad_shader_index;
 extern int z_prepass_shader_index;
-extern int deferred_process_shader_index;
+extern int shade_deferred_clustered_shader;
+extern int shade_deferred_classic_shader;
 extern int composite_shader_index;
 extern int wireframe_shader_index;
 extern int flat_shader_index;
@@ -224,14 +227,15 @@ PEWAPI void shader_Init(char *path)
 	shader_path_len = strlen(shader_path);
 	
 	
-	
 	if(bm_extensions & EXT_UNIFORM_BUFFER_OBJECT)
 	{
 		shader_AddGlobalDefine("_GL3A_");
 	}
 	else
 	{
-		shader_AddGlobalDefine("_GL2B_");
+		printf("ERROR! Uniform buffer objects not supported by current driver!\n");
+		exit(1);
+		//shader_AddGlobalDefine("_GL2B_");
 	}
 	
 	
@@ -298,7 +302,8 @@ PEWAPI void shader_Init(char *path)
 	blend_translucent_shader_index = shader_LoadShader("resolve_translucent_vert.glsl", "resolve_translucent_frag.glsl", "resolve_translucent");
 	
 	
-	deferred_process_shader_index=shader_LoadShader("resolve_gbuffer_vert.glsl", "resolve_gbuffer_frag.glsl", "resolve_gbuffer");
+	shade_deferred_clustered_shader = shader_LoadShader("shade_deferred_clustered_vert.glsl", "shade_deferred_clustered_frag.glsl", "shade_deferred_clustered");
+	//shade_deferred_classic_shader = shader_LoadShader("shade_deferred_classic_vert.glsl", "shade_deferred_classic_frag.glsl", "shade_deferred_classic");
 	
 	wireframe_shader_index=shader_LoadShader("wireframe_vert.glsl", "wireframe_frag.glsl", "wireframe");
 	flat_shader_index=shader_LoadShader("flat_vert.glsl", "flat_frag.glsl", "flat");
@@ -434,8 +439,12 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	int b_compiled;
 	int flags = 0;
 	int h;
-	char vfull_path[256];
-	char ffull_path[256];
+	
+	/* I guess the path was getting bigger than 256 chars... good to know... */
+	char vfull_path[1024];
+	char ffull_path[1024];
+	
+	
 	strcpy(vfull_path, shader_path);
 	strcpy(ffull_path, shader_path);
 	strcat(vfull_path, vertex_shader_name);
@@ -443,10 +452,13 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	int capture_count = 0;
 	char *capture[3];
 	
+	
+	printf("shader %s\n", name);
+	
 	//unsigned int indexes[MATERIAL_PARAMS_FIELDS];	
 	//unsigned int offsets[MATERIAL_PARAMS_FIELDS];
 
-	
+
 	/*if(!(vertex_shader_file=fopen(vfull_path, "r")))
 	{
 		console_Print(MESSAGE_ERROR, "couldn't open file [%s]!\n", vertex_shader_name);
@@ -455,6 +467,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	v_shader_str=shader_GetShaderString(vertex_shader_file);*/
 	
 	//v_shader_str = file_LoadFile(vfull_path, 0);
+	
 	q = file_LoadFile(vfull_path, 0);
 	v_shader_str = q.buf;
 	
@@ -471,6 +484,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 		printf("vertex shader [%s] has problematic preprocessor directives!\n", vertex_shader_name);
 		return -1;
 	}
+
 	
 	//printf("%s\n", v_shader_str);
 	//printf("flags is %d\n", flags);
@@ -504,6 +518,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	//f_shader_str = file_LoadFile(ffull_path, 0);
 	q = file_LoadFile(ffull_path, 0);
 	f_shader_str = q.buf;
+	
 	if(!f_shader_str)
 	{
 		console_Print(MESSAGE_ERROR, "couldn't open file [%s]!\n", fragment_shader_name);
@@ -515,6 +530,7 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 		console_Print(MESSAGE_ERROR, "fragment shader [%s] has problematic preprocessor directives!\n", fragment_shader_name);
 		return -1;
 	}
+
 	
 	//printf("%s\n", f_shader_str);
 	//printf("a-2");
@@ -530,9 +546,9 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 
 	if(!b_compiled)
 	{
-		error_str=(char *)calloc(2048, 1);
+		error_str=(char *)calloc(8192, 1);
 		console_Print(MESSAGE_ERROR, "[%s] vertex shader compilation failed!\nerror dump in external console\n", name);
-		glGetShaderInfoLog(v_shader_obj, 2048, NULL, error_str);
+		glGetShaderInfoLog(v_shader_obj, 8192, NULL, error_str);
 		printf("Error dump:\n%s", error_str);
 		free(error_str);
 		glDeleteShader(v_shader_obj);
@@ -551,8 +567,8 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 
 	if(!b_compiled)
 	{
-		error_str=(char *)malloc(2048);
-		glGetShaderInfoLog(f_shader_obj, 2048, NULL, error_str);
+		error_str=(char *)malloc(8192);
+		glGetShaderInfoLog(f_shader_obj, 8192, NULL, error_str);
 		console_Print(MESSAGE_ERROR, "[%s] fragment shader compilation failed!\nerror dump in external console\n", name);
 		printf("Error dump:\n%s", error_str);
 		//printf("[%s] fragment shader compilation failed!\n", name);
@@ -617,9 +633,9 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 	
 	if(!b_compiled)
 	{
-		error_str=(char *)malloc(2048);
+		error_str=(char *)malloc(8192);
 		printf("[%s] shader linking failed!\n", name);
-		glGetProgramInfoLog(shader_prog, 2048, NULL, error_str);
+		glGetProgramInfoLog(shader_prog, 8192, NULL, error_str);
 		printf("shader failed to link. Not my fault!\nError dump:\n%s", error_str);
 		free(error_str);
 	}
@@ -642,24 +658,24 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 			printf("shader %s has light uniform block %d\n", name, i);
 		}
 	}
-
 	
 	
 	/* Flag the shaders for deletion,
 	as soon as the shader program gets deleted.*/
 	glDeleteShader(v_shader_obj);
 	glDeleteShader(f_shader_obj);
-	
+
 	
 	for(i = 0; i < UNIFORM_Last; i++)
 	{
 		shader->default_uniforms[UNIFORM_Time + i] = glGetUniformLocation(shader_prog, uniforms[i]);
+	
 	}
 	
 	shader->sysLightCount = glGetUniformLocation(shader_prog, "sysLightCount");
 	shader->sysLightIndex = glGetUniformLocation(shader_prog, "sysLightIndex");
 	shader->sysClusterTexture = glGetUniformLocation(shader_prog, "sysClusterTexture");
-	
+
 	//printf("%d %d\n", shader->sysLightCount, shader->sysLightIndexes);
 	
 	//printf("blufs\n");
@@ -667,11 +683,13 @@ PEWAPI int shader_LoadShader(char *vertex_shader_name, char *fragment_shader_nam
 
 
 	shader->shader_ID=shader_prog;
-	shader->name=name;
+	shader->name = strdup(name);
 	
 	free(v_shader_str);
 	//printf("nufs\n"); 
 	free(f_shader_str);
+	
+
 	
 	//printf("clufs\n");
 	//fclose(vertex_shader_file);
@@ -981,6 +999,8 @@ int shader_Preprocess(char **shader_str, int *flags)
 	define_t *p;
 	cond_t *h;
 	
+	//printf("preprocess\n");
+	
 	for(i = 0; i < c; i++)
 	{
 		//printf("loop\n");
@@ -1173,13 +1193,16 @@ int shader_ExpandInclude(char **shader_str, int start_index, int cur_index, int 
 	file_len = ftell(f);
 	rewind(f);
 	
-	file_len = (file_len + 3) & (~3);
+	//j = file_len;
+	
+	//file_len = (file_len + 3) & (~3);
 	//fseek(f, cur, SEEK_SET);
 	
 	/* this will come back to bite me in the ass... */				
-	inc = (char *)calloc(10000, 1);
+	//inc = (char *)calloc(10000, 1);
+	inc = (char *)calloc(file_len, 1);
 	fread(inc, 1, file_len, f);
-	inc[file_len] = '\0';
+	inc[file_len - 1] = '\0';
 	//printf("%s\n", inc);
 	/*index = 0;
 	while(!feof(f))

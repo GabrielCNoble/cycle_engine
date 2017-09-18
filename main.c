@@ -243,7 +243,7 @@ void clear_selection_list()
 
 
 
-void add_to_world_fn(swidget_t *swidget, void *data, int i)
+/*void add_to_world_fn(swidget_t *swidget, void *data, int i)
 {
 	mat3_t id = mat3_t_id();
 	
@@ -262,12 +262,12 @@ void add_to_world_fn(swidget_t *swidget, void *data, int i)
 			break;
 			
 			case 1:
-				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 2.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+				light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 20.0, 0.0, 0.002, 0.000, 0.01, 4, 256, -1);
 			break;
 		}
 	}
 
-}
+}*/
 
 void delete_fn(swidget_t *swidget, void *data, int i)
 {
@@ -320,7 +320,7 @@ void add_light(swidget_t *swidget, void *data, int i)
 		break;
 			
 		case 1:
-			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 25.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
+			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.1, 0.002, 0.000, 0.01, 4, 256, -1);
 		break;	
 	}
 }
@@ -884,6 +884,19 @@ void ginput(float delta_time)
 	{
 		draw_Fullscreen(0);
 	}*/
+	
+	if(input_GetKeyPressed(SDL_SCANCODE_K))
+	{
+		draw_SetRenderer(RENDERER_DEFERRED_CLUSTERED);
+		printf("renderer: deferred clustered\n");
+	}
+	
+	if(input_GetKeyPressed(SDL_SCANCODE_L))
+	{
+		draw_SetRenderer(RENDERER_DEFERRED_CLASSIC);
+		printf("renderer: deferred classic \n");
+	}
+	
 		
 		
 	if(input_GetKeyPressed(SDL_SCANCODE_W))
@@ -1573,7 +1586,7 @@ void init_gui()
 	r_widget = gui_CreateWidget("Right widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, renderer.width / 2 - 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
 	l_widget = gui_CreateWidget("Left widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, -renderer.width / 2 + 250, -renderer.height / 2 + 100, 500, 200, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
 	t_widget = gui_CreateWidget("Top widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, 0, renderer.height / 2 - OPTION_HEIGHT * 2.0, renderer.width, 20, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
-	b_widget = gui_CreateWidget("bottom", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, 0, -renderer.height / 2 - OPTION_HEIGHT * 2.0, renderer.width, 20, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
+	b_widget = gui_CreateWidget("Bottom widget", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE, 0, -renderer.height / 2 - OPTION_HEIGHT * 2.0, renderer.width, 20, 0.3, 0.3, 0.3, 1.0, WIDGET_NO_TEXTURE, 0, NULL);
 	
 	viewport = gui_CreateWidget("viewport", WIDGET_RESIZABLE | WIDGET_GRABBABLE | WIDGET_MOVABLE | WIDGET_IGNORE_MOUSE, 0, 0, renderer.width * 0.6, renderer.height * 0.6, 1.0, 1.0, 1.0, 1.0, final_buffer.color_out1, 0, viewport_resize_fn);
 	gui_ShareBorders(viewport, r_widget, WIDGET_RIGHT_BORDER, WIDGET_LEFT_BORDER);
@@ -1652,7 +1665,9 @@ void ginit()
 	input_RegisterKey(SDL_SCANCODE_LSHIFT);
 	input_RegisterKey(SDL_SCANCODE_DELETE);
 	input_RegisterKey(SDL_SCANCODE_KP_MEMADD);
-	input_RegisterKey(SDL_SCANCODE_KP_MEMSUBTRACT);        
+	input_RegisterKey(SDL_SCANCODE_KP_MEMSUBTRACT);       
+	input_RegisterKey(SDL_SCANCODE_K); 
+	input_RegisterKey(SDL_SCANCODE_L);
 	
 	mesh_t *sphereptr;
 	mesh_t *planeptr;
@@ -2099,7 +2114,7 @@ void ginit()
 	{	
 		//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 6.0, 0.0, 1.0), &id, vec3(1.0, 0.5, 0.5), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 2.0, 0.0, 1.0), &id, vec3(1.0, 0.5, 0.5), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);

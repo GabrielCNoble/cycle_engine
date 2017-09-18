@@ -177,9 +177,17 @@ ligths wouldn't have 20 unused bytes inside of it. The light would have just an 
 typedef struct
 {
 	mat4_t model_view_projection_matrix;	
-	smap_t shadow_map;
+	//smap_t shadow_map;
 	float znear;
 	float zfar;
+	short max_res;
+	short cur_res;
+	short min_res;
+	short shadow_map_index;			/* used to get the resolution */
+	short x;
+	short y;
+	short w;
+	short h;
 	//int bm_shadow_flags;
 }light_data2;
 /* light_shadow_data */
@@ -216,6 +224,9 @@ typedef struct
 
 typedef struct
 {
+	
+	mat4_t sysLightModelViewProjectionMatrix;
+	
 	vec4_t sysLightRightVector;
 	vec4_t sysLightUpVector;
 	vec4_t sysLightForwardVector;
@@ -227,10 +238,16 @@ typedef struct
 	float sysLightSpotCosCutoff;
 	float sysLightSpotBlend;
 	
-	float sysLightShadowV;
-	float sysLightShadowU;
+	float sysLightLinearFallof;
+	float sysLightSquaredFallof;
+	
+	float sysLightShadowX;
+	float sysLightShadowY;
 	float sysLightShadowSize;
 	int sysLightType;
+	
+	float sysLightZNear;
+	float sysLightZFar;
 }gpu_lamp_t;
 
 
@@ -266,6 +283,16 @@ typedef struct
 	unsigned short users;
 	unsigned int id;
 }shared_shadow_map_t;
+
+
+
+typedef struct
+{
+	short x;
+	short y;
+	short w;
+	short h;
+}ks_chunk_t;
 
 
 

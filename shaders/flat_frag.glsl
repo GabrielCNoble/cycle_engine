@@ -1,9 +1,13 @@
+#include "material.h"
+
+
+
 uniform sampler2D sysTextureSampler0;
 varying vec3 bi_tangent;
 varying vec3 normal;
 varying vec2 UV;
 
-#include "material.h"
+
 
 
 

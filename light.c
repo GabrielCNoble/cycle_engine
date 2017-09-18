@@ -2,12 +2,15 @@
 #include "shader.h"
 #include "draw.h"
 #include "camera.h"
-#include "material.h"		/* for material_FloatToColor4_t */
+#include "material.h"	
 #include "vector.h"
 //#include "framebuffer.h"
 #include "macros.h"
+#include "input.h"
 #include "draw_debug.h"
 
+
+#define SHADOW_MAP_TEXTURE_CIELING 8192
 
 /*enum RENDERER_RESOLUTIONS
 {
@@ -42,7 +45,7 @@ int cluster_texture_resolutions[CLUSTER_LAST][2] =
 {
 	60, 34,
 	50, 29,
-	44, 24,
+	43, 24,
 };
 
 
@@ -81,12 +84,33 @@ static int free_stack_top;
 static int *free_stack;
 static unsigned int light_cache;
 unsigned int cluster_texture;
+unsigned int cluster_ubo;
 
 extern int bm_extensions;
 
 extern int uniform_buffer_alignment;
 extern int light_params_uniform_buffer_size;
 extern int type_offsets[];
+
+
+
+int ssm_cur_width;
+int ssm_cur_height;
+unsigned int ssm;
+
+
+int free_chunk_count;
+int free_chunk_size;
+ks_chunk_t *free_chunks;
+
+int alloc_chunk_count;
+int alloc_chunk_size;
+ks_chunk_t *alloc_chunks;
+
+
+int shadow_memory_update_delay = 0;
+
+
 
 void light_CacheGPULight(light_ptr light);
 
@@ -97,7 +121,7 @@ void light_Init()
 	
 	mat3_t m;
  	
- 	glGenFramebuffers(1, &extra_framebuffer);
+ 	//glGenFramebuffers(1, &extra_framebuffer);
 	
 	light_cache_size = MAX_ACTIVE_LIGHTS;
 	cached_light_count = 0;
@@ -112,6 +136,10 @@ void light_Init()
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(gpu_lamp_t) * light_cache_size, NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		
+		//glGenBuffers(1, &cluster_ubo);
+		//glBindBuffer(GL_UNIFORM_BUFFER, cluster_ubo);
+		//glBufferData(GL_UNIFORM_BUFFER, sizeof(int) * 4 * cluster_texture_resolutions[renderer.selected_resolution][0] * cluster_texture_resolutions[renderer.selected_resolution][1] * CLUSTER_Z_DIVS, NULL, GL_DYNAMIC_DRAW);
+		//glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		//printf("%x\n", glGetError());
 		
 	}
@@ -128,7 +156,7 @@ void light_Init()
 	
 	//while(glGetError() != GL_NO_ERROR);
 	
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, cluster_texture_resolutions[renderer.selected_resolution][0], cluster_texture_resolutions[renderer.selected_resolution][1], 16, 0, GL_RED, GL_UNSIGNED_INT, NULL);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE32UI_EXT, cluster_texture_resolutions[renderer.selected_resolution][0], cluster_texture_resolutions[renderer.selected_resolution][1], CLUSTER_Z_DIVS, 0, GL_LUMINANCE_INTEGER_EXT, GL_UNSIGNED_INT, NULL);
 	
 	//printf("%x\n", glGetError());
 	
@@ -139,6 +167,23 @@ void light_Init()
 	clusters = (unsigned int *)malloc(sizeof(int) * cluster_texture_resolutions[renderer.selected_resolution][0] * cluster_texture_resolutions[renderer.selected_resolution][1] * CLUSTER_Z_DIVS);
 	
 	
+	ssm_cur_width = SHADOW_MAP_MIN_RES * 64;
+ 	ssm_cur_height = SHADOW_MAP_MIN_RES * 64;
+ 	
+ 	//ssm_cur_width = SHADOW_MAP_TEXTURE_CIELING;
+ 	//ssm_cur_height = SHADOW_MAP_TEXTURE_CIELING;
+ 	
+ 	glGenTextures(1, &ssm);
+	glBindTexture(GL_TEXTURE_2D, ssm);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+ 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+ 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+ 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+ 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, ssm_cur_width, ssm_cur_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+ 	glBindTexture(GL_TEXTURE_2D, 0);
+	
 	
 	light_a.shadow_data=NULL;
 	light_a.position_data=NULL;
@@ -146,7 +191,7 @@ void light_Init()
 	light_a.params=NULL;
 	light_a.light_count=0;
 	light_a.stack_top = -1;
-	light_ResizeLightArray(&light_a, 8);
+	light_ResizeLightArray(&light_a, MAX_ACTIVE_LIGHTS);
 	
 	//affecting_lights.lights = NULL;
 	//affecting_lights.count = 0;
@@ -161,6 +206,22 @@ void light_Init()
 	
 	//active_light_indexes = (int *)malloc(sizeof(int) * MAX_ACTIVE_LIGHTS);
 	active_light_transforms = (mat4_t *)malloc(sizeof(mat4_t) * MAX_ACTIVE_LIGHTS);
+	
+	
+	
+	free_chunk_count = 1;
+	free_chunk_size = 128;
+	free_chunks = (ks_chunk_t *)malloc(sizeof(ks_chunk_t) * free_chunk_size);
+	free_chunks[0].x = 0;
+	free_chunks[0].y = 0;
+	free_chunks[0].w = ssm_cur_width;
+	free_chunks[0].h = ssm_cur_height;
+	
+	
+	alloc_chunk_count = 0;
+	alloc_chunk_size = 128;
+	alloc_chunks = (ks_chunk_t *)malloc(sizeof(ks_chunk_t) * alloc_chunk_size);
+	
 	
 	
 	m=mat3_t_id();
@@ -178,7 +239,7 @@ void light_Init()
 	
 	
 	m=mat3_t_id();
-	mat3_t_rotate(&m, vec3(1.0, 0.0, 0.0), -0.5, 1);
+	mat3_t_rotate(&m, vec3(1.0, 0.0, 0.0), 0.5, 1);
 	//mat3_t_rotate(&m, vec3(0.0, 1.0, 0.0), 1.0, 0);
 	mat4_t_compose(&cube_shadow_mats[2], &m, vec3(0.0, 0.0, 0.0));
 	mat4_t_transpose(&cube_shadow_mats[2]);
@@ -186,8 +247,8 @@ void light_Init()
 	
 	
 	m=mat3_t_id();
-	mat3_t_rotate(&m, vec3(1.0, 0.0, 0.0), 0.5, 1);
-	//mat3_t_rotate(&m, vec3(0.0, 0.0, 1.0), 1.0, 0);
+	mat3_t_rotate(&m, vec3(1.0, 0.0, 0.0), -0.5, 1);
+	//mat3_t_rotate(&m, vec3(0.0, 1.0, 0.0), 1.0, 0);
 	mat4_t_compose(&cube_shadow_mats[3], &m, vec3(0.0, 0.0, 0.0));
 	mat4_t_transpose(&cube_shadow_mats[3]);
 	
@@ -220,6 +281,12 @@ void light_Finish()
 	
 	//free(active_light_indexes);
 	free(active_light_transforms);
+	
+	glDeleteTextures(1, &ssm);
+	
+	free(alloc_chunks);
+	free(free_chunks);
+	
 	return;
 }
 
@@ -228,20 +295,20 @@ void light_ResizeLightArray(light_array *larray, int new_size)
 	/* TODO: aligned allocation (using a single big chunk of memory maybe?)... */
 	//light_world_data *wtemp=calloc(new_size, sizeof(light_world_data));
 	//light_local_data *ltemp=calloc(new_size, sizeof(light_local_data));
-	light_data2 *stemp=(light_data2 *)calloc(new_size, sizeof(light_data2));
-	light_data0 *ctemp=(light_data0 *)calloc(new_size, sizeof(light_data0));
-	light_data3 *etemp=(light_data3 *)calloc(new_size, sizeof(light_data3));
-	light_data1 *ptemp=(light_data1 *)calloc(new_size, sizeof(light_data1));
+	light_data2 *stemp=(light_data2 *)malloc(new_size * sizeof(light_data2));
+	light_data0 *ctemp=(light_data0 *)malloc(new_size * sizeof(light_data0));
+	light_data3 *etemp=(light_data3 *)malloc(new_size * sizeof(light_data3));
+	light_data1 *ptemp=(light_data1 *)malloc(new_size * sizeof(light_data1));
 	int *temp = (int *)malloc(sizeof(int) * new_size);
 	
 	if(larray->position_data)
 	{
 		//memcpy(wtemp, larray->world_data, sizeof(light_world_data)*larray->light_count);
 		//memcpy(ltemp, larray->local_data, sizeof(light_local_data)*larray->light_count);
-		memcpy(stemp, larray->shadow_data, sizeof(light_data2)*larray->light_count);
-		memcpy(ctemp, larray->position_data, sizeof(light_data0)*larray->light_count);
-		memcpy(etemp, larray->extra_data, sizeof(light_data3)*larray->light_count);
-		memcpy(ptemp, larray->params, sizeof(light_data1)*larray->light_count);
+		memcpy(stemp, larray->shadow_data, sizeof(light_data2) * larray->array_size);
+		memcpy(ctemp, larray->position_data, sizeof(light_data0) * larray->array_size);
+		memcpy(etemp, larray->extra_data, sizeof(light_data3) * larray->array_size);
+		memcpy(ptemp, larray->params, sizeof(light_data1) * larray->array_size);
 		
 		//free(larray->world_data);
 		//free(larray->local_data);
@@ -276,6 +343,274 @@ void light_ResizeAffectingLightList(int new_size)
 	}
 	affecting_lights.lights = a;
 	affecting_lights.size = new_size;
+}
+
+void light_FitLights()
+{
+	int i;
+	int c;
+	int j;
+	int k;
+	int m;
+
+	short ah;
+	short bw;
+	
+	short a0;
+	short a1;
+	short b0;
+	short b1;
+	
+	short w;
+	short h;
+	short temp0;
+	short temp1;
+	short old_w;
+	short old_h;
+	short old_x;
+	short old_y;
+	float r[2];
+	short aw[2];
+	short bh[2];
+	int prev;
+	int next;
+	light_data2 *light;
+	light_data0 *light1;
+	//int last = free_chunk_count;
+	
+	//if(w < 1 || h < 1) return -1;
+	
+
+	k = active_light_a.light_count;
+	w = 0;
+	h = 0;
+	/*for(m = 0; m < k; m++)
+	{
+		light1 = &active_light_a.position_data[m];
+		light = &active_light_a.shadow_data[m];
+		
+		if(!(light1->bm_flags & LIGHT_GENERATE_SHADOWS)) continue;
+		
+		if(light1->bm_flags & LIGHT_POINT)
+		{
+			w += light->cur_res * 3;
+			h += light->cur_res * 2;
+		}
+		else
+		{
+			w += light->cur_res;
+			h += light->cur_res;
+		}
+	}
+	
+	
+	light_ResizeShadowMemory(w, h);*/
+	
+	
+	free_chunk_count = 1;
+	free_chunks[0].x = 0;
+	free_chunks[0].y = 0;
+	free_chunks[0].w = ssm_cur_width;
+	free_chunks[0].h = ssm_cur_height;
+	alloc_chunk_count = 0;
+	
+	
+	for(m = 0; m < k; m++)
+	{
+		light1 = &active_light_a.position_data[m];
+		light = &active_light_a.shadow_data[m];
+		
+		if(!(light1->bm_flags & LIGHT_GENERATE_SHADOWS)) continue;
+		
+		w = light->cur_res;
+		h = light->cur_res;
+		
+		if(light1->bm_flags & LIGHT_POINT)
+		{
+			w *= 3;
+			h *= 2;
+		}
+		c = free_chunk_count;
+		
+		for(i = 0; i < c; i++)
+		{
+			if(w <= free_chunks[i].w)
+			{
+				if(h <= free_chunks[i].h)
+				{
+					alloc_chunks[alloc_chunk_count].x = free_chunks[i].x;
+					alloc_chunks[alloc_chunk_count].y = free_chunks[i].y;
+					alloc_chunks[alloc_chunk_count].w = w;
+					alloc_chunks[alloc_chunk_count].h = h;
+					
+					light->x = alloc_chunks[alloc_chunk_count].x;
+					light->y = alloc_chunks[alloc_chunk_count].y;
+					light->w = alloc_chunks[alloc_chunk_count].w;
+					light->h = alloc_chunks[alloc_chunk_count].h;
+					
+					//printf("%d %d %d %d\n", light->x, light->y, light->w, light->h);
+					
+					//light->shadow_map_index = active_shadow_map;
+					
+					
+					/*printf("[x: %d  y: %d  w: %d  h: %d]\n\n", shadow_maps[active_shadow_map].alloc_chunks[shadow_maps[active_shadow_map].alloc_chunk_count].x,
+															 shadow_maps[active_shadow_map].alloc_chunks[shadow_maps[active_shadow_map].alloc_chunk_count].y,
+															 shadow_maps[active_shadow_map].alloc_chunks[shadow_maps[active_shadow_map].alloc_chunk_count].w,
+															 shadow_maps[active_shadow_map].alloc_chunks[shadow_maps[active_shadow_map].alloc_chunk_count].h);*/
+					
+					
+					alloc_chunk_count++;				
+					
+					/* the allocation fits exactly within this chunk. */
+					if(w == free_chunks[i].w && h == free_chunks[i].h)
+					{
+	
+						if(free_chunk_count > 1)
+						{
+							free_chunks[i] = free_chunks[free_chunk_count - 1];
+						}
+						free_chunk_count--;
+						//return;
+						break;
+						
+					}
+					
+					/* this allocation have one of its dimensions equal 
+					to the free chunk, so just shrink it */
+					else if(w == free_chunks[i].w)
+					{
+						free_chunks[i].y += h;
+						free_chunks[i].h -= h;
+						continue;
+						//return;
+					}
+					else if(h == free_chunks[i].h)
+					{
+						free_chunks[i].x += w;
+						free_chunks[i].w -= w;
+						break;
+						//return;
+					}
+					
+					old_w = free_chunks[i].w;
+					old_h = free_chunks[i].h;
+					old_x = free_chunks[i].x;
+					old_y = free_chunks[i].y;
+					
+					/* The requested block has both its dimensions smaller than
+					the free block. This means that a new block will be added,
+					and the old one will be modified. */
+					
+					/* the two combinations for each chunk after the cut */
+					aw[0] = w;
+					aw[1] = old_w;
+					ah = old_h - h;
+					
+					bh[0] = old_h;
+					bh[1] = h;
+					bw = old_w - w;
+					
+					/* here, a0 ,a1, b0 and b1
+					are swapped to make sure that
+					a1 > a0 and b0 > b1, so
+					the relation a1b0 > a0b1
+					holds. */
+					for(j = 0; j < 2; j++)
+					{
+						a0 = ah;
+						a1 = aw[j];
+						/* this swap could be made faster if the
+						rotate instruction was used, since those are 
+						16 bits figures...  */
+						if(a1 > a0)
+						{
+							temp0 = a1;
+							a1 = a0;
+							a0 = temp0;
+						}
+						
+						b0 = bw;
+						b1 = bh[j];
+						if(b0 > b1)
+						{
+							temp0 = b0;
+							b0 = b1;
+							b1 = temp0;
+						}
+						/* calculate the ratio for both configurations... */
+						r[j] = (float)(a0*b1)/(float)(a1*b0);
+					}
+					
+					free_chunks[i].h = ah;
+					free_chunks[i].y = old_y + h;
+					free_chunks[i].x = old_x;
+					free_chunks[free_chunk_count].w = bw;
+					free_chunks[free_chunk_count].y = old_y;
+					free_chunks[free_chunk_count].x = old_x + w;
+					
+					/* and use the one that results in the 
+					smallest ratio between the ratio of the 
+					chunks' sides. */
+					if(r[0] < r[1])
+					{
+						free_chunks[i].w = aw[0];
+						free_chunks[free_chunk_count].h = bh[0];
+					}
+					else
+					{
+						free_chunks[i].w = aw[1];
+						free_chunks[free_chunk_count].h = bh[1];
+					}
+					free_chunk_count++;
+					break;
+					//return;
+					
+				}
+			}
+		}
+	}
+		
+}
+
+void light_ResizeShadowMemory(int width, int height)
+{
+	
+	if(width > SHADOW_MAP_TEXTURE_CIELING) width = SHADOW_MAP_TEXTURE_CIELING;
+	else if(width < SHADOW_MAP_MIN_RES) width = SHADOW_MAP_MIN_RES;
+	
+	if(height > SHADOW_MAP_TEXTURE_CIELING) height = SHADOW_MAP_TEXTURE_CIELING;
+	else if(height < SHADOW_MAP_MIN_RES) height = SHADOW_MAP_MIN_RES;
+	
+	width = (width + SHADOW_MAP_MIN_RES - 1) & (~(SHADOW_MAP_MIN_RES - 1));
+	height = (height + SHADOW_MAP_MIN_RES - 1) & (~(SHADOW_MAP_MIN_RES - 1));
+	
+	//printf("w: %d  h: %d\n", ssm_cur_width, ssm_cur_height);
+	
+	if((ssm_cur_width > width && ssm_cur_height > height) || 
+	   (ssm_cur_width == width && ssm_cur_height > height) ||
+	   (ssm_cur_width > width && ssm_cur_height == height))
+	{
+		//if(!frames)
+		//{
+		shadow_memory_update_delay++;	
+		//}
+	}
+	else if(ssm_cur_width < width || ssm_cur_height < height)
+	{
+		shadow_memory_update_delay = 150;
+	}
+	
+	/* delay physical shadow map resizing when
+	the requested size is smaller then the current... */
+	if(shadow_memory_update_delay >= 150)
+	{
+		shadow_memory_update_delay = 0;
+		ssm_cur_width = width;
+		ssm_cur_height = height;
+		//printf("w: %d  h: %d\n", ssm_cur_width, ssm_cur_height);
+		glBindTexture(GL_TEXTURE_2D, ssm);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	}
 }
 
 PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *orientation, vec3_t diffuse_color, float radius, float energy, float spot_angle, float spot_blend, float lin_fallof, float sqrd_fallof, float scattering, int volume_samples,  int shadow_map_res, int max_shadow_aa_samples, int tex_index)
@@ -333,14 +668,20 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	if(spot_blend > 1.0) spot_blend = 1.0;
 	else if(spot_blend < 0.0) spot_blend = 0.0;
 	
-	params->spot_e = 255 * spot_blend;
+	params->spot_e = (unsigned char)0xff * spot_blend;
 	params->max_shadow_aa_samples = max_shadow_aa_samples;
-	
 	
 	if(shadow_map_res > MAX_SHADOW_MAP_RES) shadow_map_res = MAX_SHADOW_MAP_RES;
 	else if(shadow_map_res < MIN_SHADOW_MAP_RES) shadow_map_res = MIN_SHADOW_MAP_RES;
 	shadow_map_res = (shadow_map_res + MIN_SHADOW_MAP_RES - 1) & (~(MIN_SHADOW_MAP_RES - 1));
 	params->shadow_map_res = shadow_map_res / MIN_SHADOW_MAP_RES;
+	
+	shadow_data->max_res = shadow_map_res;
+	shadow_data->min_res = MIN_SHADOW_MAP_RES;
+	shadow_data->cur_res = shadow_data->max_res;
+	
+	
+	//printf("%d %d\n", shadow_data->max_res, shadow_data->min_res);
 	
 	
 	if(volume_samples > MAX_VOLUME_SAMPLES) volume_samples = MAX_VOLUME_SAMPLES;
@@ -385,10 +726,10 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 			
 		//position_data->local_position.floats[3]=1.0;
 		position_data->local_position.floats[3] = 1.0;
-		if(bm_flags & LIGHT_GENERATE_SHADOWS)
+		/*if(bm_flags & LIGHT_GENERATE_SHADOWS)
 		{
 			shadow_data->shadow_map = light_CreateShadowCubeMap(shadow_map_res);
-		}
+		}*/
 			
 		frustum_angle=45.0;		
 		position_data->spot_co = 0;
@@ -398,10 +739,10 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	{
 		//position_data->local_position.floats[3]=1.0;
 		position_data->local_position.floats[3] = 1.0;
-		if(bm_flags&LIGHT_GENERATE_SHADOWS)
+		/*if(bm_flags&LIGHT_GENERATE_SHADOWS)
 		{
 			shadow_data->shadow_map=light_CreateShadowMap(shadow_map_res);
-		}
+		}*/
 			
 		frustum_angle = (float)position_data->spot_co;
 	}
@@ -422,7 +763,6 @@ PEWAPI int light_CreateLight(char *name, int bm_flags, vec4_t position, mat3_t *
 	}*/
 	
 	shadow_data->znear = extra_data->generated_frustum.znear;
-	
 	shadow_data->zfar = extra_data->generated_frustum.zfar;
 	
 	/* depth imprecision was causing shadow artifacts. The solution was to kick the far clipping plane WAY farther, hence the
@@ -516,10 +856,10 @@ PEWAPI void light_DestroyLight(light_ptr light)
 		light_a.stack_top++;
 		light_a.free_stack[light_a.stack_top] = light_index;
 		
-		if(light_a.position_data[light_index].bm_flags & LIGHT_GENERATE_SHADOWS)
+		/*if(light_a.position_data[light_index].bm_flags & LIGHT_GENERATE_SHADOWS)
 		{
 			light_DestroyShadowMap(&light_a.shadow_data[light_index].shadow_map);
-		}
+		}*/
 		
 		light.position_data->light_index = -1;
 		light_DropGPULight(light);
@@ -661,12 +1001,15 @@ void light_UploadLightTransforms()
 	
 	glBindBuffer(GL_UNIFORM_BUFFER, light_cache);
 	lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+
 	
 	for(i = 0; i < c; i++)
 	{
 		light_index = active_light_a.position_data[i].cache_index;
-		
 		//memcpy(&lamp[light_index], &active_light_transforms[i], sizeof(mat4_t));
+		
+		/* Updating this cache every frame could lead to bad performance... */
+		
 		
 		lamp[light_index].sysLightRightVector.x = active_light_transforms[i].floats[0][0];
 		lamp[light_index].sysLightRightVector.y = active_light_transforms[i].floats[0][1];
@@ -687,6 +1030,25 @@ void light_UploadLightTransforms()
 		lamp[light_index].sysLightPosition.y = active_light_transforms[i].floats[3][1];
 		lamp[light_index].sysLightPosition.z = active_light_transforms[i].floats[3][2];
 		lamp[light_index].sysLightPosition.w = active_light_transforms[i].floats[3][3];
+		
+		
+		lamp[light_index].sysLightModelViewProjectionMatrix = active_light_a.shadow_data[i].model_view_projection_matrix;
+		lamp[light_index].sysLightShadowX = (float)active_light_a.shadow_data[i].x / (float)ssm_cur_width;
+		lamp[light_index].sysLightShadowY = (float)active_light_a.shadow_data[i].y / (float)ssm_cur_height;
+		lamp[light_index].sysLightShadowSize = (float)active_light_a.shadow_data[i].w / (float)ssm_cur_width;
+		
+		
+		//printf("%f %f %f\n", lamp[light_index].sysLightShadowX, lamp[light_index].sysLightShadowY, lamp[light_index].sysLightShadowSize);
+		
+		
+		/* size * 3 for point lights... */
+		//lamp[light_index].sysLightShadowSize = (float)light.shadow_data->w;
+		
+		
+		/*printf("%f %f %f %f\n", lamp[light_index].sysLightPosition.x, 
+								lamp[light_index].sysLightPosition.y,
+								lamp[light_index].sysLightPosition.z,
+								lamp[light_index].sysLightPosition.w);*/
 	}
 	
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -712,6 +1074,10 @@ void light_AssignLightsToClusters()
 	vec3_t light_origin;
 	vec3_t cam_vec;
 	vec3_t p;
+	vec2_t ac;
+	vec2_t lb;
+	vec2_t rb;
+	
 	float light_radius;
 	
 	float nzfar = -active_camera->frustum.zfar;
@@ -724,6 +1090,12 @@ void light_AssignLightsToClusters()
 	float y_max;
 	float y_min;
 	float d;
+	float t;
+	float denom;
+	float si;
+	float co;
+	float k;
+	float l;
 	
 	int cluster_min_x;
 	int cluster_min_y;
@@ -732,34 +1104,34 @@ void light_AssignLightsToClusters()
 	int cluster_max_y;
 	int cluster_max_z;
 	
+	int layer_size = cluster_texture_resolutions[renderer.selected_resolution][1] * cluster_texture_resolutions[renderer.selected_resolution][0];
+	int row_size = cluster_texture_resolutions[renderer.selected_resolution][0];
+		
 	
-	d = log(1.0 + (2.0 * tan(0.68)) / CLUSTER_SIZE);
+	denom = log(1.0 + (2.0 * tan(0.68)) / CLUSTER_SIZE);
 	
 	
-	/*for(z = 0; z < CLUSTER_Z_DIVS; z++)
+	for(z = 0; z < CLUSTER_Z_DIVS; z++)
 	{
 		for(y = 0; y < cluster_texture_resolutions[renderer.selected_resolution][1]; y++)
 		{
 			for(x = 0; x < cluster_texture_resolutions[renderer.selected_resolution][0]; x++)
 			{
-				clusters[z * cluster_texture_resolutions[renderer.selected_resolution][0] * 
-							 cluster_texture_resolutions[renderer.selected_resolution][1] + 
-							 y * cluster_texture_resolutions[renderer.selected_resolution][0] + 
-							 x] = 0;
+				clusters[z * layer_size + y * row_size + x] = 0;
 			}
 				
 		}
-	}*/
+	}
 	
 	
-	for(y = 0; y < cluster_texture_resolutions[renderer.selected_resolution][1]; y++)
+	/*for(y = 0; y < cluster_texture_resolutions[renderer.selected_resolution][1]; y++)
 	{
 		for(x = 0; x < cluster_texture_resolutions[renderer.selected_resolution][0]; x++)
 		{
-			clusters[y * cluster_texture_resolutions[renderer.selected_resolution][0] + x] = 0;
+			clusters[y * row_size + x] = 0;
 		}
 			
-	}
+	}*/
 
 	
 	
@@ -771,167 +1143,198 @@ void light_AssignLightsToClusters()
 		//light_origin = active_light_a.position_data[i].world_position.vec3;
 		light_origin = vec3(active_light_transforms[i].floats[3][0], active_light_transforms[i].floats[3][1], active_light_transforms[i].floats[3][2]);
 		light_radius = active_light_a.position_data[i].radius;
-		cam_vec = normalize3(vec3(-light_origin.x, -light_origin.y, -light_origin.z));
 		
-		//p = mul3(cam_vec, light_radius);
-		
-		corners[0].x = cam_vec.x * light_radius - light_radius;
-		corners[0].y = p.y + light_radius;
-		corners[0].z = p.z;
-		
-	/*	corners[0].x = light_origin.x - light_radius;
-		corners[0].y = light_origin.y + light_radius;
-		corners[0].z = light_origin.z + light_radius;
-		//corners[0].w = 1.0;
-		
-		corners[1].x = light_origin.x - light_radius;
-		corners[1].y = light_origin.y - light_radius;
-		corners[1].z = light_origin.z - light_radius;
-		//corners[1].w = 1.0;
-		
-		corners[2].x = light_origin.x + light_radius;
-		corners[2].y = light_origin.y - light_radius;
-		//corners[2].z = light_origin.z + light_radius;
-		//corners[2].w = 1.0;
-		
-		corners[3].x = light_origin.x + light_radius;
-		corners[3].y = light_origin.y + light_radius;
-		//corners[3].z = light_origin.z + light_radius;
-		//corners[3].w = 1.0;
-		
-		corners[4].x = light_origin.x - light_radius;
-		corners[4].y = light_origin.y + light_radius;
-		//corners[4].z = light_origin.z - light_radius;
-		//corners[4].w = 1.0;
-		
-		corners[5].x = light_origin.x - light_radius;
-		corners[5].y = light_origin.y - light_radius;
-		//corners[5].z = light_origin.z - light_radius;
-		//corners[5].w = 1.0;
-		
-		corners[6].x = light_origin.x + light_radius;
-		corners[6].y = light_origin.y - light_radius;
-		//corners[6].z = light_origin.z - light_radius;
-		//corners[6].w = 1.0;
-		
-		corners[7].x = light_origin.x + light_radius;
-		corners[7].y = light_origin.y + light_radius;
-		//corners[7].z = light_origin.z - light_radius;
-		//corners[7].w = 1.0;
-		
-		
-		x_max = -999.999;
-		x_min = 999.999;
-		y_max = -999.999;
-		y_min = 999.999;
-		
-		for(j = 0; j < 4; j++)
+		/* light is completely behind near plane, so don't
+		to anything (this case is already handled by the
+		frustum culling code, but whatever...) */
+		/*if(light_origin.z - light_radius > nznear)
 		{
-			corners[j].x = ((nznear / nright) * corners[j].x) / corners[0].z;
-			corners[j].y = ((nznear / ntop) * corners[j].y) / corners[0].z;
 			
+		}
+		else*/
+		
 			
-			if(corners[j].x > x_max) x_max = corners[j].x;
-			if(corners[j].x < x_min) x_min = corners[j].x;
-			
-			if(corners[j].y > y_max) y_max = corners[j].y;
-			if(corners[j].y < y_min) y_min = corners[j].y;
-			
-			//printf("[%f %f]\n", corners[j].x, corners[j].y);
-			
-			//draw_debug_DrawPoint(vec3(corners[j].x, corners[j].y, -0.5), vec3(1.0, 1.0, 1.0), 8.0, 1);
+			//if(dot3(light_origin, light_origin) >= light_radius * light_radius)
+			//{
+		ac.x = light_origin.x;
+		ac.y = light_origin.z;
+		d = ac.x * ac.x + ac.y * ac.y;
+		l = light_radius * light_radius;
+		k = nznear - ac.y;
+		k = sqrt(light_radius * light_radius - k * k);
+				
+		if(d > l)
+		{
+			t = sqrt(d - light_radius * light_radius);
+			d = sqrt(d);
+					
+					
+			si = light_radius / d;
+			co = t / d;	
+					
+			rb.x = ac.x * co - ac.y * si;
+			rb.y = ac.x * si + ac.y * co;
+			lb.x = ac.x * co + ac.y * si;
+			lb.y = -ac.x * si + ac.y * co;
+					
+					
+			if(rb.y > nznear)
+			{				
+				rb.x = ac.x + k;
+				rb.y = nznear;
+			}
+					
+			if(lb.y > nznear)
+			{				
+				lb.x = ac.x - k;
+				lb.y = nznear;
+			}
+					
+			x_min = ((nznear / nright) * lb.x) / lb.y;
+			x_max = ((nznear / nright) * rb.x) / rb.y;
+					
+			if(x_min < -1.0) x_min = -1.0;
+			if(x_max > 1.0) x_max = 1.0;
+				
+					
+		}
+		else
+		{
+			x_min = -1.0;
+			x_max = 1.0;
 		}
 				
-		for(; j < 8; j++)
+				
+			/*	draw_debug_DrawPoint(vec3(x_min, 0.0, -0.5), vec3(0.0, 1.0, 0.0), 12.0, 1);
+				draw_debug_DrawPoint(vec3(x_max, 0.0, -0.5), vec3(0.0, 1.0, 0.0), 12.0, 1);*/
+				
+				
+				
+				
+		ac.x = light_origin.y;
+		ac.y = light_origin.z;
+		d = ac.x * ac.x + ac.y * ac.y;
+				//l = light_radius * light_radius;
+				
+		if(d > l)
 		{
-			corners[j].x = ((nznear / nright) * corners[j].x) / corners[1].z;
-			corners[j].y = ((nznear / ntop) * corners[j].y) / corners[1].z;
-			
-			if(corners[j].x > x_max) x_max = corners[j].x;
-			if(corners[j].x < x_min) x_min = corners[j].x;
-			
-			if(corners[j].y > y_max) y_max = corners[j].y;
-			if(corners[j].y < y_min) y_min = corners[j].y;
-			
-			//printf("[%f %f]\n", corners[j].x, corners[j].y);
-			
-			//draw_debug_DrawPoint(vec3(corners[j].x, corners[j].y, -0.5), vec3(1.0, 1.0, 1.0), 8.0, 1);
+			t = sqrt(d - light_radius * light_radius);
+			d = sqrt(d);
+					//k = nznear - ac.y;
+					//k = sqrt(light_radius * light_radius - k * k);
+					
+			si = light_radius / d;
+			co = t / d;	
+					
+			rb.x = ac.x * co - ac.y * si;
+			rb.y = ac.x * si + ac.y * co;
+			lb.x = ac.x * co + ac.y * si;
+			lb.y = -ac.x * si + ac.y * co;
+					
+					
+			if(rb.y > nznear)
+			{				
+				rb.x = ac.x + k;
+				rb.y = nznear;
+			}
+					
+			if(lb.y > nznear)
+			{				
+				lb.x = ac.x - k;
+				lb.y = nznear;
+			}
+					
+			y_min = ((nznear / ntop) * lb.x) / lb.y;
+			y_max = ((nznear / ntop) * rb.x) / rb.y;
+					
+			if(y_min < -1.0) y_min = -1.0;
+			if(y_max > 1.0) y_max = 1.0;
+				
+				
 		}
-		
-		//printf("\n\n");
-		
-		if(x_min < -1.0) x_min = -1.0;
-		if(y_min < -1.0) y_min = -1.0;
-		if(x_max > 1.0) x_max = 1.0;
-		if(y_max > 1.0) y_max = 1.0;
-		
-		draw_debug_DrawLine(vec3(x_min, y_max, -0.5), vec3(x_min, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		draw_debug_DrawLine(vec3(x_min, y_min, -0.5), vec3(x_max, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		draw_debug_DrawLine(vec3(x_max, y_min, -0.5), vec3(x_max, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		draw_debug_DrawLine(vec3(x_max, y_max, -0.5), vec3(x_min, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		
-		
+		else
+		{
+			y_min = -1.0;
+			y_max = 1.0;
+		}
+			
+			
+		/*draw_debug_DrawPoint(vec3(x_min, y_max, -0.5), vec3(0.0, 0.0, 1.0), 12.0, 1);
+		draw_debug_DrawPoint(vec3(x_min, y_min, -0.5), vec3(0.0, 0.0, 1.0), 12.0, 1);
+		draw_debug_DrawPoint(vec3(x_max, y_min, -0.5), vec3(0.0, 0.0, 1.0), 12.0, 1);
+		draw_debug_DrawPoint(vec3(x_max, y_max, -0.5), vec3(0.0, 0.0, 1.0), 12.0, 1);*/
+		/*draw_debug_DrawLine(vec3(x_min, y_max, -0.25), vec3(x_min, y_min, -0.25), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_min, y_min, -0.25), vec3(x_max, y_min, -0.25), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_max, y_min, -0.25), vec3(x_max, y_max, -0.25), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
+		draw_debug_DrawLine(vec3(x_max, y_max, -0.25), vec3(x_min, y_max, -0.25), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);*/
+			
+			
 		x_min = x_min * 0.5 + 0.5;
 		y_min = y_min * 0.5 + 0.5;
 		
 		x_max = x_max * 0.5 + 0.5;
 		y_max = y_max * 0.5 + 0.5;
-		
-		
+			
+			
 		cluster_min_x = (renderer.width * x_min) / CLUSTER_SIZE;
 		cluster_min_y = (renderer.height * y_min) / CLUSTER_SIZE;
-		
+			
 		cluster_max_x = (renderer.width * x_max) / CLUSTER_SIZE;
 		cluster_max_y = (renderer.height * y_max) / CLUSTER_SIZE;
-		
-		cluster_min_z = int(log((-corners[0].z) / (-nznear)) / d) / CLUSTER_Z_DIVS;
-		cluster_max_z = int(log((-corners[1].z) / (-nznear)) / d) / CLUSTER_Z_DIVS;
-		
+			
+		cluster_min_z = int(log(-(light_origin.z + light_radius) / -nznear) / denom) / CLUSTER_Z_DIVS;
+		cluster_max_z = int(log(-(light_origin.z - light_radius) / -nznear) / denom) / CLUSTER_Z_DIVS;
+			
 		if(cluster_min_z < 0) cluster_min_z = 0;
 		if(cluster_max_z > CLUSTER_Z_DIVS) cluster_max_z = CLUSTER_Z_DIVS;
-		
-		
-		for(y = cluster_min_y; y < cluster_max_y; y++)
-		{
-			for(x = cluster_min_x; x < cluster_max_x; x++)
-			{
-				clusters[y * cluster_texture_resolutions[renderer.selected_resolution][0] + x] = 0xffffffff;
-			}
 			
-		}*/
+		//printf("%d %d\n", cluster_min_z, cluster_max_z);
 		
-		
-		/*for(z = cluster_min_z; z < cluster_max_z; z++)
-		{
-			for(y = cluster_min_y; y < cluster_max_y; y++)
+		j = 1 << active_light_a.position_data[i].cache_index;
+			
+		for(z = cluster_min_z; z <= cluster_max_z; z++)
+		{	
+			for(y = cluster_min_y; y <= cluster_max_y; y++)
 			{
-				for(x = cluster_min_x; x < cluster_max_x; x++)
-				{
-					clusters[z * cluster_texture_resolutions[renderer.selected_resolution][0] * 
-								 cluster_texture_resolutions[renderer.selected_resolution][1] + 
-								 y * cluster_texture_resolutions[renderer.selected_resolution][0] + 
-								 x] = 0xffffffff;
-				}
 				
+				
+				for(x = cluster_min_x; x <= cluster_max_x; x++)
+				{
+					clusters[z * layer_size + y * row_size + x] |= j;
+				}
 			}
+		}
+			
+			//printf("%d %d\n", cluster_min_z, cluster_max_z);
+			
+			
+		/*for(y = cluster_min_y; y <= cluster_max_y; y++)
+		{
+			for(x = cluster_min_x; x <= cluster_max_x; x++)
+			{
+				clusters[y * row_size + x * 4] |= j;
+			}
+				
 		}*/
+			
+			 
+			
+	//	}
 		
-		
-		//printf("%d %d %d %d %d %d\n", cluster_min_x, cluster_min_y, cluster_max_x, cluster_max_y, cluster_min_z, cluster_max_z);
-		
-		
-		/*draw_debug_DrawLine(vec3(x_min, y_max, -0.5), vec3(x_min, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		draw_debug_DrawLine(vec3(x_min, y_min, -0.5), vec3(x_max, y_min, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		draw_debug_DrawLine(vec3(x_max, y_min, -0.5), vec3(x_max, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);
-		draw_debug_DrawLine(vec3(x_max, y_max, -0.5), vec3(x_min, y_max, -0.5), vec3(0.0, 1.0, 0.0), 1.0, 0, 1, 0);*/
 	}
 	
+	//while(glGetError() != GL_NO_ERROR);
 	glBindTexture(GL_TEXTURE_3D, cluster_texture);
+	//glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, cluster_texture_resolutions[renderer.selected_resolution][0], 
-											cluster_texture_resolutions[renderer.selected_resolution][1], 
-											CLUSTER_Z_DIVS, GL_RED, GL_UNSIGNED_INT, clusters);
+											   cluster_texture_resolutions[renderer.selected_resolution][1], 
+											   CLUSTER_Z_DIVS, GL_LUMINANCE_INTEGER_EXT, GL_UNSIGNED_INT, clusters);
 											
-	glBindTexture(GL_TEXTURE_3D, 0);											
+	//glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE);										
+	glBindTexture(GL_TEXTURE_3D, 0);
+	
+	//printf("%x\n", glGetError());											
 	
 }
 
@@ -980,18 +1383,32 @@ PEWAPI void light_UpdateGPULight(light_ptr light)
 	lamp = (gpu_lamp_t *)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 	lamp += index;
 	
+	
+	lamp->sysLightModelViewProjectionMatrix = light.shadow_data->model_view_projection_matrix;
+	
 	lamp->sysLightColor.r = (float)light.params->r / 255.0;
 	lamp->sysLightColor.g = (float)light.params->g / 255.0;
 	lamp->sysLightColor.b = (float)light.params->b / 255.0;
 	lamp->sysLightColor.a = 1.0;
 	
+	lamp->sysLightLinearFallof = (float)light.params->lin_fallof/0xffff;
+	lamp->sysLightSquaredFallof = (float)light.params->sqr_fallof/0xffff;
+
 	lamp->sysLightRadius = light.position_data->radius;
 	lamp->sysLightSpotCutoff = (float)light.position_data->spot_co;
 	lamp->sysLightSpotCosCutoff = cos(DegToRad(((float)light.position_data->spot_co)));	
-	lamp->sysLightSpotBlend = (float)light.params->spot_e;
+	lamp->sysLightSpotBlend = (float)light.params->spot_e / 255.0;
 	
+	lamp->sysLightShadowX = (float)light.shadow_data->x / (float)ssm_cur_width;
+	lamp->sysLightShadowY = (float)light.shadow_data->y / (float)ssm_cur_height;
+	
+	/* size * 3 for point lights... */
+	lamp->sysLightShadowSize = (float)light.shadow_data->w / (float)ssm_cur_width;
 	
 	lamp->sysLightType = light.position_data->bm_flags & (LIGHT_POINT | LIGHT_SPOT | LIGHT_DIRECTIONAL);
+	
+	lamp->sysLightZNear = light.shadow_data->znear;
+	lamp->sysLightZFar = light.shadow_data->zfar;
 	
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -1018,17 +1435,34 @@ void light_CacheGPULight(light_ptr light)
 	
 	//lamp = (gpu_lamp_t *)((char *)p + sizeof(gpu_lamp_t) * index);
 	
+	lamp->sysLightModelViewProjectionMatrix = light.shadow_data->model_view_projection_matrix;
+	
 	lamp->sysLightColor.r = (float)light.params->r / 255.0;
 	lamp->sysLightColor.g = (float)light.params->g / 255.0;
 	lamp->sysLightColor.b = (float)light.params->b / 255.0;
 	lamp->sysLightColor.a = 1.0;
 	
+	lamp->sysLightLinearFallof = (float)light.params->lin_fallof/0xffff;
+	lamp->sysLightSquaredFallof = (float)light.params->sqr_fallof/0xffff;
+	
 	lamp->sysLightRadius = light.position_data->radius;
 	lamp->sysLightSpotCutoff = (float)light.position_data->spot_co;
 	lamp->sysLightSpotCosCutoff = cos(DegToRad(((float)light.position_data->spot_co)));	
-	lamp->sysLightSpotBlend = (float)light.params->spot_e;
+	lamp->sysLightSpotBlend = (float)light.params->spot_e / 255.0;
+	
+	lamp->sysLightShadowX = (float)light.shadow_data->x / (float)ssm_cur_width;
+	lamp->sysLightShadowY = (float)light.shadow_data->y / (float)ssm_cur_height;
+	
+	/* size * 3 for point lights... */
+	lamp->sysLightShadowSize = (float)light.shadow_data->w / (float)ssm_cur_width;
+	
+	//printf("%d %d %d\n", lamp->sysLightShadowX, lamp->sysLightShadowY, lamp->sysLightShadowSize);
+	
 	
 	lamp->sysLightType = light.position_data->bm_flags & (LIGHT_POINT | LIGHT_SPOT | LIGHT_DIRECTIONAL);
+	
+	lamp->sysLightZNear = light.shadow_data->znear;
+	lamp->sysLightZFar = light.shadow_data->zfar;
 	
 	light.position_data->cache_index = index;
 	light.position_data->bm_flags |= LIGHT_CACHED;

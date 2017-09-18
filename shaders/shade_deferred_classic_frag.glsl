@@ -330,13 +330,16 @@ float attenuate_spot(vec3 light_vec, vec3 spot_direction, float light_distance, 
 
 void main()
 {    
+    int i;
+    int c;
+    
     
     vec2 uv = vec2(gl_FragCoord.x / sysRenderTargetWidth, gl_FragCoord.y / sysRenderTargetHeight);
     
     //float depth = texture2D(sysDepthSampler, uv).x;
     float depth = texelFetch(sysDepthSampler, ivec2(gl_FragCoord.xy), 0).r;
-    vec4 d_texel;
-    vec4 n_texel;
+    vec4 d_texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
+    vec4 n_texel = texelFetch(sysTextureSampler1, ivec2(gl_FragCoord.xy), 0);
   
     vec4 h_pos = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 p_texel = get_view_pos(h_pos, gl_ProjectionMatrixInverse);
@@ -352,7 +355,8 @@ void main()
     //vec4 lcolor = gl_LightSource[0].diffuse;
     //vec3 light_color = gl_LightSource[0].diffuse.rgb;
     //vec3 light_color = vec3(1.0);
-    vec3 light_color = sysLightParams[sysLightIndex].sysLightColor.rgb;
+    //vec3 light_color = sysLightParams[sysLightIndex].sysLightColor.rgb;
+    vec3 light_color;
     float diff;
     float intensity=1.0;
     float spec;
@@ -363,6 +367,8 @@ void main()
 	//float dFactor;
 	//float sFactor;
 	float shadow;
+	//unsigned int kl;
+	//ivec3 cluster_position;
 
 	//float pixelRayMarchNoise=texture2D(textureSampler0, UV).x;
 	
@@ -375,34 +381,72 @@ void main()
 	//}
 	//else if(sysRenderDrawMode == RENDER_DRAWMODE_LIT)
 	//{
-		view_vec = -p_texel.xyz;
+	
+	
+	view_vec = normalize(-p_texel.xyz);
+	n_texel.xyz = normalize(n_texel.xyz);
+	
+		
+	if(length(n_texel.xyz) == 0.0)
+	{
+		discard;
+	}
+
+	light_pos = sysLightParams[sysLightIndex].sysLightPosition.xyz;
+	light_vec = light_pos - p_texel.xyz;
+	light_color = sysLightParams[sysLightIndex].sysLightColor.rgb;
+				
+	if(sysLightParams[sysLightIndex].sysLightType == LIGHT_POINT)
+	{
+		intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndex].sysLightRadius, sysLightParams[sysLightIndex].sysLightLinearFallof, sysLightParams[sysLightIndex].sysLightSquaredFallof);
+	}
+	else if(sysLightParams[sysLightIndex].sysLightType == LIGHT_SPOT)
+	{
+		intensity = sysAttenuateSpot(light_vec, sysLightParams[sysLightIndex].sysLightForwardVector, sysLightParams[sysLightIndex].sysLightRadius, sysLightParams[sysLightIndex].sysLightSpotCosCutoff, sysLightParams[sysLightIndex].sysLightSpotBlend, sysLightParams[sysLightIndex].sysLightLinearFallof, sysLightParams[sysLightIndex].sysLightSquaredFallof);				
+	}
+				
+	if(intensity <= 0.0)
+	{
+		discard;
+	}
+				
+	shadow = 1.0;
+
+	f_color = vec4(cook_torrance(normalize(light_vec), view_vec, n_texel.xyz, d_texel.xyz, d_texel.w, n_texel.w) * intensity * light_color * shadow, 1.0);
+				
+				
+			//}
+			
+			//kl >>= 1;
+		//}
+		
 
 		//light_pos = gl_LightSource[0].position.xyz;
-		light_pos = sysLightParams[sysLightIndex].sysLightPosition.xyz;
-		light_vec = light_pos - p_texel.xyz;
+		//light_pos = sysLightParams[sysLightIndex].sysLightPosition.xyz;
+		//light_vec = light_pos - p_texel.xyz;
 		
-		if(sysLightParams[sysLightIndex].sysLightType == LIGHT_POINT)
-		{
-			intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndex].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
-		}
-		else if(sysLightParams[sysLightIndex].sysLightType == LIGHT_SPOT)
-		{
-			intensity = sysAttenuateSpot(light_vec, sysLightParams[sysLightIndex].sysLightForwardVector /*gl_LightSource[2].spotDirection*/, sysLightParams[sysLightIndex].sysLightRadius, sysLightParams[sysLightIndex].sysLightSpotCosCutoff, sysLightParams[sysLightIndex].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+		//if(sysLightParams[sysLightIndex].sysLightType == LIGHT_POINT)
+		//{
+		//	intensity = sysAttenuatePoint(light_vec, sysLightParams[sysLightIndex].sysLightRadius, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
+	//	}
+		//else if(sysLightParams[sysLightIndex].sysLightType == LIGHT_SPOT)
+	//	{
+	//		intensity = sysAttenuateSpot(light_vec, sysLightParams[sysLightIndex].sysLightForwardVector /*gl_LightSource[2].spotDirection*/, sysLightParams[sysLightIndex].sysLightRadius, sysLightParams[sysLightIndex].sysLightSpotCosCutoff, sysLightParams[sysLightIndex].sysLightSpotBlend, gl_LightSource[0].linearAttenuation, gl_LightSource[0].quadraticAttenuation);
 			/*if(sysProjectTexture == 1)
 			{
 				light_color *= project_texture(sysTextureSampler2, p_texel.xyz);
 			}*/
 			
-		}
+	//	}
 		
 		
 		
 			
 
-		if(intensity <= 0.0)
-		{
-			discard;
-		}
+	//	if(intensity <= 0.0)
+	//	{
+		//	discard;
+	//	}
 		
 		
 		/*else
@@ -417,16 +461,16 @@ void main()
 		}*/
 		
 		//n_texel = texture2D(sysTextureSampler1, uv);
-		n_texel = texelFetch(sysTextureSampler1, ivec2(gl_FragCoord.xy), 0);
+		//n_texel = texelFetch(sysTextureSampler1, ivec2(gl_FragCoord.xy), 0);
 		
-		if(length(n_texel.xyz) == 0.0)
-		{
-			discard;
-		}
+	//	if(length(n_texel.xyz) == 0.0)
+		//{
+		//	discard;
+		//}
 		
-		n_texel.xyz = normalize(n_texel.xyz);
+		//n_texel.xyz = normalize(n_texel.xyz);
     	//d_texel = texture2D(sysTextureSampler0, uv);
-    	d_texel = texelFetch(sysTextureSampler0, ivec2(gl_FragCoord.xy), 0);
+    	
     	
     	
 
@@ -442,7 +486,7 @@ void main()
 		//phong(light_vec, cam_vec, n_texel.xyz, d_texel.w, 1.0, diff, spec);
 		//cook_torrance(light_vec, cam_vec, n_texel.xyz, 0.1, 0.0, diff, spec);
 		
-		shadow = 1.0;
+		//shadow = 1.0;
 		
 		/*if(sysUseShadows)
 		{
@@ -461,37 +505,15 @@ void main()
 		//f_color = vec4(1.0) * g_smith(n_texel.xyz, normalize(view_vec), normalize(light_vec), 0.5);
 		//f_color = vec4(f_schlick(n_texel.xyz, normalize(view_vec), vec3(0.0, 0.0 ,0.0), 0.0), 1.0);
 		//f_color=((d_texel / PI) * diff + spec) * lcolor * intensity * shadow; 
-		f_color = vec4(cook_torrance(normalize(light_vec), normalize(view_vec), n_texel.xyz, d_texel.xyz, d_texel.w, n_texel.w) * intensity * light_color * shadow, 1.0);
+		//f_color = vec4(cook_torrance(normalize(light_vec), normalize(view_vec), n_texel.xyz, d_texel.xyz, d_texel.w, n_texel.w) * intensity * light_color * shadow, 1.0);
 		//f_color = vec4(0.0);
 		
 		//f_color = vec4(1.0) * max(dot(normalize(light_vec + view_vec), n_texel.xyz), 0.0);
 
 	//}
 	
-	vec4 c_color = vec4(0.0);
-	unsigned int kl;
 	
-	
-	ivec3 cluster_position = sysGetCluster(gl_FragCoord.x, gl_FragCoord.y, p_texel.z, 0.1);
-	
-	kl = texelFetch(sysClusterTexture, ivec3(cluster_position.xy, 0), 0).r;
-	
-	if(kl != 0)
-	{
-		c_color = vec4(0.05);
-	}
-	
-	
-	/*if(sysGetCluster(gl_FragCoord.x, gl_FragCoord.y, p_texel.z, 0.1).xy == ivec2(41, 0))
-	{
-		c_color = vec4(0.5);
-	}
-	else
-	{
-		c_color = vec4(0);
-	}*/
-	
-	gl_FragColor = f_color + c_color;
+	gl_FragColor = f_color;
 }
 
 

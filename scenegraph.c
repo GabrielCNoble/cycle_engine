@@ -69,7 +69,7 @@ entity_ptr last_under_cursor;
 static int sizes[6] = {0, 0, 0, 0, 0, 0};
 static int *(rqs[6]);
 static int used[6] = {0, 0, 0, 0, 0, 0};
-static int check_values[6] = {0x00000065, 0x0000009a, 0x00000909, 0x00000606, 0x00000aa0, 0x00000550};
+static int check_values[6] = {0x00000065, 0x0000009a, 0x00000606, 0x00000909, 0x00000aa0, 0x00000550};
 
 static vec3_t point_frustum_normals[6];
 static plane_t point_frustum_planes[6];
@@ -136,6 +136,8 @@ static void scenegraph_ProcessNodes();
 static void scenegraph_GetAffectedScreenTiles();
 
 static void scenegraph_CullLights();
+
+static void scenegraph_KnapSack();
 
 static void scenegraph_CullGeometry();
 
@@ -786,11 +788,16 @@ void scenegraph_ProcessScenegraph()
 	scenegraph_CullGeometry();
 	scenegraph_CullLights();
 	scenegraph_DispatchGeometry();
-	scenegraph_GetAffectingLights();
+	//scenegraph_GetAffectingLights();
 	if(renderer.renderer_flags&RENDERFLAG_USE_SHADOW_MAPS)
 	{
+		scenegraph_KnapSack();
 		scenegraph_FillShadowQueue();
 	}
+	
+	light_UploadLightTransforms();
+	light_AssignLightsToClusters();
+	
 	/*if(get_entity_under_cursor)
 	{
 		scenegraph_GetEntityUnderMouse();
@@ -1277,6 +1284,10 @@ static void scenegraph_CullLights()
 			memcpy(&active_light_a.extra_data[m], &light_a.extra_data[i], sizeof(light_data3));
 			memcpy(&active_light_a.params[m], &light_a.params[i], sizeof(light_data1));
 			
+			
+			//printf("%d %d %d\n", active_light_a.shadow_data[m].x, active_light_a.shadow_data[m].y, active_light_a.shadow_data[m].w);
+			
+			
 			/* this could be made faster with sse... */
 			for(l = 0; l < 3; l++)
 			{
@@ -1298,6 +1309,8 @@ static void scenegraph_CullLights()
 				active_light_transforms[m].floats[l][1] = l_org3.y;
 				active_light_transforms[m].floats[l][2] = l_org3.z;
 				active_light_transforms[m].floats[l][3] = 0.0;
+				
+				
 			}
 			
 
@@ -1320,106 +1333,7 @@ static void scenegraph_CullLights()
 			active_light_transforms[m].floats[3][0] = l_org3.x;
 			active_light_transforms[m].floats[3][1] = l_org3.y;
 			active_light_transforms[m].floats[3][2] = l_org3.z;
-			active_light_transforms[m].floats[3][3] = 1.0;		   
-			
-			/*light_vec = l_org3;*/
-			
-			//printf("%f %f\n", l_org3.x, l_org3.y);
-			
-			/*light_vec.x = l_org3.x - active_camera->world_position.x;
-			light_vec.y = l_org3.y - active_camera->world_position.y;
-			light_vec.z = l_org3.z - active_camera->world_position.z;*/
-			
-			if(active_light_a.position_data[m].bm_flags&LIGHT_POINT)
-			{
-				
-				//if(light_vec)
-				
-				/*corners[0].x = l_org3.x - l_rad;
-				corners[0].y = l_org3.y + l_rad;
-				corners[0].z = l_org3.z + l_rad;
-				
-				corners[1].x = l_org3.x - l_rad;
-				corners[1].y = l_org3.y - l_rad;
-				corners[1].z = l_org3.z - l_rad;
-				
-				corners[2].x = l_org3.x + l_rad;
-				corners[2].y = l_org3.y - l_rad;
-				
-				corners[3].x = l_org3.x + l_rad;
-				corners[3].y = l_org3.y + l_rad;
-				
-				
-				
-				corners[4].x = l_org3.x - l_rad;
-				corners[4].y = l_org3.y + l_rad;
-				
-				corners[5].x = l_org3.x - l_rad;
-				corners[5].y = l_org3.y - l_rad;
-				
-				corners[6].x = l_org3.x + l_rad;
-				corners[6].y = l_org3.y - l_rad;
-				
-				corners[7].x = l_org3.x + l_rad;
-				corners[7].y = l_org3.y + l_rad;
-				
-				
-				
-				for(s = 0; s < 4; s++)
-				{
-					corners[s].x = ((nznear / nright) * corners[s].x) / corners[0].z;
-					corners[s].y = ((nznear / ntop) * corners[s].y) / corners[0].z;
-				}
-				
-				for(s = 4; s < 8; s++)
-				{
-					corners[s].x = ((nznear / nright) * corners[s].x) / corners[1].z;
-					corners[s].y = ((nznear / ntop) * corners[s].y) / corners[1].z;
-				}
-				
-				draw_debug_DrawLine(vec3(corners[0].x, corners[0].y, -0.5), vec3(corners[1].x, corners[1].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[1].x, corners[1].y, -0.5), vec3(corners[2].x, corners[2].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[2].x, corners[2].y, -0.5), vec3(corners[3].x, corners[3].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[3].x, corners[3].y, -0.5), vec3(corners[0].x, corners[0].y, -0.5), vec3(0.0, 1.0, 0.0), 2.0, 0, 1);
-				
-				
-				draw_debug_DrawLine(vec3(corners[4].x, corners[4].y, -0.5), vec3(corners[5].x, corners[5].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[5].x, corners[5].y, -0.5), vec3(corners[6].x, corners[6].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[6].x, corners[6].y, -0.5), vec3(corners[7].x, corners[7].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);
-				draw_debug_DrawLine(vec3(corners[7].x, corners[7].y, -0.5), vec3(corners[4].x, corners[4].y, -0.5), vec3(0.0, 0.0, 1.0), 2.0, 0, 1);*/
-				
-				
-				/*if(dot3(light_vec, light_vec) < active_light_a.position_data[active_light_a.light_count].radius * active_light_a.position_data[active_light_a.light_count].radius)
-				{
-					active_light_a.position_data[active_light_a.light_count].bm_flags |= LIGHT_VIEWPOINT_INSIDE_VOLUME;
-				}
-				else
-				{
-					active_light_a.position_data[active_light_a.light_count].bm_flags &= ~LIGHT_VIEWPOINT_INSIDE_VOLUME;
-				}
-				
-				factor = (active_light_a.position_data[active_light_a.light_count].radius / (length3(light_vec) + active_light_a.position_data[active_light_a.light_count].radius)) * 2.0; 
-				
-				active_light_a.position_data[active_light_a.light_count].screen_value = factor;*/
-				
-				
-				//printf("%f\n", factor);
-				//printf("%f %f\n", ((nznear / nright) * l_org3.x) / l_org3.z,  ((nznear / ntop) * l_org3.y) / l_org3.z);
-				
-				/*draw_debug_DrawPoint(l_org4.vec3, vec3(1.0, 0.0, 0.0), 8.0, 1);
-				draw_debug_DrawPoint(vec3(l_org4.x + factor, l_org4.y, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);
-				draw_debug_DrawPoint(vec3(l_org4.x - factor, l_org4.y, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);
-				draw_debug_DrawPoint(vec3(l_org4.x, l_org4.y + factor, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);
-				draw_debug_DrawPoint(vec3(l_org4.x, l_org4.y - factor, l_org4.z), vec3(1.0, 0.0, 0.0), 8.0, 1);*/
-				
-			}
-			else if(active_light_a.position_data[m].bm_flags & LIGHT_SPOT)
-			{
-				/*active_light_a.position_data[active_light_a.light_count].smax_x = renderer.width;
-				active_light_a.position_data[active_light_a.light_count].smin_x = 0;
-				active_light_a.position_data[active_light_a.light_count].smax_y = renderer.height;
-				active_light_a.position_data[active_light_a.light_count].smin_y = 0;*/
-			}
+			active_light_transforms[m].floats[3][3] = 1.0;	
 			
 			active_light_a.light_count++;
 		}
@@ -1433,10 +1347,15 @@ static void scenegraph_CullLights()
 			
 	}
 	
-	light_UploadLightTransforms();
-	light_AssignLightsToClusters();
+	//light_UploadLightTransforms();
+	//light_AssignLightsToClusters();
 	//printf("\n");
 	//printf("%d\n", active_light_a.light_count);
+}
+
+static void scenegraph_KnapSack()
+{
+	light_FitLights();
 }
 
 
@@ -1726,6 +1645,11 @@ static void scenegraph_FillShadowQueue()
 	int bm_sides = 0;
 	int bm_inserted;
 	
+	int x;
+	int y;
+	int w;
+	int h;
+	
 	k=active_light_a.light_count;
 	c=entity_a.entity_count;
 	
@@ -1819,8 +1743,10 @@ static void scenegraph_FillShadowQueue()
 				
 				
 			*(int *)&scb.model_view_matrix.floats[0][3] = 0xff000000;				/* this tells draw_DrawShadowMaps that this command_buffer_t starts a light's render queue */
-			*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].shadow_map.shadow_map << 16);
-			*(int *)&scb.model_view_matrix.floats[2][3] = (GL_TEXTURE_2D << 16) | (active_light_a.params[j].shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;
+			*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].x << 16) | active_light_a.shadow_data[j].y;						
+			*(int *)&scb.model_view_matrix.floats[2][3] = (active_light_a.shadow_data[j].w << 16) | active_light_a.shadow_data[j].h;
+			//*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].shadow_map.shadow_map << 16);
+			//*(int *)&scb.model_view_matrix.floats[2][3] = (GL_TEXTURE_2D << 16) | (active_light_a.params[j].shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;
 			draw_DispatchShadowCommandBuffer(&scb);
 			
 			p_index = 0;	
@@ -2025,11 +1951,58 @@ static void scenegraph_FillShadowQueue()
 				mat4_t_mult_fast(&transform, &translation, &cube_shadow_mats[m]);	
 				mat4_t_mult_fast(&scb.model_view_matrix, &transform, &projection_matrix);
 				
+				
+				w = active_light_a.shadow_data[j].w / 3;
+				h = active_light_a.shadow_data[j].h >> 1;
+				
+				switch(m)
+				{
+					/* +X */
+					case 0:
+						x = active_light_a.shadow_data[j].x;
+						y = active_light_a.shadow_data[j].y;
+					break;
+					
+					/* -X */
+					case 1:	
+						x = active_light_a.shadow_data[j].x;
+						y = active_light_a.shadow_data[j].y + h;
+					break;
+					
+					/* +Y */
+					case 2:
+						x = active_light_a.shadow_data[j].x + w;
+						y = active_light_a.shadow_data[j].y;
+					break;
+					
+					/* -Y */
+					case 3:
+						x = active_light_a.shadow_data[j].x + w;
+						y = active_light_a.shadow_data[j].y + h;
+					break;
+					
+					/* +Z */
+					case 4:
+						x = active_light_a.shadow_data[j].x + 2 * w;
+						y = active_light_a.shadow_data[j].y;
+					break;
+					
+					/* -Z */
+					case 5:
+						x = active_light_a.shadow_data[j].x + 2 * w;
+						y = active_light_a.shadow_data[j].y + h;
+					break;
+				}
+				
+				
+				
 				/* ignore frustums that have no objects in it. */
 					
 				*(int *)&scb.model_view_matrix.floats[0][3] = 0xff000000; 				/* this tells draw_DrawShadowMaps that this command_buffer_t starts a light's render queue */
-				*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].shadow_map.shadow_map << 16);
-				*(int *)&scb.model_view_matrix.floats[2][3] = ((GL_TEXTURE_CUBE_MAP_POSITIVE_X+m) << 16) | (active_light_a.params[j].shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;		
+				*(int *)&scb.model_view_matrix.floats[1][3] = (x << 16) | y;						
+				*(int *)&scb.model_view_matrix.floats[2][3] = (w << 16) | h;
+			//	*(int *)&scb.model_view_matrix.floats[1][3] = (active_light_a.shadow_data[j].shadow_map.shadow_map << 16);
+			//	*(int *)&scb.model_view_matrix.floats[2][3] = ((GL_TEXTURE_CUBE_MAP_POSITIVE_X+m) << 16) | (active_light_a.params[j].shadow_map_res) /*(active_light_a.shadow_data[j].shadow_map.resolution)*/;		
 				draw_DispatchShadowCommandBuffer(&scb);
 				
 				//printf("m: %d used: %d\n", m, used[m]);

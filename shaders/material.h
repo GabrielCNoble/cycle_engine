@@ -9,20 +9,15 @@ struct sysMaterialFields
 	int sysMaterialFlags;
 };
 
-
-#ifdef _GL3A_
 #extension GL_ARB_uniform_buffer_object : enable
+#extension GL_EXT_gpu_shader4 : enable
 
 layout(std140) uniform sysMaterialParamsUniformBlock
 {
 	sysMaterialFields sysMaterialParams;
 };
 
-#else
 
-layout(std140) uniform sysMaterialFields sysMaterialParams;
-
-#endif
 
 #define  MATERIAL_Shadeless 1
 #define  MATERIAL_Wireframe 1<<1

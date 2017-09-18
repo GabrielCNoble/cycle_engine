@@ -4,7 +4,7 @@
 #include <intrin.h>
 
 /* global declarations */
-renderer_t renderer;
+extern renderer_t renderer;
 //sound_system sound;
 //text_renderer_t text_renderer;
 camera_array camera_a;
@@ -81,7 +81,7 @@ PEWAPI void pew_Init(int resolution, int mode, char *path)
 		i--;
 	}
 	
-	printf("full path: %s\n", full_path);
+	//printf("full path: %s\n", full_path);
 	
 	draw_Init(resolution, mode);
 	gpu_Init();

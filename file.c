@@ -30,17 +30,20 @@ file_t file_LoadFile(char *file_name, int bin_load)
 		return q;
 	}
 	
-	q.size = file_GetFileSize(f) + 1;
+	q.size = file_GetFileSize(f);
 
-	q.buf = (char *)malloc(q.size);
+	q.buf = (char *)malloc(q.size + 10);
 	i = 0;
-	while(1)
+	while(1 && i < q.size)
 	{
 		b = fgetc(f);
 		if(!feof(f))
 		{
+			//printf("add0\n");
 			q.buf[i] = b;
 			i++;
+			
+			//printf("add1\n");
 		}
 		else
 		{
@@ -48,6 +51,8 @@ file_t file_LoadFile(char *file_name, int bin_load)
 		}
 		
 	}
+
+	
 	fclose(f);
 	
 	/* Won't make difference for binary files. This is

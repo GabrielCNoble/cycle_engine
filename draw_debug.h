@@ -91,6 +91,8 @@ PEWAPI void draw_debug_BlitFramebuffer(framebuffer_t *framebuffer, int offset_x,
 
 PEWAPI void draw_debug_Draw3DHandle(int mode, vec3_t position, mat3_t *orientation);
 
+PEWAPI void draw_debug_DrawCameraClusters(camera_t *camera);
+
 //PEWAPI void draw_debug_Draw2DPoint(vec2_t position, vec3_t color, float point_size);
 
 //PEWAPI void draw_debug_DrawPointHomogeneous(vec3_t position, vec3_t color, float point_size);

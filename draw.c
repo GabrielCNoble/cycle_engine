@@ -37,12 +37,14 @@ extern swidget_t *active_swidget;
 
 extern unsigned int screen_area_mesh_gpu_buffer;
 extern unsigned int cluster_texture;
-
+extern unsigned int ssm;
 //extern float screen_quad[3 * 4];
 
 extern int ui_font;
 
 static char formated_str[8192];
+
+void (*draw_ShadeFn)();
 
 int resolutions[7][2]=
 {
@@ -75,7 +77,7 @@ extern float gui_time;
 
 mat4_t widget_projection_matrix;
 
-extern renderer_t renderer;
+renderer_t renderer;
 render_queue render_q;
 render_queue t_render_q;				/* for transparent objects */
 render_queue e_render_q;				/* emissive objects */
@@ -100,6 +102,8 @@ extern armature_list_t armature_list;
 int screen_quad_shader_index;
 int z_prepass_shader_index;
 int deferred_process_shader_index;
+int shade_deferred_classic_shader;
+int shade_deferred_clustered_shader;
 int deferred_process_wireframe_shader_index;
 int composite_shader_index;
 int wireframe_shader_index;
@@ -735,6 +739,7 @@ draw_Init
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, renderer.width / 8, renderer.height / 8, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
 
 	
+	draw_SetRenderer(RENDERER_DEFERRED_CLUSTERED);
 	draw_SetRenderDrawMode(RENDER_DRAWMODE_LIT);
 	draw_SetRenderFlags(RENDERFLAG_USE_SHADOW_MAPS);
 	//draw_SetDebugFlag(DEBUG_DRAW_LIGHT_LIMITS);
@@ -1519,6 +1524,21 @@ int draw_FillAndDispatchShadowCommandBuffer(int vert_count, short material_index
 	//return shadow_q.count-1;
 }
 
+PEWAPI void draw_SetRenderer(int renderer_mode)
+{
+	switch(renderer_mode)
+	{
+		case RENDERER_DEFERRED_CLUSTERED:
+			draw_ShadeFn = draw_ShadeDeferredClustered;	
+			draw_SetRenderFlags(0);
+		break;
+		
+		case RENDERER_DEFERRED_CLASSIC:
+			draw_ShadeFn = draw_ShadeDeferredClassic;
+			draw_SetRenderFlags(0);
+		break;
+	}
+}
 
 PEWAPI void draw_SetRenderDrawMode(int draw_mode)
 {
@@ -1558,7 +1578,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 	{
 		case 0:
 			renderer.renderer_flags=flags;
-			frame_funcs[1] = draw_ResolveGBuffer;
+			frame_funcs[1] = draw_ShadeFn;
 			frame_funcs[2] = draw_Dummy;
 			frame_funcs[3] = draw_Dummy;
 			frame_funcs[4] = draw_ComposeNoVolNoBloom;
@@ -1569,7 +1589,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 		case RENDERFLAG_DRAW_LIGHT_VOLUMES:
 			renderer.renderer_flags=flags;
 			frame_funcs[1] = draw_DrawLightVolumes;
-			frame_funcs[2] = draw_ResolveGBuffer;
+			frame_funcs[2] = draw_ShadeFn;
 			frame_funcs[3] = draw_Dummy;
 			frame_funcs[4] = draw_Dummy;
 			frame_funcs[5] = draw_ComposeVolNoBloom;
@@ -1580,7 +1600,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 		case RENDERFLAG_USE_SHADOW_MAPS:
 			renderer.renderer_flags=flags;
 			frame_funcs[1] = draw_DrawShadowMaps;
-			frame_funcs[2] = draw_ResolveGBuffer;
+			frame_funcs[2] = draw_ShadeFn;
 			frame_funcs[3] = draw_Dummy;
 			frame_funcs[4] = draw_Dummy;
 			frame_funcs[5] = draw_ComposeNoVolNoBloom;
@@ -1592,7 +1612,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 			renderer.renderer_flags=flags;
 			frame_funcs[1] = draw_DrawShadowMaps;
 			frame_funcs[2] = draw_DrawLightVolumes;
-			frame_funcs[3] = draw_ResolveGBuffer;
+			frame_funcs[3] = draw_ShadeFn;
 			frame_funcs[4] = draw_Dummy;
 			frame_funcs[5] = draw_Dummy;
 			frame_funcs[6] = draw_ComposeVolNoBloom;
@@ -1602,7 +1622,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 		
 		case RENDERFLAG_USE_BLOOM:
 			renderer.renderer_flags = flags;
-			frame_funcs[1] = draw_ResolveGBuffer;
+			frame_funcs[1] = draw_ShadeFn;
 			frame_funcs[2] = draw_Dummy;
 			frame_funcs[3] = draw_ComposeNoVolBloom;
 			frame_funcs[4] = draw_BlitToScreen;
@@ -1616,7 +1636,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 		case RENDERFLAG_USE_BLOOM | RENDERFLAG_USE_SHADOW_MAPS:
 			renderer.renderer_flags = flags;
 			frame_funcs[1] = draw_DrawShadowMaps;
-			frame_funcs[2] = draw_ResolveGBuffer;
+			frame_funcs[2] = draw_ShadeDeferredClustered;
 			frame_funcs[3] = draw_Dummy;
 			frame_funcs[4] = draw_Dummy;
 			frame_funcs[5] = draw_ComposeNoVolBloom;
@@ -1628,7 +1648,7 @@ PEWAPI void draw_SetRenderFlags(int flags)
 			renderer.renderer_flags = flags;
 			frame_funcs[1] = draw_DrawShadowMaps;
 			frame_funcs[2] = draw_DrawLightVolumes;
-			frame_funcs[3] = draw_ResolveGBuffer;
+			frame_funcs[3] = draw_ShadeDeferredClustered;
 			frame_funcs[4] = draw_Dummy;
 			frame_funcs[5] = draw_Dummy;
 			frame_funcs[6] = draw_Compose;
@@ -2793,9 +2813,225 @@ void draw_FillStencilBuffer()
 
 
 
-void draw_ResolveGBuffer()
+void draw_ShadeDeferredClustered()
 {
 	
+	int i;
+	int j;
+	int c;
+	
+	int q;
+	int k;
+	
+	int x;
+	int y;
+	int pass_count=0;
+	mat4_t cam_transform;
+	float fx;
+	float fy;
+	
+	light_data0 *position;
+	light_data1 *params;
+	light_data2 *shadow;
+	light_data3 *extra;
+	
+	mat3_t orientation;
+	mat4_t camera_to_world_matrix;
+	mat4_t camera_to_light_matrix;
+	mat4_t camera_to_light_projection_matrix;
+	mat4_t light_transform;
+	mat4_t model_view_matrix;
+	
+	int imin_x;
+	int imax_x;
+	int imin_y;
+	int imax_y;
+	
+	//float use_shadows;
+	int light_type = 0;
+	int area_type = 0;
+	int use_shadows = 0;
+	unsigned int target;
+	unsigned int uniform;
+	unsigned int timer;
+	
+	float v[4];
+	int draw_begin;
+	int draw_count;
+	int draw_mode;
+	
+    //affecting_lights_list light_list;
+    camera_t *active_camera=camera_GetActiveCamera();
+	
+	framebuffer_CopyFramebuffer(&left_buffer, &geometry_buffer, COLOR_COMPONENT_DEPTH);	
+
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearStencil(0);
+	framebuffer_BindFramebuffer(&left_buffer);		
+	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);	
+		
+	
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(&active_camera->projection_matrix.floats[0][0]);
+	
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	
+
+	switch(renderer.render_mode)
+	{
+
+		case RENDER_DRAWMODE_LIT:
+		
+			/*#ifdef PROFILE_RENDERER
+	
+			draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_PROCESS);
+			
+			#endif*/
+			
+			//draw_profile_StartTimer();
+			
+			c = active_light_a.light_count;
+			
+			shader_SetShaderByIndex(stencil_lights_shader);
+			glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
+			glEnableVertexAttribArray(shader_a.shaders[stencil_lights_shader].v_position);
+			glVertexAttribPointer(shader_a.shaders[stencil_lights_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			
+			
+			glEnable(GL_STENCIL_TEST);
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			
+			
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glDepthMask(GL_FALSE);	
+			
+			glStencilFunc(GL_ALWAYS, 0, 0xff);
+			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_INCR, GL_KEEP);
+			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_DECR, GL_KEEP);
+			
+			light_BindLightCache();
+			
+			for(i = 0; i < c; i++)
+			{
+				position = &active_light_a.position_data[i];				
+				glUniform1i(shader_a.shaders[stencil_lights_shader].sysLightIndex, position->cache_index);
+
+				if(position->bm_flags&LIGHT_SPOT)
+				{
+					draw_begin = DRAW_CONE_LOD0_BEGIN;
+					draw_count = DRAW_CONE_LOD0_COUNT;
+				}
+				else if(position->bm_flags&LIGHT_POINT)
+				{
+					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
+					draw_count = DRAW_SPHERE_LOD0_COUNT;
+				}
+
+				
+				glCullFace(GL_BACK);
+				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
+				
+				glCullFace(GL_FRONT);
+				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
+			}
+			
+			//printf("%f	", draw_profile_StopTimer());
+			//draw_profile_StartTimer();
+			
+			
+			glStencilFunc(GL_NOTEQUAL, 0x0, 0xff);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			
+			shader_SetShaderByIndex(shade_deferred_clustered_shader);
+			//glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
+			glEnableVertexAttribArray(shader_a.shaders[shade_deferred_clustered_shader].v_position);
+			glVertexAttribPointer(shader_a.shaders[shade_deferred_clustered_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out1);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out2);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, geometry_buffer.z_buffer);
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_3D, cluster_texture);
+			glActiveTexture(GL_TEXTURE4);
+			glBindTexture(GL_TEXTURE_2D, ssm);
+		
+			
+			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
+			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler1, 1);
+			shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 2);
+			shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 4);
+			
+			glUniform1i(shader_a.shaders[shade_deferred_clustered_shader].sysClusterTexture, 3);
+			
+			shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_camera->frustum.znear);
+			shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_camera->frustum.zfar);
+			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, left_buffer.width);
+			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, left_buffer.height);
+			
+			mat4_t_compose(&camera_to_world_matrix, &active_camera->world_orientation, active_camera->world_position);
+			
+			shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraToWorldMatrix, &camera_to_world_matrix.floats[0][0]);
+			
+			
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			
+		
+			draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
+
+			
+			light_UnbindLightCache();
+			
+			//printf("%f\n", draw_profile_StopTimer());
+			
+			/*#ifdef PROFILE_RENDERER
+	
+			draw_profile_StopCollectionOfStageStatistics();
+			
+			#endif*/
+		break;
+		
+		case RENDER_DRAWMODE_WIREFRAME:
+		case RENDER_DRAWMODE_FLAT:			
+			
+		/*	#ifdef PROFILE_RENDERER
+	
+			draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_PROCESS);
+			
+			#endif*/
+		
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, left_buffer.width, left_buffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			
+			/*#ifdef PROFILE_RENDERER
+	
+			draw_profile_StopCollectionOfStageStatistics();
+			
+			#endif*/
+		break;
+	}
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_STENCIL_TEST);
+}
+
+void draw_ShadeDeferredClassic()
+{
 	int i;
 	int j;
 	int c;
@@ -2840,7 +3076,7 @@ void draw_ResolveGBuffer()
 	int draw_mode;
 	
     //affecting_lights_list light_list;
-    camera_t *active_camera=camera_GetActiveCamera();
+    camera_t *active_camera = camera_GetActiveCamera();
 	
 	framebuffer_CopyFramebuffer(&left_buffer, &geometry_buffer, COLOR_COMPONENT_DEPTH);
 	
@@ -2864,7 +3100,7 @@ void draw_ResolveGBuffer()
 	
 //#define TEST_STENCIL_MF_BUFFER	
 	
-#ifdef TEST_STENCIL_MF_BUFFER
+/*#ifdef TEST_STENCIL_MF_BUFFER
 
 	glEnable(GL_STENCIL_TEST);
 
@@ -2898,7 +3134,7 @@ void draw_ResolveGBuffer()
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glDepthMask(GL_TRUE);
 	
-#endif
+#endif*/
 	
 	//glDisable(GL_DEPTH_TEST);
 	//glDepthMask(GL_FALSE);	
@@ -2919,23 +3155,20 @@ void draw_ResolveGBuffer()
 
 		case RENDER_DRAWMODE_LIT:
 		
-			#ifdef PROFILE_RENDERER
+			/*#ifdef PROFILE_RENDERER
 	
 			draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_PROCESS);
 			
-			#endif
-		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
-		//	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, geometry_buffer.z_buffer, 0);
+			#endif*/
 			
 			c = active_light_a.light_count;
+			
+			//draw_profile_StartTimer();
 			
 			shader_SetShaderByIndex(stencil_lights_shader);
 			glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
 			glEnableVertexAttribArray(shader_a.shaders[stencil_lights_shader].v_position);
 			glVertexAttribPointer(shader_a.shaders[stencil_lights_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-			
-			
-			
 			
 			glEnable(GL_STENCIL_TEST);
 			glEnable(GL_DEPTH_TEST);
@@ -2947,74 +3180,37 @@ void draw_ResolveGBuffer()
 			glDepthMask(GL_FALSE);	
 			
 			glStencilFunc(GL_ALWAYS, 0, 0xff);
-			//glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_INCR, GL_KEEP);
 			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_DECR, GL_KEEP);
-			
-			//glBindBufferRange(GL_UNIFORM_BUFFER, LIGHT_PARAMS_BINDING, light_cache);
-			//light_BindLightCache();
 			
 			light_BindLightCache();
 			
 			for(i = 0; i < c; i++)
 			{
 				position = &active_light_a.position_data[i];				
-				//glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
-				//printf("%d\n", position->cache_index);
-				
 				glUniform1i(shader_a.shaders[stencil_lights_shader].sysLightIndex, position->cache_index);
-				
-				//v[0] = 0;
-		 		//v[1] = 0;
-		 		//v[2] = 0;
-		 		//v[3] = position->radius;
-				//glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
-				
-				//glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
-				
-		 		//v[0] = position->world_orientation.floats[0][0];
-				//v[1] = position->world_orientation.floats[0][1];
-				//v[2] = position->world_orientation.floats[0][2];
-				//glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
-				
-				//v[0] = position->world_orientation.floats[1][0];
-				//v[1] = position->world_orientation.floats[1][1];
-				//v[2] = position->world_orientation.floats[1][2];
-				//glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
-				
-				//v[0] = position->world_orientation.floats[2][0];
-				//v[1] = position->world_orientation.floats[2][1];
-				//v[2] = position->world_orientation.floats[2][2];
-				//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
-				
-				
+
 				if(position->bm_flags&LIGHT_SPOT)
 				{
 					draw_begin = DRAW_CONE_LOD0_BEGIN;
 					draw_count = DRAW_CONE_LOD0_COUNT;
-					//area_type = LIGHT_SPOT;
-					//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR, GL_KEEP);
-					//glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR, GL_KEEP);
 				}
 				else if(position->bm_flags&LIGHT_POINT)
 				{
 					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
 					draw_count = DRAW_SPHERE_LOD0_COUNT;
-					//area_type = LIGHT_POINT;	
-					//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_INCR, GL_KEEP);
-					//glStencilOpSeparate(GL_BACK, GL_KEEP, GL_DECR, GL_KEEP);
 				}
-				
-				//light_SetAreaType(area_type);
+
 				
 				glCullFace(GL_BACK);
-				//glStencilOp(GL_KEEP, GL_INCR, GL_KEEP);
 				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
 				
 				glCullFace(GL_FRONT);
-				//glStencilOp(GL_KEEP, GL_DECR, GL_KEEP);
 				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
 			}
+			
+			//printf("%f	", draw_profile_StopTimer());
+			//draw_profile_StartTimer();
 			
 			
 			glStencilFunc(GL_NOTEQUAL, 0x0, 0xff);
@@ -3026,10 +3222,10 @@ void draw_ResolveGBuffer()
 			//framebuffer_ResetFramebufferComponents(&geometry_buffer, COLOR_COMPONENT_DEPTH);
 			
 			
-			shader_SetShaderByIndex(deferred_process_shader_index);
-			glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
-			glEnableVertexAttribArray(shader_a.shaders[deferred_process_shader_index].v_position);
-			glVertexAttribPointer(shader_a.shaders[deferred_process_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			shader_SetShaderByIndex(shade_deferred_classic_shader);
+			//glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
+			glEnableVertexAttribArray(shader_a.shaders[shade_deferred_classic_shader].v_position);
+			glVertexAttribPointer(shader_a.shaders[shade_deferred_classic_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 			
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out1);
@@ -3038,36 +3234,39 @@ void draw_ResolveGBuffer()
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, geometry_buffer.z_buffer);
 				
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			//glActiveTexture(GL_TEXTURE3);
+			//glBindTexture(GL_TEXTURE_2D, 0);
+			//glActiveTexture(GL_TEXTURE4);
+			//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 			
-			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_3D, cluster_texture);
+			//glActiveTexture(GL_TEXTURE5);
+			//glBindTexture(GL_TEXTURE_3D, cluster_texture);
 		
 			
 			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
 			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler1, 1);
-			shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler2, 5);
+			//shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler2, 5);
 			shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 2);
 			
-			shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 3);
-			shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 4);
+			//shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 3);
+			//shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 4);
 			
-			glUniform1i(shader_a.shaders[deferred_process_shader_index].sysClusterTexture, 5);
-			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_LIT);
+			//glUniform1i(shader_a.shaders[deferred_process_shader_index].sysClusterTexture, 5);
+			//shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_LIT);
 			
 			shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_camera->frustum.znear);
 			shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_camera->frustum.zfar);
 			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetWidth, left_buffer.width);
 			shader_SetCurrentShaderUniform1f(UNIFORM_RenderTargetHeight, left_buffer.height);
 			
-			mat4_t_compose(&camera_to_world_matrix, &active_camera->world_orientation, active_camera->world_position);
+			//mat4_t_compose(&camera_to_world_matrix, &active_camera->world_orientation, active_camera->world_position);
 			
 			glDisable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_BACK);
+			
+		//	glDisable(GL_STENCIL_TEST);
+			
 			//glDepthMask(GL_FALSE);
 			
 			glEnable(GL_BLEND);
@@ -3079,9 +3278,9 @@ void draw_ResolveGBuffer()
 			{
 				
 				position = &active_light_a.position_data[i];
-				params = &active_light_a.params[i];
-				shadow = &active_light_a.shadow_data[i];
-				extra = &active_light_a.extra_data[i];
+				//params = &active_light_a.params[i];
+				//shadow = &active_light_a.shadow_data[i];
+				//extra = &active_light_a.extra_data[i];
 		 		//light_SetLight(i);
 		 		
 		 		//mat4_t_compose(&light_transform, &active_light_a.position_data[i].world_orientation, active_light_a.position_data[i].world_position.vec3);
@@ -3089,7 +3288,7 @@ void draw_ResolveGBuffer()
 		 		//glLoadMatrixf(&model_view_matrix.floats[0][0]);
 		 		//printf("%d\n", position->cache_index);
 		 		
-		 		glUniform1i(shader_a.shaders[deferred_process_shader_index].sysLightIndex, position->cache_index);
+		 		glUniform1i(shader_a.shaders[shade_deferred_classic_shader].sysLightIndex, position->cache_index);
 		 		
 		 		//glLightfv(GL_LIGHT0, GL_POSITION, &position->world_position.floats[0]);
 		 		
@@ -3121,8 +3320,8 @@ void draw_ResolveGBuffer()
 				
 				//glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
 				//glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, params->spot_e);
-				glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)params->lin_fallof/0xffff);
-				glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)params->sqr_fallof/0xffff);
+				//glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)params->lin_fallof/0xffff);
+				//glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)params->sqr_fallof/0xffff);
 				
 				
 				/*imin_x=active_light_a.position_data[i].smin_x;
@@ -3130,15 +3329,15 @@ void draw_ResolveGBuffer()
 				imin_y=active_light_a.position_data[i].smin_y;
 				imax_y=active_light_a.position_data[i].smax_y;*/
 				
-				light_type = 0;
+				//light_type = 0;
 				
-				if(position->bm_flags&LIGHT_SPOT)
-				{
-					draw_begin = DRAW_CONE_LOD0_BEGIN;
-					draw_count = DRAW_CONE_LOD0_COUNT;
-					draw_mode = GL_TRIANGLES;
-					light_type = LIGHT_SPOT;
-					area_type = LIGHT_SPOT;
+				//if(position->bm_flags&LIGHT_SPOT)
+				//{
+				//	draw_begin = DRAW_CONE_LOD0_BEGIN;
+				//	draw_count = DRAW_CONE_LOD0_COUNT;
+				//	draw_mode = GL_TRIANGLES;
+				//	light_type = LIGHT_SPOT;
+				//	area_type = LIGHT_SPOT;
 					
 					/*if(active_light_a.position_data[i].tex_index > -1)
 					{
@@ -3150,23 +3349,23 @@ void draw_ResolveGBuffer()
 					{
 						glLighti(GL_LIGHT4, GL_SPOT_EXPONENT, 0);
 					}*/
-				}
-				else if(position->bm_flags&LIGHT_POINT)
-				{
-					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
-					draw_count = DRAW_SPHERE_LOD0_COUNT;
+				//}
+			//	else if(position->bm_flags&LIGHT_POINT)
+			//	{
+			//		draw_begin = DRAW_SPHERE_LOD0_BEGIN;
+			//		draw_count = DRAW_SPHERE_LOD0_COUNT;
 					
-					draw_mode = GL_TRIANGLES;
-					area_type = LIGHT_POINT;
+			//		draw_mode = GL_TRIANGLES;
+			//		area_type = LIGHT_POINT;
 					
-					light_type = LIGHT_POINT;
-				}
+			//		light_type = LIGHT_POINT;
+			//	}
 				
 				/* spot exponent goes to the vertex shader... */
 				//glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, area_type);
-				light_SetAreaType(area_type);
+			//	light_SetAreaType(area_type);
 				
-				if(position->bm_flags&LIGHT_GENERATE_SHADOWS && renderer.renderer_flags&RENDERFLAG_USE_SHADOW_MAPS)
+				/*if(position->bm_flags&LIGHT_GENERATE_SHADOWS && renderer.renderer_flags&RENDERFLAG_USE_SHADOW_MAPS)
 				{
 					switch(light_type)
 					{
@@ -3195,73 +3394,82 @@ void draw_ResolveGBuffer()
 				{
 					use_shadows = 0;
 					//light_type = 0;
-				}
+				}*/
 				
 				/* spot cutoff goes to the fragment shader... */
 				//glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, light_type);
 				//light_SetLightType(light_type);
 				//glLighti(GL_LIGHT2, GL_SPOT_EXPONENT, params->max_shadow_aa_samples);
 				//glLighti(GL_LIGHT3, GL_SPOT_EXPONENT, use_shadows);
-				draw_DrawArrays(draw_mode, draw_begin, draw_count);
-				//glDrawArrays(draw_mode, draw_begin, draw_count);
+				
+				if(position->bm_flags&LIGHT_SPOT)
+				{
+					draw_begin = DRAW_CONE_LOD0_BEGIN;
+					draw_count = DRAW_CONE_LOD0_COUNT;
+				}
+				else if(position->bm_flags&LIGHT_POINT)
+				{
+					draw_begin = DRAW_SPHERE_LOD0_BEGIN;
+					draw_count = DRAW_SPHERE_LOD0_COUNT;
+				}
+				
+				
+				draw_DrawArrays(GL_TRIANGLES, draw_begin, draw_count);
+			
 			}
 			
 			light_UnbindLightCache();
 			
-			#ifdef PROFILE_RENDERER
+			//printf("%f\n", draw_profile_StopTimer());
+			
+			/*#ifdef PROFILE_RENDERER
 	
 			draw_profile_StopCollectionOfStageStatistics();
 			
-			#endif
+			#endif*/
 		break;
 		
 		case RENDER_DRAWMODE_WIREFRAME:
 		case RENDER_DRAWMODE_FLAT:			
 			
-			#ifdef PROFILE_RENDERER
+			/*#ifdef PROFILE_RENDERER
 	
 			draw_profile_StartCollectionOfStageStatistics(STAGE_GBUFFER_PROCESS);
 			
-			#endif
+			#endif*/
 		
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, geometry_buffer.id);
 			glDrawBuffer(GL_COLOR_ATTACHMENT0);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 			glBlitFramebuffer(0, 0, geometry_buffer.width, geometry_buffer.height, 0, 0, left_buffer.width, left_buffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 			
-			#ifdef PROFILE_RENDERER
+			/*#ifdef PROFILE_RENDERER
 	
 			draw_profile_StopCollectionOfStageStatistics();
 			
-			#endif
+			#endif*/
 		break;
-		
-		/*case RENDER_DRAWMODE_FLAT:
-			shader_SetCurrentShaderUniform1i(UNIFORM_RenderDrawMode, RENDER_DRAWMODE_FLAT);
-			glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 0);
-			draw_DrawArrays(GL_QUADS, DRAW_SCREEN_QUAD_BEGIN, DRAW_SCREEN_QUAD_COUNT);
-		break;*/
 	}
-	
-	//glDisable(GL_SCISSOR_TEST);
 	glEnable(GL_DEPTH_TEST);
-	//glCullFace(GL_BACK);
-	//glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_STENCIL_TEST);
-	//glLighti(GL_LIGHT1, GL_SPOT_CUTOFF, 0);
-	//glActiveTexture(GL_TEXTURE3);
-	//glBindTexture(GL_TEXTURE_2D, 0);	
-	//glActiveTexture(GL_TEXTURE4);
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+void draw_FillStencil()
+{	
+	int i;
+	int c = active_light_a.light_count;
 	
-	//glMatrixMode(GL_PROJECTION);
-	//glPopMatrix();
-	//glMatrixMode(GL_MODELVIEW);
-	//glPopMatrix();
+	shader_SetShaderByIndex(stencil_lights_shader);
+	glBindBuffer(GL_ARRAY_BUFFER, screen_area_mesh_gpu_buffer);
+	glEnableVertexAttribArray(shader_a.shaders[stencil_lights_shader].v_position);
+	glVertexAttribPointer(shader_a.shaders[stencil_lights_shader].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
-	//glBindBuffer(GL_ARRAY_BUFFER, 0); 
+	for(i = 0; i < c; i++)
+	{
+		
+	}
 }
 
 void draw_ResolveTranslucent()
@@ -3339,6 +3547,11 @@ void draw_DrawShadowMaps()
 	unsigned int m;
 	unsigned int n;
 	
+	int x;
+	int y;
+	int w;
+	int h;
+	
 	int vert_count;
 	int draw_mode;
 	//int gpu_buffer;
@@ -3376,7 +3589,8 @@ void draw_DrawShadowMaps()
 	
 	//mat4_t transform;
 	//mat4_t light_model_view_projection_matrix;
-
+	//glActiveTexture(GL_TEXTURE_0);
+	//glBindTexture(GL_TEXTURE_2D, ssm);
 
 	//glUseProgram(shader_a.shaders[smap_shader_index].shader_ID);
 	//renderer.active_shader_index=smap_shader_index;
@@ -3399,6 +3613,7 @@ void draw_DrawShadowMaps()
 	//glPolygonOffset(-2.0, 1.0);
 	glCullFace(GL_BACK);
 	glEnable(GL_BLEND);
+	glEnable(GL_SCISSOR_TEST);
 	//glDisable(GL_DEPTH_TEST);
 	glBlendFunc(GL_ONE, GL_ONE);
 	
@@ -3406,7 +3621,9 @@ void draw_DrawShadowMaps()
 	
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadow_buffer.id);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, ssm, 0);
+	glDrawBuffer(GL_NONE);
+	//glClear(GL_DEPTH_BUFFER_BIT);
 	//glClearColor(0.0, 0.0, 0.0, 0.0);
 	//glClearDepth(1.0);
 	
@@ -3444,24 +3661,41 @@ void draw_DrawShadowMaps()
 			matrix position. shadow_map_res and shadow_map_face can be packed in the same
 			matrix position. */
 			
+			//printf("here\n");
 			
 			model_view_matrix = &shadow_q.command_buffers[m].model_view_matrix;
 			
 			model_view_matrix->floats[0][3] = model_view_matrix->floats[0][2];
 			
-			shadow_map_id = *(int *)&model_view_matrix->floats[1][3];
+			x = *(int *)&model_view_matrix->floats[1][3];
+			y = x & 0x0000ffff;
+			x = (x >> 16) & 0x0000ffff;
 			model_view_matrix->floats[1][3] = model_view_matrix->floats[1][2];
-			//alpha_map_id = shadow_map_id & 0x0000ffff;
-			shadow_map_id = (shadow_map_id >> 16) & 0x0000ffff;
-			
-			shadow_map_face = *(int *)&model_view_matrix->floats[2][3];
+
+			w = *(int *)&model_view_matrix->floats[2][3];
+			h = w & 0x0000ffff;
+			w = (w >> 16) & 0x0000ffff;
 			model_view_matrix->floats[2][3] = model_view_matrix->floats[2][2];
-			shadow_map_res = shadow_map_face & 0x0000ffff;
-			shadow_map_face = (shadow_map_face >> 16) & 0x0000ffff;
+			
+			//printf("[%d %d %d %d]\n", x, y, w, h); 
+
+			glViewport(x, y, w, h);
+			glScissor(x, y, w, h);			/* clear only the portion to be used by this shadow map */
+			glClear(GL_DEPTH_BUFFER_BIT); 
+			
+			//shadow_map_id = *(int *)&model_view_matrix->floats[1][3];
+			//model_view_matrix->floats[1][3] = model_view_matrix->floats[1][2];
+			//alpha_map_id = shadow_map_id & 0x0000ffff;
+			//shadow_map_id = (shadow_map_id >> 16) & 0x0000ffff;
+			
+			//shadow_map_face = *(int *)&model_view_matrix->floats[2][3];
+			//model_view_matrix->floats[2][3] = model_view_matrix->floats[2][2];
+			//shadow_map_res = shadow_map_face & 0x0000ffff;
+			//shadow_map_face = (shadow_map_face >> 16) & 0x0000ffff;
 			
 			//printf("%d\n", shadow_map_res * MIN_SHADOW_MAP_RES);
 			
-			glViewport(0, 0, shadow_map_res * MIN_SHADOW_MAP_RES, shadow_map_res * MIN_SHADOW_MAP_RES);
+			//glViewport(0, 0, shadow_map_res * MIN_SHADOW_MAP_RES, shadow_map_res * MIN_SHADOW_MAP_RES);
 			
 			
 			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, extra_framebuffer);
@@ -3470,9 +3704,9 @@ void draw_DrawShadowMaps()
 			//glClear(GL_DEPTH_BUFFER_BIT);
 			//glBindFramebuffer(GL_READ_FRAMEBUFFER, extra_framebuffer);
 			
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadow_map_face, shadow_map_id, 0);
+			//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadow_map_face, shadow_map_id, 0);
 			//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadow_map_face, alpha_map_id, 0);
-			glClear(GL_DEPTH_BUFFER_BIT);
+			//glClear(GL_DEPTH_BUFFER_BIT);
 			
 			//break;
 			
@@ -3591,6 +3825,7 @@ void draw_DrawShadowMaps()
 	
 	glCullFace(GL_BACK);
 	glDisable(GL_POLYGON_OFFSET_FILL);
+	glDisable(GL_SCISSOR_TEST);
 	glDisable(GL_BLEND);
 	//glEnable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
@@ -3679,7 +3914,7 @@ void draw_DrawLightVolumes()
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler1, 5);
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler2, 1);
 	//shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 1);
-	shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 2);
+	//shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 2);
 	shader_SetCurrentShaderUniform1i(UNIFORM_2DShadowSampler, 3);
 	
 	shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraProjectionMatrix, &active_camera->projection_matrix.floats[0][0]);
@@ -3702,13 +3937,13 @@ void draw_DrawLightVolumes()
 		{
 			continue;
 		}
-		if(position->bm_flags&LIGHT_SPOT)
+	/*	if(position->bm_flags&LIGHT_SPOT)
 		{
 			//shader_to_use=slvol_shader_index;	
 			area_type = LIGHT_SPOT;
 			light_type = LIGHT_SPOT;
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, shadow->shadow_map.shadow_map);
+			//glActiveTexture(GL_TEXTURE3);
+			//glBindTexture(GL_TEXTURE_2D, shadow->shadow_map.shadow_map);
 			draw_count = DRAW_CONE_LOD0_COUNT;
 			draw_start = DRAW_CONE_LOD0_BEGIN;
 			//glCullFace(GL_BACK);
@@ -3725,19 +3960,19 @@ void draw_DrawLightVolumes()
 			}*/
 			//continue;
 			
-			//glLighti(GL_LIGHT4, GL_SPOT_EXPONENT, 0);
-		}
-		else if(position->bm_flags&LIGHT_POINT)
+			//glLighti(GL_LIGHT4, GL_SPOT_EXPONENT, 0);*/
+		//}
+		/*else if(position->bm_flags&LIGHT_POINT)
 		{
 			area_type = LIGHT_POINT;
 			light_type = LIGHT_POINT;
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, shadow->shadow_map.shadow_map);
+			//glActiveTexture(GL_TEXTURE2);
+			//glBindTexture(GL_TEXTURE_CUBE_MAP, shadow->shadow_map.shadow_map);
 			draw_count = DRAW_SPHERE_LOD0_COUNT;
 			draw_start = DRAW_SPHERE_LOD0_BEGIN;
-		}
+		}*/
 		
-		v[0] = position->world_position.x;
+		/*v[0] = position->world_position.x;
 		v[1] = position->world_position.y;
 		v[2] = position->world_position.z;
 		v[3] = 1.0;
@@ -3746,50 +3981,50 @@ void draw_DrawLightVolumes()
 		v[0] = position->world_orientation.floats[2][0];
 		v[1] = position->world_orientation.floats[2][1];
 		v[2] = position->world_orientation.floats[2][2];
-		glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);
+		glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v);*/
 				
 		/* up vector */
-		v[0] = position->world_orientation.floats[1][0];
+		/*v[0] = position->world_orientation.floats[1][0];
 		v[1] = position->world_orientation.floats[1][1];
 		v[2] = position->world_orientation.floats[1][2];
-		glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); 
+		glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v); */
 				
 		/* right vector */
-		v[0] = position->world_orientation.floats[0][0];
+		/*v[0] = position->world_orientation.floats[0][0];
 		v[1] = position->world_orientation.floats[0][1];
 		v[2] = position->world_orientation.floats[0][2];
-		glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);
+		glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, v);*/
 		 		
 		 		
-		v[0] = (float)params->r / 255.0;
+		/*v[0] = (float)params->r / 255.0;
 		v[1] = (float)params->g / 255.0;
 		v[2] = (float)params->b / 255.0;
 		v[3] = position->radius;
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, v);
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, v);*/
 				
-		glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
-		glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, (int)params->spot_e);
-		glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)params->lin_fallof/0xffff);
-		glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)params->sqr_fallof/0xffff);
+	//	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, (float)position->spot_co);
+	//	glLighti(GL_LIGHT0, GL_SPOT_EXPONENT, (int)params->spot_e);
+	//	glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, (float)params->lin_fallof/0xffff);
+	//	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (float)params->sqr_fallof/0xffff);
 		
-		glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, ((float)params->scattering / (float)0xffff) * MAX_LIGHT_VOLUME_SCATTERING);
-		glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, ((float)params->energy / (float)0xffff) * MAX_LIGHT_ENERGY);
-		glLighti(GL_LIGHT2, GL_SPOT_CUTOFF, params->volume_samples);
+	//	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, ((float)params->scattering / (float)0xffff) * MAX_LIGHT_VOLUME_SCATTERING);
+		//glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, ((float)params->energy / (float)0xffff) * MAX_LIGHT_ENERGY);
+		//glLighti(GL_LIGHT2, GL_SPOT_CUTOFF, params->volume_samples);
 		
-		if(position->bm_flags & LIGHT_GENERATE_SHADOWS)
+		/*if(position->bm_flags & LIGHT_GENERATE_SHADOWS)
 		{
 			mat4_t_mult(&camera_to_light_matrix, &camera_to_world_matrix, &extra->world_to_light_matrix);
 			mat4_t_mult(&camera_to_light_projection_matrix, &camera_to_light_matrix, &extra->light_projection_matrix);
 			shader_SetCurrentShaderUniformMatrix4fv(UNIFORM_CameraToLightProjectionMatrix, &camera_to_light_projection_matrix.floats[0][0]);
-		}
+		}*/
 		
 		
-		shader_SetCurrentShaderUniform1f(UNIFORM_LightZNear, shadow->znear);
-		shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, shadow->zfar);
-		light_SetAreaType(area_type);
-		light_SetLightType(light_type);
+		//shader_SetCurrentShaderUniform1f(UNIFORM_LightZNear, shadow->znear);
+		//shader_SetCurrentShaderUniform1f(UNIFORM_LightZFar, shadow->zfar);
+		//light_SetAreaType(area_type);
+		//light_SetLightType(light_type);
 		
-		draw_DrawArrays(GL_TRIANGLES, draw_start, draw_count);
+		//draw_DrawArrays(GL_TRIANGLES, draw_start, draw_count);
 	//	glDrawArrays(GL_TRIANGLES, draw_start, draw_count);
 
 	}
@@ -4013,6 +4248,8 @@ void draw_DrawBloom()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 }
+
+
 
 void draw_AutoAdjust()
 {
@@ -4241,7 +4478,7 @@ void draw_BlitToScreen()
 	glVertexAttribPointer(shader_a.shaders[screen_quad_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	shader_SetCurrentShaderUniform1i(UNIFORM_TextureSampler0, 0);
-	shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 1);
+	//shader_SetCurrentShaderUniform1i(UNIFORM_3DShadowSampler, 1);
 	//shader_SetCurrentShaderUniform1f(UNIFORM_ZNear, active_light_a.shadow_data[0].znear);
 	//shader_SetCurrentShaderUniform1f(UNIFORM_ZFar, active_light_a.shadow_data[0].zfar);
 	
@@ -4253,6 +4490,8 @@ void draw_BlitToScreen()
 	glBlendFunc(GL_ONE, GL_ONE);
 	
 	glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, ssm);
+	//glBindTexture(GL_TEXTURE_2D, geometry_buffer.color_out1);
 	glBindTexture(GL_TEXTURE_2D, composite_buffer.color_out1);
 	//glBindTexture(GL_TEXTURE_2D, left_buffer.z_buffer);
 	//glActiveTexture(GL_TEXTURE1);

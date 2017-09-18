@@ -495,10 +495,10 @@ static void material_SetMaterialByIndexGL2B(int material_index)
 		
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, (GLfloat *)&c_color);
 		
-		shader_SetCurrentShaderUniform1i(UNIFORM_MaterialFlags, (int)(bm_flags & (MATERIAL_Shadeless | MATERIAL_DiffuseTexture |
+		/*shader_SetCurrentShaderUniform1i(UNIFORM_MaterialFlags, (int)(bm_flags & (MATERIAL_Shadeless | MATERIAL_DiffuseTexture |
 																				  MATERIAL_NormalTexture | MATERIAL_HeightTexture |
 																				  MATERIAL_GlossTexture | MATERIAL_MetallicTexture |
-																				  MATERIAL_FrontAndBack)));
+																				  MATERIAL_FrontAndBack)));*/
 		
 		/*shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_Shadeless, (int)bm_flags & MATERIAL_Shadeless);
 		shader_SetCurrentShaderUniform1i(UNIFORM_MFLAG_DiffuseTexture, (int)bm_flags & MATERIAL_DiffuseTexture);

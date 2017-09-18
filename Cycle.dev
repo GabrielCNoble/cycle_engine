@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0000000100000000001000000
-UnitCount=110
+UnitCount=112
 
 [VersionInfo]
 Major=1
@@ -1144,6 +1144,26 @@ BuildCmd=
 FileName=gmath\matrix.inl
 CompileCpp=1
 Folder=gmath
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit111]
+FileName=gl2renderer.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit112]
+FileName=renderer.h
+CompileCpp=1
+Folder=
 Compile=1
 Link=1
 Priority=1000

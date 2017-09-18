@@ -1060,25 +1060,39 @@ void gui_SetFocused(widget_t *widget)
 		if(widget_count > 1)
 		{
 			top_widget->bm_flags &= ~WIDGET_MOUSE_OVER;
+			
+			/* if this widget is not the first
+			in the list... */
 			if(widget != widgets->next)
 			{
 				
-				if(widget == last)
-				{
-					last = last->prev; 
-				}
-				
-				
+				/* if this widget is in the middle
+				of the list...  */
 				if(widget->next)
 				{
 					widget->next->prev = widget->prev;
 				}
+				else
+				{
+					/* this widget is the last
+					in the list, so make the previous
+					widget the new end of the list... */
+					last = last->prev; 
+				}
 				
 				widget->prev->next = widget->next;
 				
+				/* widget->prev now points to the
+				root of the list... */
 				widget->prev = widgets;
+				
+				/* widget->next now points to the
+				previous first widget (now second)... */
 				widget->next = widgets->next;
+				
 				widget->next->prev = widget;
+				
+				/* widget is now the first widget in the list... */
 				widgets->next = widget;
 				
 			}
@@ -1162,6 +1176,8 @@ void gui_ProcessWidgets()
 		{
 			goto _skip;
 		}
+		
+		//printf("%s\n", cwidget->name);
 			
 		cwidget->relative_mouse_x = ((cwidget->x * x_scale - input.normalized_mouse_x) * -2.0) / (cwidget->w * x_scale);
 		cwidget->relative_mouse_y = ((cwidget->y * y_scale - input.normalized_mouse_y) * -2.0) / (cwidget->h * y_scale);
@@ -1185,50 +1201,53 @@ void gui_ProcessWidgets()
 				
 				cwidget->bm_flags |= WIDGET_MOUSE_OVER;
 				
+				/* this flag would suggest that the widget
+				ignores the mouse completely... heh, sweet
+				lies... */
 				if(!(cwidget->bm_flags & WIDGET_IGNORE_MOUSE))
 				{
 					input.bm_mouse |= MOUSE_OVER_WIDGET;
-					
-					if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+				}
+				
+				
+				if(input.bm_mouse & MOUSE_LEFT_BUTTON_JUST_CLICKED)
+				{
+					/* There's an active subwidget from another widget. Only allow this
+					widget to become the top widget if the mouse is not on top of the
+					active subwidget... */
+					if(active_swidget)
 					{
-						/* There's an active subwidget from another widget. Only allow this
-						widget to become the top widget if the mouse is not on top of the
-						active subwidget... */
-						if(active_swidget)
+						if(active_swidget->bm_flags & WIDGET_MOUSE_OVER)
 						{
-							if(active_swidget->bm_flags & WIDGET_MOUSE_OVER)
-							{
-								//goto _skip1;
-								/* well... this label doesn't have function scope...
-								this might create problems later on... */	
-								asm("jmp _skip1\n");
-							}
+							//goto _skip1;
+							/* well... this label doesn't have function scope...
+							this might create problems later on... */	
+							asm("jmp _skip1\n");
 						}
+					}
 						
-						cwidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
-						if(cwidget != top_widget)
-						{
-							gui_SetFocused(cwidget);
-							active_swidget == NULL;
-						}
+					cwidget->bm_flags |= WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+					if(cwidget != top_widget)
+					{
+						gui_SetFocused(cwidget);
+						active_swidget == NULL;
+					}
 						
-						//_skip1:
-						asm("_skip1:\n");
-					}
-					else
-					{
-						cwidget->bm_flags &= ~WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
-					}
+					//_skip1:
+					asm("_skip1:\n");
+				}
+				else
+				{
+					cwidget->bm_flags &= ~WIDGET_RECEIVED_LEFT_BUTTON_DOWN;
+				}
 					
-					if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
-					{
-						cwidget->bm_flags |= WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
-					}
-					else
-					{
-						cwidget->bm_flags &= ~WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
-					}
-					
+				if(input.bm_mouse & MOUSE_RIGHT_BUTTON_JUST_CLICKED)
+				{
+					cwidget->bm_flags |= WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
+				}
+				else
+				{
+					cwidget->bm_flags &= ~WIDGET_RECEIVED_RIGHT_BUTTON_DOWN;
 				}
 				
 				mouse_over_widgets++;
@@ -1568,9 +1587,6 @@ void gui_ProcessWidgets()
 			{
 				dx = cswidget->cw;
 				dx = -(cwidget->w / 2.0) - cswidget->x - dx;
-				
-				//printf("%f\n", d)
-				
 				cswidget->x += dx;
 			}
 			
@@ -2005,6 +2021,8 @@ void gui_ProcessWidgets()
 			
 		
 	}
+	
+	//printf("\n");
 }
 
 

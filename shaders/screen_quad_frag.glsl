@@ -64,7 +64,7 @@ void main()
 	//texel=textureCube(textureSamplerCube0, vec3(-1.0, UV.y*2.0-1.0, UV.x*2.0-1.0));
 	
 
-    //texel=vec4(linearDepth(texture2D(sysTextureSampler0, vec2(UV.x, UV.y)).r))*0.01;
+	//texel=vec4(linearDepth(texture2D(sysTextureSampler0, vec2(UV.x, UV.y)).r)) * 0.001;
     //texel=vec4(linearDepth((textureCube(sys3DShadowSampler, vec3(UV.x*4.0-2.0, 1.0, UV.y*4.0-2.0)).r)))* 0.01;
 	//texel=textureCube(textureSampler1, vec3(1.0, UV.y*4.0-2.0, UV.x*4.0-2.0));
 	//texel = vec4(1.0);
