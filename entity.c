@@ -211,7 +211,7 @@ PEWAPI void entity_SetEntityArmature(int entity_index, int armature_index)
 		mesh = entity_a.draw_data[entity_index].mesh;
 		byte_count = sizeof(float) * 3 * mesh->vert_count;
 		
-		if(mesh->n_data)
+		/*if(mesh->n_data)
 		{
 			byte_count += byte_count; 
 		}
@@ -222,7 +222,10 @@ PEWAPI void entity_SetEntityArmature(int entity_index, int armature_index)
 		if(mesh->t_c_data)
 		{
 			byte_count += sizeof(float) * 2 * mesh->vert_count;
-		}
+		}*/
+		
+		byte_count = sizeof(vertex_t) * mesh->vert_count;
+		
 		
 		entity_a.draw_data[entity_index].handle = gpu_Alloc(byte_count);
 		entity_a.draw_data[entity_index].start = gpu_GetAllocStart(entity_a.draw_data[entity_index].handle);
@@ -293,9 +296,9 @@ PEWAPI comp_base_t *entity_CreateGeometryComponent(char *name, int flags, mesh_t
 	g->start = mesh->start;
 	g->vert_count = mesh->vert_count;
 	g->draw_flags = mesh->draw_mode;
-	model_GetMaxMinsFromVertexData(mesh->v_data, g->o_maxmins, mesh->vert_count);
+	model_GetMaxMinsFromVertexData(mesh->vertices, g->o_maxmins, mesh->vert_count);
 	
-	if(mesh->n_data)
+	/*if(mesh->n_data)
 	{
 		g->draw_flags |= CBATTRIBUTE_NORMAL;
 	}
@@ -306,7 +309,7 @@ PEWAPI comp_base_t *entity_CreateGeometryComponent(char *name, int flags, mesh_t
 	if(mesh->t_c_data)
 	{
 		g->draw_flags |= CBATTRIBUTE_TEX_COORD;
-	}
+	}*/
 	
 }
 
@@ -477,9 +480,9 @@ PEWAPI int entity_CreateEntityDef(char *name, short flags, short material_index,
 		
 		entity_defs.defs[index].armdef_index = armdef_index;
 		
-		model_GetMaxMinsFromVertexData(mesh->v_data, &entity_defs.defs[index].o_maxmins[0], mesh->vert_count);
+		model_GetMaxMinsFromVertexData(mesh->vertices, &entity_defs.defs[index].o_maxmins[0], mesh->vert_count);
 			
-		if(mesh->n_data)
+		/*if(mesh->n_data)
 		{
 			entity_defs.defs[index].draw_flags |= CBATTRIBUTE_NORMAL;
 		}
@@ -490,7 +493,7 @@ PEWAPI int entity_CreateEntityDef(char *name, short flags, short material_index,
 		if(mesh->t_c_data)
 		{
 			entity_defs.defs[index].draw_flags |= CBATTRIBUTE_TEX_COORD;
-		}
+		}*/
 		entity_defs.count++;
 		
 		if(!mesh) 
@@ -607,7 +610,7 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 			vmesh = draw->mesh;
 			byte_count = sizeof(float) * 3 * vmesh->vert_count;
 			
-			if(vmesh->n_data)
+			/*if(vmesh->n_data)
 			{
 				byte_count += sizeof(float) * 3 * vmesh->vert_count; 
 			}
@@ -618,11 +621,14 @@ PEWAPI int entity_SpawnEntity(char *name, entity_def_t *entity_def, vec3_t posit
 			if(vmesh->t_c_data)
 			{
 				byte_count += sizeof(float) * 2 * vmesh->vert_count;
-			}
+			}*/
+			
+			byte_count = sizeof(vertex_t) * vmesh->vert_count;
+			
 			
 			draw->handle = gpu_Alloc(byte_count);
 			draw->start = gpu_GetAllocStart(draw->handle);
-			gpu_Write(draw->handle, 0, vmesh->v_data, byte_count, 0);
+			gpu_Write(draw->handle, 0, vmesh->vertices, byte_count, 0);
 			pos->bm_flags |= ENTITY_SKINNABLE;
 			
 			ar = &armature_list.armatures[draw->armature_index];

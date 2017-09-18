@@ -4,7 +4,7 @@
 //#include "GL/glew.h"
 
 
-typedef struct
+typedef union
 {
 	struct
 	{

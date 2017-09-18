@@ -447,39 +447,39 @@ void armature_SkinMeshesCPU()
 		
 		bm_attribs = 0;
 		
-		if(mesh->n_data)
+		/*if(mesh->n_data)
 		{
 			bm_attribs |= 1;
 		}
 		if(mesh->t_data)
 		{
 			bm_attribs |= 2;
-		}
+		}*/
+		
+		bm_attribs |= 1 | 2;
 
 		for(j = 0; j < k;)
 		{
 				
 			index = set->weights[j].index;
 				
-			p.x = mesh->v_data[index * 3];
+			/*p.x = mesh->v_data[index * 3];
 			p.y = mesh->v_data[index * 3 + 1];
 			p.z = mesh->v_data[index * 3 + 2];
 			
-			//if(a->mesh->n_data)
 			if(bm_attribs & 1)
 			{
 				n.x = mesh->n_data[index * 3];
 				n.y = mesh->n_data[index * 3 + 1];
 				n.z = mesh->n_data[index * 3 + 2];
 			}
-			
-			//if(a->mesh->t_data)
+
 			if(bm_attribs & 2)
 			{
 				t.x = mesh->t_data[index * 3];
 				t.y = mesh->t_data[index * 3 + 1];
 				t.z = mesh->t_data[index * 3 + 2];
-			}
+			}*/
 				
 			ap.x = 0.0;
 			ap.y = 0.0;

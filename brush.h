@@ -3,7 +3,7 @@
 
 #include "matrix.h"
 #include "vector.h"
-
+#include "model.h"
 
 
 
@@ -33,7 +33,8 @@ typedef struct
 
 typedef struct
 {
-	float *verts;
+	//float *verts;
+	vertex_t *vertices;
 	int *face_indexes;
 	int vert_count;
 	int handle;

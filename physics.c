@@ -190,9 +190,14 @@ void physics_UpdateStaticWorld()
 		
 		for(j = 0; j < k;)
 		{
-			triangle_mesh->addTriangle(btVector3(brush_list.draw_data[i].verts[j * 6], 	     brush_list.draw_data[i].verts[j * 6 + 1], 		 brush_list.draw_data[i].verts[j * 6 + 2]),
+			/*triangle_mesh->addTriangle(btVector3(brush_list.draw_data[i].verts[j * 6], 	     brush_list.draw_data[i].verts[j * 6 + 1], 		 brush_list.draw_data[i].verts[j * 6 + 2]),
 			      					   btVector3(brush_list.draw_data[i].verts[(j + 1) * 6], brush_list.draw_data[i].verts[(j + 1) * 6 + 1], brush_list.draw_data[i].verts[(j + 1) * 6 + 2]),
-									   btVector3(brush_list.draw_data[i].verts[(j + 2) * 6], brush_list.draw_data[i].verts[(j + 2) * 6 + 1], brush_list.draw_data[i].verts[(j + 2) * 6 + 2]));
+									   btVector3(brush_list.draw_data[i].verts[(j + 2) * 6], brush_list.draw_data[i].verts[(j + 2) * 6 + 1], brush_list.draw_data[i].verts[(j + 2) * 6 + 2]));*/
+			
+			triangle_mesh->addTriangle(btVector3(brush_list.draw_data[i].vertices[j].position.x, brush_list.draw_data[i].vertices[j].position.y, brush_list.draw_data[i].vertices[j].position.z),
+			      					   btVector3(brush_list.draw_data[i].vertices[j + 1].position.x, brush_list.draw_data[i].vertices[j + 1].position.y, brush_list.draw_data[i].vertices[j + 1].position.z),
+									   btVector3(brush_list.draw_data[i].vertices[j + 2].position.x, brush_list.draw_data[i].vertices[j + 2].position.y, brush_list.draw_data[i].vertices[j + 2].position.z));						   
+									   
 			j += 3;						  
 		}
 		

@@ -320,7 +320,7 @@ void add_light(swidget_t *swidget, void *data, int i)
 		break;
 			
 		case 1:
-			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.1, 0.002, 0.000, 0.01, 4, 256, -1);
+			light_CreateSpotLight("spot0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 35.0, 10.0, 45.0, 0.1, 0.002, 0.000, 0.01, 4, 256, -1);
 		break;	
 	}
 }
@@ -754,12 +754,14 @@ void ginput(float delta_time)
 	camera_t *active_camera=camera_GetActiveCamera();
 	//entity_ptr eptr=entity_GetEntity("body");
 	entity_ptr selected;
+	entity_ptr spawned;
 	general_collider_t *col;
 	static entity_ptr hit;
 	//general_collider_t *collider = physics_GetColliderByIndex(eptr.position_data->collider_index);
 	character_controller_t *controller = (character_controller_t *)physics_GetCollider("_player_");
 	mat4_t transform;
 	entity_ptr e;
+	mat3_t rot = mat3_t_id();
 	//light_ptr l=light_GetLight("lightwow4");
 	btTransform trm;
 	btMatrix3x3 r;
@@ -777,6 +779,8 @@ void ginput(float delta_time)
 	static int small_bloom_iterations = draw_GetBloomParam(BLOOM_SMALL_ITERATIONS);
 	static int medium_bloom_iterations = draw_GetBloomParam(BLOOM_MEDIUM_ITERATIONS);
 	static int large_bloom_iterations = draw_GetBloomParam(BLOOM_LARGE_ITERATIONS);
+	
+	entity_def_t *def = entity_GetEntityDef("cube");
 	
 	s = pew_GetPewState();
 		
@@ -823,6 +827,13 @@ void ginput(float delta_time)
 		if(medium_bloom_radius < 0) medium_bloom_radius = 0;
 		draw_SetBloomParam(BLOOM_MEDIUM_RADIUS, medium_bloom_radius);
 	}
+	
+	/*if(input_GetKeyPressed(SDL_SCANCODE_G))
+	{
+		t = entity_SpawnEntity("WOW", def, vec3(0.0, 5.0, 0.0), &rot);
+		spawned = entity_GetEntityByIndex(t);
+		entity_ApplyForce(&spawned, vec3(0.0, 15000.0 ,0.0), vec3(0.0, 0.0, 0.0));
+	}*/
 		
 		
 	if(input_GetKeyPressed(SDL_SCANCODE_9))
@@ -1856,47 +1867,47 @@ void ginit()
 	tif.norm_tex = (short)texture_GetTextureIndex("greasy_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("greasy_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("greasy_metallic");
-	material_CreateMaterial("greasy", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("greasy", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("iron_rusted_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("iron_rusted_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("iron_rusted_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("iron_rusted_metallic");
-	material_CreateMaterial("iron_rusted", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("iron_rusted", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("painted_metal_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("painted_metal_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("painted_metal_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("painted_metal_metallic");
-	material_CreateMaterial("painted_metal", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("painted_metal", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("brushed_metal_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("brushed_metal_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("brushed_metal_gloss");
 	tif.met_tex = (short)texture_GetTextureIndex("brushed_metal_metallic");
-	material_CreateMaterial("brushed_metal", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("brushed_metal", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("tufted_leather_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("tufted_leather_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("tufted_leather_gloss");
 	tif.heig_tex = (short)texture_GetTextureIndex("tufted_leather_height");
-	material_CreateMaterial("tufted_leather", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
+	material_CreateMaterial("tufted_leather", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_NormalTexture|MATERIAL_HeightTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("slate_floor_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("slate_floor_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("slate_floor_gloss");
 	tif.heig_tex = (short)texture_GetTextureIndex("slate_floor_height");
-	material_CreateMaterial("slate_floor", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
+	material_CreateMaterial("slate_floor", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("cobble_stone_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("cobble_stone_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("cobble_stone_gloss");
 	tif.heig_tex = (short)texture_GetTextureIndex("cobble_stone_height");
-	material_CreateMaterial("cobble_stone", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture, &tif);
+	material_CreateMaterial("cobble_stone", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("dungeon_diffuse");
@@ -1904,30 +1915,30 @@ void ginit()
 	tif.gloss_tex = (short)texture_GetTextureIndex("dungeon_gloss");
 	tif.heig_tex = (short)texture_GetTextureIndex("dungeon_height");
 	tif.heig_tex = (short)texture_GetTextureIndex("dungeon_metallic");
-	material_CreateMaterial("dungeon", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture|MATERIAL_HeightTexture|MATERIAL_MetallicTexture, &tif);
+	material_CreateMaterial("dungeon", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 0.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_MetallicTexture, &tif);
 	
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("oakfloor_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("oakfloor_normal");
 	tif.gloss_tex = (short)texture_GetTextureIndex("oakfloor_gloss");
-	material_CreateMaterial("oakfloor", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture|MATERIAL_GlossTexture, &tif);
+	material_CreateMaterial("oakfloor", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_GlossTexture|MATERIAL_NormalTexture, &tif);
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("tile_d");
 	tif.norm_tex = (short)texture_GetTextureIndex("tile_n");
-	material_CreateMaterial("tile", 0.7, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
+	material_CreateMaterial("tile", 0.7, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture, &tif);
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("cargo_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("cargo_normal");
 	tif.heig_tex = (short)texture_GetTextureIndex("cargo_height");
-	material_CreateMaterial("cargo", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
+	material_CreateMaterial("cargo", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture, &tif);
 	
 	tif.diff_tex = (short)texture_GetTextureIndex("vending_machine_diffuse");
 	tif.norm_tex = (short)texture_GetTextureIndex("vending_machine_normal");
-	material_CreateMaterial("vending_machine", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture|MATERIAL_NormalTexture, &tif);
+	material_CreateMaterial("vending_machine", 0.5, 0.0, vec4(1.0, 1.0, 1.0, 1.0), 1.0, MATERIAL_DiffuseTexture, &tif);
 	
 	id = mat3_t_id();
 	
-	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("white"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
+	entity_CreateEntityDef("plane", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("oakfloor"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("wall", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("tile"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	//entity_CreateEntityDef("cieling", ENTITY_COLLIDES|ENTITY_STATIC, material_GetMaterialIndex("dungeon"), -1, planeptr, 0.0, COLLISION_SHAPE_CONVEX_HULL);
 	
@@ -1942,7 +1953,7 @@ void ginit()
 	
 	//entity_CreateEntityDef("pole", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("pole"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("bus_stop", 0, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("bus_stop"), 2.0, COLLISION_SHAPE_SPHERE);
-	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("white"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
+	entity_CreateEntityDef("cube", ENTITY_COLLIDES, material_GetMaterialIndex("tufted_leather"), -1, model_GetMeshPtr("cubeUV"), 2.0, COLLISION_SHAPE_SPHERE);
 	
 	//entity_CreateEntityDef("cargo", 0, material_GetMaterialIndex("cargo"), -1, model_GetMeshPtr("cargo"), 2.0, COLLISION_SHAPE_SPHERE);
 	//entity_CreateEntityDef("vending_machine", 0, material_GetMaterialIndex("vending_machine"), -1, model_GetMeshPtr("vending_machine"), 2.0, COLLISION_SHAPE_SPHERE);
@@ -2114,7 +2125,7 @@ void ginit()
 	{	
 		//mat3_t_rotate(&id, vec3(1.0, 0.0, 0.0), 0.0, 1);
 		
-		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 2.0, 0.0, 1.0), &id, vec3(1.0, 0.5, 0.5), 15.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
+		light_CreatePointLight("lightwow0", LIGHT_GENERATE_SHADOWS, vec4(0.0, 2.0, 0.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 25.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spo0", LIGHT_GENERATE_SHADOWS, vec4(-10.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);
 		//light_CreatePointLight("lightwow1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, -10.0, 1.0), &id, vec3(1.0, 1.0, 1.0), 10.0, 10.0, 0.02, 0.01, 0.01, 4, 256);
 		//light_CreateSpotLight("spot1", LIGHT_GENERATE_SHADOWS, vec4(0.0, 0.0, 0.0, 1.0), &id, vec3(0.8, 0.6, 0.2), 35.0, 10.0, 45.0, 0.5, 0.002, 0.000, 0.01, 4, 256, -1);

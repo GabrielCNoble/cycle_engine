@@ -48,7 +48,9 @@ void vcache_CacheMeshData(mesh_t *mesh)
 		/* don't cache already cached stuff... */
 		if(mesh->vcache_slot_id >= 0) return;
 		
-		byte_count = sizeof(float) * 3 * mesh->vert_count;
+		byte_count = sizeof(vertex_t) * mesh->vert_count;
+		
+		/*byte_count = sizeof(float) * 3 * mesh->vert_count;
 	
 		if(mesh->n_data)
 		{
@@ -61,7 +63,7 @@ void vcache_CacheMeshData(mesh_t *mesh)
 		if(mesh->t_c_data)
 		{
 			byte_count += sizeof(float) * 2 * mesh->vert_count;
-		}
+		}*/
 		
 		
 		//f = (float *)malloc(byte_count);
@@ -81,9 +83,9 @@ void vcache_CacheMeshData(mesh_t *mesh)
 		
 		mesh->vcache_slot_id = slot_index;
 		mesh->start = vert_cache[slot_index].start;
-		gpu_Write(vert_cache[slot_index].handle, 0, mesh->v_data, byte_count, 0);
+		gpu_Write(vert_cache[slot_index].handle, 0, mesh->vertices, byte_count, 0);
 		mesh->flags |= MESH_CACHED;
-		printf("mesh_t %s has been cached\n", mesh->name);
+		printf("mesh_t %s has been cached  %d %d\n", mesh->name, mesh->start, byte_count);
 		
 		/*gpu_Read(vert_cache[slot_index].handle, 0, f, byte_count, 0);
 		

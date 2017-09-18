@@ -1553,7 +1553,7 @@ static void scenegraph_CullBrushes()
 	
 	for(i = 0; i < c; i++)
 	{
-		draw_DispatchBrushCommandBuffer(brush_list.draw_data[i].start / (sizeof(float) * 6), brush_list.draw_data[i].vert_count, brush_list.draw_data[i].material_index);
+		draw_DispatchBrushCommandBuffer(brush_list.draw_data[i].start / sizeof(vertex_t), brush_list.draw_data[i].vert_count, brush_list.draw_data[i].material_index);
 	}
 }
 
@@ -2422,7 +2422,7 @@ pick_record_t scenegraph_Pick(float mouse_x, float mouse_y)
 	glBindBuffer(GL_ARRAY_BUFFER, gpu_heap);
 	shader_SetShaderByIndex(wireframe_shader_index);
 	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
-	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));	
+	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t ), (void *)(0));	
 
 	glMatrixMode(GL_MODELVIEW);
 	c = render_q.count;
@@ -2474,13 +2474,13 @@ pick_record_t scenegraph_Pick(float mouse_x, float mouse_y)
 		
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 		glLoadMatrixf(&model_view_matrix.floats[0][0]);
-		start /= sizeof(float) * 3;
+		start /= sizeof(vertex_t);
 		glDrawArrays(draw_mode, start, vert_count);
 	}
 	
 	shader_SetShaderByIndex(brush_pick_shader);
 	glEnableVertexAttribArray(shader_a.shaders[brush_pick_shader].v_position);
-	glVertexAttribPointer(shader_a.shaders[brush_pick_shader].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(0));
+	glVertexAttribPointer(shader_a.shaders[brush_pick_shader].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(0));
 	
 	glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
 	
@@ -2489,7 +2489,7 @@ pick_record_t scenegraph_Pick(float mouse_x, float mouse_y)
 	//c = brush_render_queue.command_buffer_count;
 	for(i = 0; i < c; i++)
 	{
-		start = brush_list.draw_data[i].start / (sizeof(float) * 6);
+		start = brush_list.draw_data[i].start / sizeof(vertex_t);
 		
 		*(int *)&wcolor[0] = (i + 1);
 		wcolor[2] = start / 3 + brush_list.draw_data[i].vert_count / 3;

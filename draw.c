@@ -1319,7 +1319,7 @@ void draw_FillCommandBuffer(command_buffer_t *cb, mesh_t *mesh, int entity_index
 	*((unsigned int *)&cb->model_view_matrix.floats[2][3]) = entity_index;
 	*((unsigned int *)&cb->model_view_matrix.floats[3][3]) = (mesh->draw_mode << 16) | ((short)material_index);
 	
-	if(mesh->n_data)
+	/*if(mesh->n_data)
 	{
 		*((unsigned int *)&cb->model_view_matrix.floats[3][3]) |= CBATTRIBUTE_NORMAL<<16;
 	}
@@ -1330,7 +1330,7 @@ void draw_FillCommandBuffer(command_buffer_t *cb, mesh_t *mesh, int entity_index
 	if(mesh->t_data)
 	{
 		*((unsigned int *)&cb->model_view_matrix.floats[3][3]) |= CBATTRIBUTE_TANGENT<<16;
-	}
+	}*/
 
 	return;
 }
@@ -1350,7 +1350,7 @@ void draw_FillCommandBuffer128(command_buffer_t *cb, mesh_t *mesh, int entity_in
 	*((unsigned int *)&cb->model_view_matrix.floats[2][3])=entity_index;
 	*((unsigned int *)&cb->model_view_matrix.floats[3][3])=(mesh->draw_mode << 16) | ((short)material_index);
 	
-	if(mesh->n_data)
+	/*if(mesh->n_data)
 	{
 		*((unsigned int *)&cb->model_view_matrix.floats[3][3])|=CBATTRIBUTE_NORMAL<<16;
 	}
@@ -1361,7 +1361,7 @@ void draw_FillCommandBuffer128(command_buffer_t *cb, mesh_t *mesh, int entity_in
 	if(mesh->t_data)
 	{
 		*((unsigned int *)&cb->model_view_matrix.floats[3][3])|=CBATTRIBUTE_TANGENT<<16;
-	}
+	}*/
 	
 	//MatrixCopy4(&cb->last_model_view_matrix, last_model_view_matrix);
 	//cb->last_model_view_matrix.floats[0][3] = entity_index;
@@ -1839,13 +1839,16 @@ void draw_DrawWireframe()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	
 	glMatrixMode(GL_MODELVIEW);
+	
+	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
+	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(0));	
 		
 	
 	if(brush_render_queue.command_buffer_count)
 	{	
 		glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
-		glEnableVertexAttribArray(v_position);
-		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)0);
+		//glEnableVertexAttribArray(v_position);
+		//glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)0);
 		glMultiDrawArrays(GL_TRIANGLES, brush_render_queue.start, brush_render_queue.count, brush_render_queue.command_buffer_count);
 	}
 	
@@ -1857,8 +1860,7 @@ void draw_DrawWireframe()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, wcolor);
 	
 	
-	glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
-	glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));	
+	
 
 	//glMatrixMode(GL_MODELVIEW);
 	c=render_q.count;
@@ -1904,7 +1906,7 @@ void draw_DrawWireframe()
 		//glBindBuffer(GL_ARRAY_BUFFER, gpu_buffer);
 		//v_byte_count=vert_count*3*sizeof(float);
 		
-		start /= sizeof(float) * 3;
+		start /= sizeof(vertex_t);
 		
 		//glEnableVertexAttribArray(shader_a.shaders[wireframe_shader_index].v_position);
 		//glVertexAttribPointer(shader_a.shaders[wireframe_shader_index].v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(0));
@@ -2076,23 +2078,49 @@ void draw_DrawLit()
 	
 	c = brush_render_queue.command_buffer_count;
 	
+	glEnableVertexAttribArray(v_position);
+	glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)0);	
+		
+	glEnableVertexAttribArray(v_normal);
+	glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(&(((vertex_t *)0)->normal)));
+	
+	glEnableVertexAttribArray(v_tangent);
+	glVertexAttribPointer(v_tangent, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(&(((vertex_t *)0)->tangent)));
+	
+	glEnableVertexAttribArray(v_tex_coord);
+	glVertexAttribPointer(v_tex_coord, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(&(((vertex_t *)0)->tex_coord)));
+	
+	
 	//if(brush_render_queue.command_buffer_count)
 	for(i = 0; i < c;)
 	{	
 		material_SetMaterialByIndex(brush_render_queue.material_indexes[i]);
 		
 		glLoadMatrixf(&active_camera->world_to_camera_matrix.floats[0][0]);
-		glEnableVertexAttribArray(v_position);
-		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)0);
-		glEnableVertexAttribArray(v_normal);
-		glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(sizeof(float) * 3));
+		//glEnableVertexAttribArray(v_position);
+		//glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)0);
+		//glEnableVertexAttribArray(v_normal);
+		//glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void *)(sizeof(float) * 3));
 		glMultiDrawArrays(GL_TRIANGLES, brush_render_queue.start + i + 1, brush_render_queue.count + i + 1, brush_render_queue.start[i]);
 		
 		i += brush_render_queue.start[i] + 1;
 	}
 	
+	//q = 0;
+	/*glEnableVertexAttribArray(v_position);
+	glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)0);	
 		
-	c=render_q.count;	
+	glEnableVertexAttribArray(v_normal);
+	glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(&(((vertex_t *)0)->normal)));
+	
+	glEnableVertexAttribArray(v_tangent);
+	glVertexAttribPointer(v_tangent, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(&(((vertex_t *)0)->tangent)));
+	
+	glEnableVertexAttribArray(v_tex_coord);
+	glVertexAttribPointer(v_tex_coord, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)(&(((vertex_t *)0)->tex_coord)));*/
+	
+		
+	c = render_q.count;	
 	
 		
 	#ifdef PROFILE_RENDERER
@@ -2130,19 +2158,19 @@ void draw_DrawLit()
 		
 		glLoadMatrixf(&cb.model_view_matrix.floats[0][0]);	
 			
-		v_byte_count = vert_count*3*sizeof(float);
+		//v_byte_count = vert_count*3*sizeof(float);
 			
-		q = 0;
-		glEnableVertexAttribArray(v_position);
-		glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-		q += v_byte_count;
-		if(attrib_flags&CBATTRIBUTE_NORMAL)
-		{	
-			glEnableVertexAttribArray(v_normal);
-			glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
-			q += v_byte_count;
-		}
-		if(attrib_flags&CBATTRIBUTE_TEX_COORD)
+		//q = 0;
+		//glEnableVertexAttribArray(v_position);
+		//glVertexAttribPointer(v_position, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+		//q += v_byte_count;
+		//if(attrib_flags&CBATTRIBUTE_NORMAL)
+		//{	
+		//glEnableVertexAttribArray(v_normal);
+		//glVertexAttribPointer(v_normal, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
+		//q += v_byte_count;
+		//}
+		/*if(attrib_flags&CBATTRIBUTE_TEX_COORD)
 		{
 			if(attrib_flags&CBATTRIBUTE_TANGENT)
 			{				
@@ -2150,13 +2178,21 @@ void draw_DrawLit()
 				glVertexAttribPointer(v_tangent, 3, GL_FLOAT, GL_FALSE, 0, (void *)(q));
 				q += v_byte_count;
 			}
+			
+			//printf("has tex coord\n");
+			
 			glEnableVertexAttribArray(v_tex_coord);
 			glVertexAttribPointer(v_tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (void *)(q));
-		}
+		}*/
 	
 		material_SetMaterialByIndex(material_index);
+		
+	//	printf("%d\n", start);
 
-		start /= sizeof(float) * 3;
+		start /= sizeof(vertex_t);
+		//start /= 4;
+		
+		//printf("%d\n", start);
 		
 		draw_DrawArrays(draw_mode, start, vert_count);
 
@@ -3603,7 +3639,7 @@ void draw_DrawShadowMaps()
 	
 	attrib = shader_a.shaders[smap_shader_index].v_position;
 	glEnableVertexAttribArray(attrib);
-	glVertexAttribPointer(attrib, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+	glVertexAttribPointer(attrib, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)0);
 	//shader_SetCurrentShaderUniform1i(UNIFORM_DepthSampler, 1);
 	//shader_SetCurrentShaderUniform1f(UNIFORM_UseShadows, 2.0);
 	
@@ -3790,7 +3826,7 @@ void draw_DrawShadowMaps()
 				
 				glLoadMatrixf(&model_view_matrix->floats[0][0]);
 
-				v_byte_count=vert_count*sizeof(float) * 3;
+				//v_byte_count=vert_count*sizeof(float) * 3;
 				
 				//glEnableVertexAttribArray(shader_a.shaders[smap_shader_index].v_position);
 				//glVertexAttribPointer(attrib, 3, GL_FLOAT, GL_FALSE, 0, (void *)start);
@@ -3803,7 +3839,7 @@ void draw_DrawShadowMaps()
 				{
 					glEnable(GL_CULL_FACE);
 				}
-				start /= sizeof(float) * 3;
+				start /= sizeof(vertex_t);
 				draw_DrawArrays(draw_mode, start, vert_count);
 				//glDrawArrays(draw_mode, 0, vert_count);
 				

@@ -148,7 +148,7 @@ PEWAPI int model_StoreMesh(mesh_t *mesh)
 	
 	if(mesh)
 	{
-		if(!mesh->v_data) return -1;
+		if(!mesh->vertices) return -1;
 		
 		/* make a copy of the vertex data, so user won't bug it down by reusing
 		the same variable to create another mesh_t */
@@ -509,8 +509,9 @@ PEWAPI void model_FreeMesh(mesh_t *mesh)
 {
 	if(mesh)
 	{
-		free(mesh->v_data);
-		mesh->v_data=NULL;
+		//free(mesh->v_data);
+		free(mesh->vertices);
+		mesh->vertices = NULL;
 			
 		/*if(mesh->n_data)
 		{
@@ -542,7 +543,7 @@ PEWAPI void model_FreeMesh(mesh_t *mesh)
 model_GetMaxMinsFromVertexData
 =============
 */
-PEWAPI void model_GetMaxMinsFromVertexData(float *vertex_data, float *maxmins, int vertex_count)
+PEWAPI void model_GetMaxMinsFromVertexData(vertex_t *vertex_data, float *maxmins, int vertex_count)
 {
 	float max_x=-9999999999999999.0;
 	float min_x=9999999999999999.0;
@@ -554,11 +555,13 @@ PEWAPI void model_GetMaxMinsFromVertexData(float *vertex_data, float *maxmins, i
 	int i;
 	for(i=0; i<vertex_count; i++)
 	{
-		if(vertex_data[i*3]>max_x)max_x=vertex_data[i*3];
+		
+		
+		if(vertex_data[i].position.x > max_x)max_x = vertex_data[i].position.x;
 		//else if(vertex_data[i*3]<min_x)min_x=vertex_data[i*3];
-		if(vertex_data[i*3+1]>max_y)max_y=vertex_data[i*3+1];
+		if(vertex_data[i].position.y > max_y)max_y = vertex_data[i].position.y;
 		//else if(vertex_data[i*3+1]<min_y)min_y=vertex_data[i*3+1];
-		if(vertex_data[i*3+2]>max_z)max_z=vertex_data[i*3+2];
+		if(vertex_data[i].position.z > max_z)max_z = vertex_data[i].position.z;
 		//else if(vertex_data[i*3+2]<min_z)min_z=vertex_data[i*3+2];
 	}
 	
@@ -571,7 +574,7 @@ PEWAPI void model_GetMaxMinsFromVertexData(float *vertex_data, float *maxmins, i
 }
 
 /* TODO: change vertex_data param to uv_data. */
-PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *normal_data, float **tangent_data, int vert_count)
+PEWAPI void model_CalculateTangents(vertex_t *vertices, int vert_count)
 {
 	int i;
 	int count = vert_count;
@@ -610,13 +613,20 @@ PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *n
 	for(i = 0; i < count;)
 	{
 		
-		duv1.floats[0] = uv_data[(i+1) * 2] - uv_data[i * 2];
-		duv1.floats[1] = uv_data[(i+1) * 2 + 1] - uv_data[i * 2 + 1];
+		//duv1.floats[0] = uv_data[(i+1) * 2] - uv_data[i * 2];
+		//duv1.floats[1] = uv_data[(i+1) * 2 + 1] - uv_data[i * 2 + 1];
 		
-		duv2.floats[0] = uv_data[(i+2) * 2] - uv_data[i * 2];
-		duv2.floats[1] = uv_data[(i+2) * 2 + 1] - uv_data[i * 2 + 1];
+		//duv2.floats[0] = uv_data[(i+2) * 2] - uv_data[i * 2];
+		//duv2.floats[1] = uv_data[(i+2) * 2 + 1] - uv_data[i * 2 + 1];
 		
-		q = 1.0 / (duv1.floats[0] * duv2.floats[1] - duv1.floats[1] * duv2.floats[0]);
+		
+		duv1.x = vertices[i + 1].tex_coord.x - vertices[i].tex_coord.x;
+		duv1.y = vertices[i + 1].tex_coord.y - vertices[i].tex_coord.y;
+		
+		duv2.x = vertices[i + 2].tex_coord.x - vertices[i].tex_coord.x;
+		duv2.y = vertices[i + 2].tex_coord.y - vertices[i].tex_coord.y;
+		
+		q = 1.0 / (duv1.x * duv2.y - duv1.y * duv2.x);
 		
 		/*x = duv2.floats[1] / q;
 		y = -duv1.floats[1] / q;
@@ -624,19 +634,31 @@ PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *n
 		w = duv1.floats[0] / q;*/
 		
 		
-		a.floats[0] = vertex_data[i*3];
-		a.floats[1] = vertex_data[i*3+1];
-		a.floats[2] = vertex_data[i*3+2];
+		a.x = vertices[i].position.x;
+		a.y = vertices[i].position.y;
+		a.z = vertices[i].position.z;
+		
+		b.x = vertices[i + 1].position.x;
+		b.y = vertices[i + 1].position.y;
+		b.z = vertices[i + 1].position.z;
+		
+		c.x = vertices[i + 2].position.x;
+		c.y = vertices[i + 2].position.y;
+		c.z = vertices[i + 2].position.z;
+		
+		//a.floats[0] = vertex_data[i*3];
+		//a.floats[1] = vertex_data[i*3+1];
+		//a.floats[2] = vertex_data[i*3+2];
 	
 		
-		b.floats[0] = vertex_data[(i+1)*3]; 
-		b.floats[1] = vertex_data[(i+1)*3+1];
-		b.floats[2] = vertex_data[(i+1)*3+2];
+		//b.floats[0] = vertex_data[(i+1)*3]; 
+		//b.floats[1] = vertex_data[(i+1)*3+1];
+		//b.floats[2] = vertex_data[(i+1)*3+2];
 		
 		
-		c.floats[0] = vertex_data[(i+2)*3]; 
-		c.floats[1] = vertex_data[(i+2)*3+1];
-		c.floats[2] = vertex_data[(i+2)*3+2];
+		//c.floats[0] = vertex_data[(i+2)*3]; 
+		//c.floats[1] = vertex_data[(i+2)*3+1];
+		//c.floats[2] = vertex_data[(i+2)*3+2];
 		
 		ab = sub3(b, a);
 		ac = sub3(c, a);
@@ -650,10 +672,16 @@ PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *n
 		bt1.floats[1] = (ac.floats[1] * duv1.floats[0] - ab.floats[1] * duv2.floats[0])*q;
 		bt1.floats[2] = (ac.floats[2] * duv1.floats[0] - ab.floats[2] * duv2.floats[0])*q;*/
 		
-		t = gs_orthg(vec3(normal_data[i*3], normal_data[i*3+1], normal_data[i*3+2]), t1);
-		(*tangent_data)[i*3] = t.floats[0];
-		(*tangent_data)[i*3+1] = t.floats[1];
-		(*tangent_data)[i*3+2] = t.floats[2];
+		//t = gs_orthg(vec3(normal_data[i*3], normal_data[i*3+1], normal_data[i*3+2]), t1);
+		t = gs_orthg(vertices[i].normal, t1);
+		vertices[i].tangent.x = t.x;
+		vertices[i].tangent.y = t.y;
+		vertices[i].tangent.z = t.z;
+		
+		
+		//(*tangent_data)[i*3] = t.floats[0];
+		//(*tangent_data)[i*3+1] = t.floats[1];
+		//(*tangent_data)[i*3+2] = t.floats[2];
 		
 		/*(*bitangent_data)[i*3] = 1.0;
 		(*bitangent_data)[i*3+1] = 0.0;
@@ -661,10 +689,14 @@ PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *n
 		
 		i++;
 		
-		t = gs_orthg(vec3(normal_data[i*3], normal_data[i*3+1], normal_data[i*3+2]), t1);
-		(*tangent_data)[i*3] = t.floats[0];
-		(*tangent_data)[i*3+1] = t.floats[1];
-		(*tangent_data)[i*3+2] = t.floats[2];
+		//t = gs_orthg(vec3(normal_data[i*3], normal_data[i*3+1], normal_data[i*3+2]), t1);
+		t = gs_orthg(vertices[i].normal, t1);
+		vertices[i].tangent.x = t.x;
+		vertices[i].tangent.y = t.y;
+		vertices[i].tangent.z = t.z;
+		//(*tangent_data)[i*3] = t.floats[0];
+		//(*tangent_data)[i*3+1] = t.floats[1];
+		//(*tangent_data)[i*3+2] = t.floats[2];
 		
 		/*(*bitangent_data)[i*3] = 1.0;
 		(*bitangent_data)[i*3+1] = 0.0;
@@ -672,10 +704,15 @@ PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *n
 		
 		i++;
 		
-		t = gs_orthg(vec3(normal_data[i*3], normal_data[i*3+1], normal_data[i*3+2]), t1);
+		t = gs_orthg(vertices[i].normal, t1);
+		vertices[i].tangent.x = t.x;
+		vertices[i].tangent.y = t.y;
+		vertices[i].tangent.z = t.z;
+		
+		/*t = gs_orthg(vec3(normal_data[i*3], normal_data[i*3+1], normal_data[i*3+2]), t1);
 		(*tangent_data)[i*3] = t.floats[0];
 		(*tangent_data)[i*3+1] = t.floats[1];
-		(*tangent_data)[i*3+2] = t.floats[2];
+		(*tangent_data)[i*3+2] = t.floats[2];*/
 		
 		/*(*bitangent_data)[i*3] = 1.0;
 		(*bitangent_data)[i*3+1] = 0.0;
@@ -711,7 +748,7 @@ PEWAPI void model_LoadModel(char *file_name, char *name)
 	}
 		
 
-	if(m.v_data)
+	if(m.vertices)
 	{
 		m.name = strdup(name);
 		i = model_StoreMesh(&m);

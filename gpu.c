@@ -1,9 +1,10 @@
 #include "gpu.h"
 #include "macros.h"
 #include "vector.h"
+#include "model.h"
 //#define GPU_HEAP_SIZE 134217728		/* 128 MB heap should be enough... */
 #define GPU_HEAP_SIZE 33554432			/* 32 MB */
-#define GPU_MIN_ALLOC sizeof(float)			
+#define GPU_MIN_ALLOC sizeof(vertex_t)			
 #define FREE_THRESHOLD 15
 
 //int vcache_size;
@@ -181,8 +182,11 @@ PEWAPI int gpu_Alloc(int size)
 	if(likely(size > 0))
 	{
 		/* round the size up to the closest multiple of the minimum allowed allocation... */
+		if(size % sizeof(vertex_t))
+		{
+			size = (size + sizeof(vertex_t) - 1) & (~(sizeof(vertex_t) - 1));
+		}
 		
-		size = (size + GPU_MIN_ALLOC - 1) & (~(GPU_MIN_ALLOC - 1));
 		
 		//printf("size is %d\n", size);
 		_try_again:

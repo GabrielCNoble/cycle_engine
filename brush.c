@@ -112,6 +112,7 @@ extern "C"
 #endif
 
 void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **vertices, float **normals)
+//void brush_CreateCylinderBrush(int base_vertexes, vertex_t **vertices, int *vert_count)
 {
 	float *verts;
 	float *norms;
@@ -129,12 +130,15 @@ void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **verti
 		*vertices = NULL;
 		*normals = NULL;
 		*vert_count = 0;
+		//*vertices = NULL;
+		//vertices->position = NULL;
+		//vertices->normal = NULL;
 		return;
 	}
 	
 	*vert_count = ((base_vertexes * 2 * 3) + (base_vertexes * 6));
 	
-	
+	//*vertices = (vertex_t *)malloc(sizeof(vertex_t) * (*vert_count));
 	*vertices = (float *)malloc(sizeof(float) * 3 * (*vert_count));
 	*normals = (float *)malloc(sizeof(float) * 3 * (*vert_count));
 	
@@ -143,23 +147,33 @@ void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **verti
 	a = 0.0;
 	for(i = 0; i < base_vertexes * 3;)
 	{
+		
 		verts[i * 3] = 0.0;
 		verts[i * 3 + 1] = 1.0;
 		verts[i * 3 + 2] = 0.0;
 		
+		/*(*vertices)[i].position.x = 0.0;
+		(*vertices)[i].position.y = 1.0;
+		(*vertices)[i].position.z = 0.0;*/
 		i++;
+		
+		
 		
 		verts[i * 3] = cos(a);
 		verts[i * 3 + 1] = 1.0;
 		verts[i * 3 + 2] = sin(a);
-		
+		/*(*vertices)[i].position.x = cos(a);
+		(*vertices)[i].position.y = 1.0;
+		(*vertices)[i].position.z = sin(a);*/
 		a -= b;
 		i++;
 		
 		verts[i * 3] = cos(a);
 		verts[i * 3 + 1] = 1.0;
 		verts[i * 3 + 2] = sin(a);
-	
+		/*(*vertices)[i].position.x = cos(a);
+		(*vertices)[i].position.y = 1.0;
+		(*vertices)[i].position.z = sin(a);*/
 		i++;
 	}
 	
@@ -170,13 +184,18 @@ void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **verti
 		verts[k * 3 + i * 3] = 0.0;
 		verts[k * 3 + i * 3 + 1] = -1.0;
 		verts[k * 3 + i * 3 + 2] = 0.0;
-		
+		/*(*vertices)[k + i].position.x = 0.0;
+		(*vertices)[k + i].position.y = -1.0;
+		(*vertices)[k + i].position.z = 0.0;*/
 		i++;
 		
 		verts[k * 3 + i * 3] = cos(a);
 		verts[k * 3 + i * 3 + 1] = -1.0;
 		verts[k * 3 + i * 3 + 2] = sin(a);
 		
+		/*(*vertices)[k + i].position.x = cos(a);
+		(*vertices)[k + i].position.y = -1.0;
+		(*vertices)[k + i].position.z = sin(a);*/
 		a += b;
 		i++;
 		
@@ -184,6 +203,9 @@ void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **verti
 		verts[k * 3 + i * 3 + 1] = -1.0;
 		verts[k * 3 + i * 3 + 2] = sin(a);
 		
+		/*(*vertices)[k + i].position.x = cos(a);
+		(*vertices)[k + i].position.y = -1.0;
+		(*vertices)[k + i].position.z = sin(a);*/
 		i++;
 	}
 	
@@ -196,37 +218,52 @@ void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **verti
 		verts[k * 3 + i * 3 + 1] = 1.0;
 		verts[k * 3 + i * 3 + 2] = sin(a);
 		
+		/*(*vertices)[k + i].position.x = cos(a);
+		(*vertices)[k + i].position.y = 1.0;
+		(*vertices)[k + i].position.z = sin(a);*/
 		i++;
 		
 		verts[k * 3 + i * 3] = verts[k * 3 + (i - 1) * 3];
 		verts[k * 3 + i * 3 + 1] = -1.0;
 		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 1) * 3 + 2];
 		
+		/*(*vertices)[k + i].position.x = (*vertices)[k + i - 1].position.x;
+		(*vertices)[k + i].position.y = -1.0;
+		(*vertices)[k + i].position.z = (*vertices)[k + i - 1].position.z;*/
 		a -= b;
 		i++;
+		
 		
 		verts[k * 3 + i * 3] = cos(a);
 		verts[k * 3 + i * 3 + 1] = 1.0;
 		verts[k * 3 + i * 3 + 2] = sin(a);
-		
+		/*(*vertices)[k + i].position.x = cos(a);
+		(*vertices)[k + i].position.y = 1.0;
+		(*vertices)[k + i].position.z = sin(a);*/
 		i++;
 		
 		verts[k * 3 + i * 3] = verts[k * 3 + (i - 1) * 3];
 		verts[k * 3 + i * 3 + 1] = 1.0;
 		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 1) * 3 + 2];
-		
+		/*(*vertices)[k + i].position.x = (*vertices)[k + i - 1].position.x;
+		(*vertices)[k + i].position.y = 1.0;
+		(*vertices)[k + i].position.z = (*vertices)[k + i - 1].position.z;*/
 		i++;
 		
 		verts[k * 3 + i * 3] = verts[k * 3 + (i - 3) * 3];
 		verts[k * 3 + i * 3 + 1] = -1.0;
 		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 3) * 3 + 2];
-		
+		/*(*vertices)[k + i].position.x = (*vertices)[k + i - 3].position.x;
+		(*vertices)[k + i].position.y = -1.0;
+		(*vertices)[k + i].position.z = (*vertices)[k + i - 3].position.z;*/
 		i++;
 		
 		verts[k * 3 + i * 3] = verts[k * 3 + (i - 3) * 3];
 		verts[k * 3 + i * 3 + 1] = -1.0;
 		verts[k * 3 + i * 3 + 2] = verts[k * 3 + (i - 3) * 3 + 2];
-		
+		/*(*vertices)[k + i].position.x = (*vertices)[k + i - 3].position.x;
+		(*vertices)[k + i].position.y = -1.0;
+		(*vertices)[k + i].position.z = (*vertices)[k + i - 3].position.z;*/
 		i++;
 	}
 	
@@ -242,7 +279,30 @@ void brush_CreateCylinderBrush(int base_vertexes, int *vert_count, float **verti
 		t.y = verts[(i + 2) * 3 + 1] - verts[i * 3 + 1];
 		t.z = verts[(i + 2) * 3 + 2] - verts[i * 3 + 2];
 		
+		/*s.x = (*vertices)[i + 1].position.x - (*vertices)[i].position.x;
+		s.y = (*vertices)[i + 1].position.y - (*vertices)[i].position.y;
+		s.z = (*vertices)[i + 1].position.z - (*vertices)[i].position.z;
+		
+		
+		t.x = (*vertices)[i + 2].position.x - (*vertices)[i].position.x;
+		t.y = (*vertices)[i + 2].position.y - (*vertices)[i].position.y;
+		t.z = (*vertices)[i + 2].position.z - (*vertices)[i].position.z;*/
+		
+		
 		r = cross(s, t);
+		
+		
+	/*	(*vertices)[i].normal.x = r.x;
+		(*vertices)[i].normal.y = r.y;
+		(*vertices)[i].normal.z = r.z;
+		
+		(*vertices)[i + 1].normal.x = r.x;
+		(*vertices)[i + 1].normal.y = r.y;
+		(*vertices)[i + 1].normal.z = r.z;
+		
+		(*vertices)[i + 2].normal.x = r.x;
+		(*vertices)[i + 2].normal.y = r.y;
+		(*vertices)[i + 2].normal.z = r.z;*/
 		
 		norms[i * 3] = r.x;
 		norms[i * 3 + 1] = r.y;
@@ -274,7 +334,7 @@ void brush_Finish()
 	for(i = 0; i < brush_list.count; i++)
 	{
 		free(brush_list.position_data[i].name);
-		free(brush_list.draw_data[i].verts);
+		free(brush_list.draw_data[i].vertices);
 		gpu_Free(brush_list.draw_data[i].handle);
 	}
 	free(brush_list.position_data);
@@ -288,6 +348,7 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 	bmodel_data1_t *draw_data;
 	float *vertex_src;
 	float *normal_src;
+	vertex_t *vertices;
 	
 	vec3_t v;
 	vec3_t p;
@@ -309,7 +370,7 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 	switch(type)
 	{
 		case BRUSH_CUBE:
-			size = cube_bmodel_size;
+			//size = cube_bmodel_size;
 			vert_count = cube_bmodel_vcount;
 			vertex_src = cube_bmodel_verts;
 			normal_src = cube_bmodel_normals;
@@ -317,7 +378,8 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 		
 		case BRUSH_CYLINDER:
 			brush_CreateCylinderBrush(16, &vert_count, &vertex_src, &normal_src);
-			size = sizeof(float) * vert_count * 6;
+			//brush_CreateCylinderBrush(16, &vertices, &vert_count);
+			//size = sizeof(float) * vert_count * 6;
 		break;
 	}
 	
@@ -329,7 +391,10 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 	memcpy(&position_data->orientation, orientation, sizeof(mat3_t));
 	 
 	
-	draw_data->verts = (float *)malloc(size);
+	size = sizeof(vertex_t) * vert_count;
+	
+	//draw_data->verts = (float *)malloc(size);
+	draw_data->vertices = (vertex_t *)malloc(size);
 	draw_data->vert_count = vert_count;
 	draw_data->type = type;
 	draw_data->material_index = material_index;
@@ -349,9 +414,12 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 		v.z += position.y;
 		v.y += position.z;
 		
-		draw_data->verts[i * 6] = v.x;
+		draw_data->vertices[i].position.x = v.x;
+		draw_data->vertices[i].position.y = v.y;
+		draw_data->vertices[i].position.z = v.z;
+		/*draw_data->verts[i * 6] = v.x;
 		draw_data->verts[i * 6 + 1] = v.y;
-		draw_data->verts[i * 6 + 2] = v.z;
+		draw_data->verts[i * 6 + 2] = v.z;*/
 	}
 	
 	for(i = 0; i < vert_count; i++)
@@ -362,16 +430,20 @@ PEWAPI int brush_CreateBrush(char *name, vec3_t position, mat3_t *orientation, v
 		
 		v = MultiplyVector3(orientation, v);
 		
-		draw_data->verts[3 + i * 6] = v.x;
+		draw_data->vertices[i].normal.x = v.x;
+		draw_data->vertices[i].normal.y = v.y;
+		draw_data->vertices[i].normal.z = v.z;
+		
+		/*draw_data->verts[3 + i * 6] = v.x;
 		draw_data->verts[3 + i * 6 + 1] = v.y;
-		draw_data->verts[3 + i * 6 + 2] = v.z;
+		draw_data->verts[3 + i * 6 + 2] = v.z;*/
 	}
 	
 	
 	draw_data->handle = gpu_Alloc(size);
 	draw_data->start = gpu_GetAllocStart(draw_data->handle);
 	
-	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
+	gpu_Write(draw_data->handle, 0, draw_data->vertices, size, 0);
 	
 	brush_SortBrushList();
 	
@@ -417,11 +489,11 @@ PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name)
 	position_data->brush_index = index;
 	memcpy(&position_data->orientation, &brush.position_data->orientation, sizeof(mat3_t));
 	 
-	size = brush.draw_data->vert_count * 6 * sizeof(float); 
-	
+//	size = brush.draw_data->vert_count * 6 * sizeof(float); 
+	size = sizeof(vertex_t) * brush.draw_data->vert_count;	
 	vert_count = brush.draw_data->vert_count;
 	
-	draw_data->verts = (float *)malloc(size);
+	draw_data->vertices = (vertex_t *)malloc(size);
 	draw_data->vert_count = vert_count; 
 	draw_data->type = brush.draw_data->type;
 	draw_data->material_index = brush.draw_data->material_index;
@@ -431,19 +503,28 @@ PEWAPI int brush_CopyBrush(bmodel_ptr brush, char *name)
 	
 	for(i = 0; i < vert_count; i++)
 	{
-		draw_data->verts[i * 6] = brush.draw_data->verts[i * 6];
+		
+		draw_data->vertices[i].position.x = brush.draw_data->vertices[i].position.x;
+		draw_data->vertices[i].position.y = brush.draw_data->vertices[i].position.y;
+		draw_data->vertices[i].position.z = brush.draw_data->vertices[i].position.z;
+		
+		draw_data->vertices[i].normal.x = brush.draw_data->vertices[i].normal.x;
+		draw_data->vertices[i].normal.y = brush.draw_data->vertices[i].normal.y;
+		draw_data->vertices[i].normal.z = brush.draw_data->vertices[i].normal.z;
+		
+		/*draw_data->verts[i * 6] = brush.draw_data->verts[i * 6];
 		draw_data->verts[i * 6 + 1] = brush.draw_data->verts[i * 6 + 1];
 		draw_data->verts[i * 6 + 2] = brush.draw_data->verts[i * 6 + 2];
 		
 		draw_data->verts[3 + i * 6] = brush.draw_data->verts[3 + i * 6];
 		draw_data->verts[3 + i * 6 + 1] = brush.draw_data->verts[3 + i * 6 + 1];
-		draw_data->verts[3 + i * 6 + 2] = brush.draw_data->verts[3 + i * 6 + 2];
+		draw_data->verts[3 + i * 6 + 2] = brush.draw_data->verts[3 + i * 6 + 2];*/
 	}	
 	
 	draw_data->handle = gpu_Alloc(size);
 	draw_data->start = gpu_GetAllocStart(draw_data->handle);
 	
-	gpu_Write(draw_data->handle, 0, draw_data->verts, size, 0);
+	gpu_Write(draw_data->handle, 0, draw_data->vertices, size, 0);
 	
 	brush_SortBrushList();
 	
@@ -458,15 +539,16 @@ void brush_IntersectBrushes(bmodel_ptr brush, bmodel_ptr subtractive_brush)
 
 void brush_UpdateBrush(bmodel_ptr brush)
 {
-	int last_vert_count = gpu_GetAllocSize(brush.draw_data->handle) / (sizeof(float) * 6);
-	int size = brush.draw_data->vert_count * 6 * sizeof(float);
+	int last_vert_count = gpu_GetAllocSize(brush.draw_data->handle) / sizeof(vertex_t);
+	int size = sizeof(vertex_t) * brush.draw_data->vert_count;
+	//int size = brush.draw_data->vert_count * 6 * sizeof(float);
 	if(brush.draw_data->vert_count > last_vert_count)
 	{
 		gpu_Free(brush.draw_data->handle);
 		brush.draw_data->handle = gpu_Alloc(size);
 		brush.draw_data->start = gpu_GetAllocStart(brush.draw_data->handle);
 	}
-	gpu_Write(brush.draw_data->handle, 0, brush.draw_data->verts, size, 0);
+	gpu_Write(brush.draw_data->handle, 0, brush.draw_data->vertices, size, 0);
 	
 }
 
@@ -477,7 +559,7 @@ void brush_DeleteBrush(bmodel_ptr brush)
 	if(brush.position_data)
 	{
 		free(brush.position_data->name);
-		free(brush.draw_data->verts);
+		free(brush.draw_data->vertices);
 		gpu_Free(brush.draw_data->handle);
 		
 		index = brush.position_data->brush_index;
@@ -567,9 +649,13 @@ void brush_TranslateBrush(bmodel_ptr brush, vec3_t direction)
 	
 	for(i = 0; i < c; i++)
 	{
-		brush.draw_data->verts[i * 6] += direction.x;
-		brush.draw_data->verts[i * 6 + 1] += direction.y;
-		brush.draw_data->verts[i * 6 + 2] += direction.z;
+		//brush.draw_data->verts[i * 6] += direction.x;
+		//brush.draw_data->verts[i * 6 + 1] += direction.y;
+		//brush.draw_data->verts[i * 6 + 2] += direction.z;
+		
+		brush.draw_data->vertices[i].position.x += direction.x;
+		brush.draw_data->vertices[i].position.y += direction.y;
+		brush.draw_data->vertices[i].position.z += direction.z;
 	}
 	
 	brush.position_data->position.x += direction.x;
@@ -600,13 +686,21 @@ void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount)
 	for(i = 0; i < c; i++)
 	{
 		
-		v.x = brush.draw_data->verts[i * 6];
-		v.y = brush.draw_data->verts[i * 6 + 1];
-		v.z = brush.draw_data->verts[i * 6 + 2];
+		//v.x = brush.draw_data->verts[i * 6];
+		//v.y = brush.draw_data->verts[i * 6 + 1];
+		//v.z = brush.draw_data->verts[i * 6 + 2];
 		
-		n.x = brush.draw_data->verts[3 + i * 6];
-		n.y = brush.draw_data->verts[3 + i * 6 + 1];
-		n.z = brush.draw_data->verts[3 + i * 6 + 2];
+		//n.x = brush.draw_data->verts[3 + i * 6];
+		//n.y = brush.draw_data->verts[3 + i * 6 + 1];
+		//n.z = brush.draw_data->verts[3 + i * 6 + 2];
+		
+		v.x = brush.draw_data->vertices[i].position.x;
+		v.y = brush.draw_data->vertices[i].position.y;
+		v.z = brush.draw_data->vertices[i].position.z;
+		
+		n.x = brush.draw_data->vertices[i].normal.x;
+		n.y = brush.draw_data->vertices[i].normal.y;
+		n.z = brush.draw_data->vertices[i].normal.z;
 		
 		v.x -= brush.position_data->position.x;
 		v.y -= brush.position_data->position.y;
@@ -624,9 +718,15 @@ void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount)
 		      v.y * rotation.floats[1][2] + 
 		      v.z * rotation.floats[2][2];	        
 		
-		brush.draw_data->verts[i * 6] = p.x + brush.position_data->position.x;
-		brush.draw_data->verts[i * 6 + 1] = p.y + brush.position_data->position.y;
-		brush.draw_data->verts[i * 6 + 2] = p.z + brush.position_data->position.z;
+		//brush.draw_data->verts[i * 6] = p.x + brush.position_data->position.x;
+		//brush.draw_data->verts[i * 6 + 1] = p.y + brush.position_data->position.y;
+		//brush.draw_data->verts[i * 6 + 2] = p.z + brush.position_data->position.z;
+		
+		
+		brush.draw_data->vertices[i].position.x = p.x + brush.position_data->position.x;
+		brush.draw_data->vertices[i].position.y = p.y + brush.position_data->position.y;
+		brush.draw_data->vertices[i].position.z = p.z + brush.position_data->position.z;
+		
 		
 		
 		p.x = n.x * rotation.floats[0][0] + 
@@ -641,9 +741,13 @@ void brush_RotateBrush(bmodel_ptr brush, vec3_t axis, float amount)
 		      n.y * rotation.floats[1][2] + 
 		      n.z * rotation.floats[2][2];	        
 		
-		brush.draw_data->verts[3 + i * 6] = p.x;
+		/*brush.draw_data->verts[3 + i * 6] = p.x;
 		brush.draw_data->verts[3 + i * 6 + 1] = p.y;
-		brush.draw_data->verts[3 + i * 6 + 2] = p.z;
+		brush.draw_data->verts[3 + i * 6 + 2] = p.z;*/
+		
+		brush.draw_data->vertices[i].normal.x = p.x;
+		brush.draw_data->vertices[i].normal.y = p.y;
+		brush.draw_data->vertices[i].normal.z = p.z;
 	}
 	
 	brush_UpdateBrush(brush);
@@ -687,9 +791,13 @@ PEWAPI void brush_ScaleBrush(bmodel_ptr brush, vec3_t axis, float amount)
 	for(i = 0; i < c; i++)
 	{
 		
-		v.x = brush.draw_data->verts[i * 6] - translation.x;
-		v.y = brush.draw_data->verts[i * 6 + 1] - translation.y;
-		v.z = brush.draw_data->verts[i * 6 + 2] - translation.z;
+		//v.x = brush.draw_data->verts[i * 6] - translation.x;
+		//v.y = brush.draw_data->verts[i * 6 + 1] - translation.y;
+		//v.z = brush.draw_data->verts[i * 6 + 2] - translation.z;
+		
+		v.x = brush.draw_data->vertices[i].position.x - translation.x;
+		v.y = brush.draw_data->vertices[i].position.y - translation.y;
+		v.z = brush.draw_data->vertices[i].position.z - translation.z;
 		
 		v = MultiplyVector3(&inverse_rotation, v);
 		
@@ -699,9 +807,14 @@ PEWAPI void brush_ScaleBrush(bmodel_ptr brush, vec3_t axis, float amount)
 		
 		v = MultiplyVector3(&brush.position_data->orientation, v);
 		
-		brush.draw_data->verts[i * 6] = v.x  + translation.x;
+		/*brush.draw_data->verts[i * 6] = v.x  + translation.x;
 		brush.draw_data->verts[i * 6 + 1] = v.y + translation.y;
-		brush.draw_data->verts[i * 6 + 2] = v.z + translation.z;
+		brush.draw_data->verts[i * 6 + 2] = v.z + translation.z;*/
+		
+		brush.draw_data->vertices[i].position.x = v.x + translation.x;
+		brush.draw_data->vertices[i].position.y = v.y + translation.y;
+		brush.draw_data->vertices[i].position.z = v.z + translation.z;
+		
 	}
 	
 	brush_UpdateBrush(brush);

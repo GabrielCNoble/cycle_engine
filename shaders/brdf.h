@@ -11,6 +11,24 @@ float ndf_ggx(vec3 normal, vec3 half_vec, float roughness)
 	return a / b;
 }
 
+float ndf_beckmann(vec3 normal, vec3 half_vec, float roughness)
+{
+	
+	float c = dot(normal, half_vec);
+	
+	float a = acos(c);
+	//roughness *= roughness;
+	float g = tan(a) / roughness;	
+	
+	roughness *= roughness;
+	c *= c;
+	c *= c;
+	
+	
+	return (1.0 / (roughness * c)) * exp(-(g * g));
+	
+}
+
 float g_schlick_ggx(vec3 normal, vec3 direction, float roughness)
 {
 	float k = (roughness + 1.0);
@@ -43,7 +61,7 @@ vec3 cook_torrance(vec3 light_vec, vec3 view_vec, vec3 normal, vec3 base, float 
 	//float t = max(dot(normal, half_vec), 0.0);
 	
 	vec3 f = f_schlick(normal, view_vec, base, metalness);
-	vec3 a = ndf_ggx(normal, half_vec, roughness) *  
+	vec3 a = ndf_ggx(normal, half_vec, roughness) /*ndf_beckmann(normal, half_vec, roughness)*/ *  
 			 g_smith(normal, view_vec, light_vec, roughness) * f;
 			 
 	float q = max(dot(normal, light_vec), 0.0);		  

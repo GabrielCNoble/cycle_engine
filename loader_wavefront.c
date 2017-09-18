@@ -49,6 +49,10 @@ mesh_t loader_LoadWavefront(char *file_name)
 	int *itemp;
 	edge_t *etemp;
 	
+	
+	float *hull_vertices;
+	
+	
 	char full_path[256];
 	strcpy(full_path, mesh_path);
 	strcat(full_path, file_name);
@@ -67,11 +71,12 @@ mesh_t loader_LoadWavefront(char *file_name)
 	vec2_t v2;
 	
 	mesh.vert_count=0;
-	mesh.v_data=NULL;
-	mesh.n_data=NULL;
-	mesh.t_data=NULL;
-	mesh.t_c_data=NULL;
+	//mesh.v_data=NULL;
+	//mesh.n_data=NULL;
+	//mesh.t_data=NULL;
+	//mesh.t_c_data=NULL;
 	
+	mesh.vertices = NULL;
 	btConvexHullShape *chtemp;
 	btShapeHull *htemp;
 	//mesh.b_data = NULL;
@@ -313,9 +318,44 @@ mesh_t loader_LoadWavefront(char *file_name)
 	}
 	
 	/* this seems to be causing crashes on gpu_Write()... */
-	vbuf_size = sizeof(float) * 3 * index_count * 2;
+	//vbuf_size = sizeof(vertex_t) * index_count;
 	
-	if(t_c_count)
+	mesh.vertices = (vertex_t *)malloc(sizeof(vertex_t) * index_count);
+	
+	
+	for(i = 0; i < index_count; i++)
+	{
+		mesh.vertices[i].position.x = v_data[i_data[i * 3] * 3];
+		mesh.vertices[i].position.y = v_data[i_data[i * 3] * 3 + 1];
+		mesh.vertices[i].position.z = v_data[i_data[i * 3] * 3 + 2];
+	}
+	
+	for(i=0; i<index_count; i++)
+	{
+		mesh.vertices[i].normal.x = n_data[i_data[i * 3 + 2] * 3];
+		mesh.vertices[i].normal.y = n_data[i_data[i * 3 + 2] * 3 + 1];
+		mesh.vertices[i].normal.z = n_data[i_data[i * 3 + 2] * 3 + 2];
+	}
+	
+	for(i = 0; i < index_count; i++)
+	{
+		mesh.vertices[i].tex_coord.x = t_c_data[i_data[i * 3 + 1] * 2];
+		mesh.vertices[i].tex_coord.y = t_c_data[i_data[i * 3 + 1] * 2 + 1];
+	}
+	
+	model_CalculateTangents(mesh.vertices, index_count);
+	
+	hull_vertices = (float *)malloc(sizeof(float) * 3 * index_count);
+	
+	for(i = 0; i < index_count; i++)
+	{
+		hull_vertices[i * 3] = mesh.vertices[i].position.x;
+		hull_vertices[i * 3 + 1] = mesh.vertices[i].position.y;
+		hull_vertices[i * 3 + 2] = mesh.vertices[i].position.z;
+	}
+	
+	
+	/*if(t_c_count)
 	{
 		vbuf_size += sizeof(float) * 2 * index_count + sizeof(float) * 3 * index_count;
 	}
@@ -349,11 +389,14 @@ mesh_t loader_LoadWavefront(char *file_name)
 		{
 			mesh.t_c_data[i * 2] = t_c_data[i_data[i * 3 + 1] * 2];
 			mesh.t_c_data[i * 2 + 1] = t_c_data[i_data[i * 3 + 1] * 2 + 1];
+			
+			printf("[%f %f]\n", mesh.t_c_data[i * 2], mesh.t_c_data[i * 2 + 1]);
+			
 		}
 		model_CalculateTangents(mesh.v_data, mesh.t_c_data, mesh.n_data, &mesh.t_data, index_count);
-	}
+	}*/
 
-	chtemp = new btConvexHullShape(mesh.v_data, index_count, sizeof(float) * 3);
+	chtemp = new btConvexHullShape(hull_vertices, index_count, sizeof(float) * 3);
 	htemp = new btShapeHull(chtemp);
 	htemp->buildHull(chtemp->getMargin());
 	mesh.collision_shape = new btConvexHullShape((btScalar *)htemp->getVertexPointer(), htemp->numVertices(), sizeof(float )*4);
@@ -393,6 +436,7 @@ mesh_t loader_LoadWavefront(char *file_name)
 	free(n_data);
 	free(i_data);
 	free(t_c_data);
+	free(hull_vertices);
 	
 	printf("mesh %s has %d vertexes\n",file_name, mesh.vert_count);
 	

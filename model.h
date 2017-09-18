@@ -39,6 +39,18 @@ enum MESH_T_FLAGS
 	triangle_t *b_tri;
 }edge_t;*/
 
+//#pragma pack(1)
+typedef struct
+{
+	vec3_t position;
+	vec3_t normal;
+	vec3_t tangent;
+	vec2_t tex_coord;
+}vertex_t;
+
+//#pragma pack(4)
+
+
 typedef struct
 {
 	int *indexes;
@@ -62,10 +74,13 @@ typedef struct vertex_data_t
 
 typedef struct
 {
-	float *v_data;
-	float *n_data;
-	float *t_c_data;
-	float *t_data;
+	//float *v_data;
+	//float *n_data;
+	//float *t_c_data;
+	//float *t_data;
+	
+	vertex_t *vertices;
+	
 	
 	//float *ov_data;
 	//float *on_data;
@@ -142,9 +157,9 @@ PEWAPI mesh_t *model_GetMeshPtr(char *name);
 
 PEWAPI void model_FreeMesh(mesh_t *mesh);
 
-PEWAPI void model_GetMaxMinsFromVertexData(float *vertex_data, float *maxmins, int vertex_count);
+PEWAPI void model_GetMaxMinsFromVertexData(vertex_t *vertex_data, float *maxmins, int vertex_count);
 
-PEWAPI void model_CalculateTangents(float *vertex_data, float *uv_data, float *normal_data, float **tangent_data, int vert_count);
+PEWAPI void model_CalculateTangents(vertex_t *vertices, int vert_count);
 
 PEWAPI void model_LoadModel(char *filename, char *name);
 

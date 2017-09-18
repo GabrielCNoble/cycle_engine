@@ -12,6 +12,7 @@
 #include "framebuffer.h"
 #include "entity.h"
 #include "physics.h"
+#include "model.h"
 
 
 /* (~46 MB)  */
@@ -274,6 +275,7 @@ void draw_debug_Draw()
 	float len;
 	
 	float *verts;
+	vertex_t *vertices;
 	mesh_t *m;
 	mat3_t *o;
 	vec3_t *w;
@@ -634,11 +636,11 @@ void draw_debug_Draw()
 				glColor3f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15]);
 				for(j = 0; j < l;)
 				{
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					glVertex3f(m->vertices[j].position.x, m->vertices[j].position.y, m->vertices[j].position.z);
 					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					glVertex3f(m->vertices[j].position.x, m->vertices[j].position.y, m->vertices[j].position.z);
 					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					glVertex3f(m->vertices[j].position.x, m->vertices[j].position.y, m->vertices[j].position.z);
 					j++;
 				}
 				glEnd();
@@ -655,11 +657,11 @@ void draw_debug_Draw()
 				glColor3f(draw_cmds[i].data[13], draw_cmds[i].data[14], draw_cmds[i].data[15]);
 				for(j = 0; j < l;)
 				{
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					glVertex3f(m->vertices[j].position.x, m->vertices[j].position.y, m->vertices[j].position.z);
 					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					glVertex3f(m->vertices[j].position.x, m->vertices[j].position.y, m->vertices[j].position.z);
 					j++;
-					glVertex3f(m->v_data[j * 3], m->v_data[j * 3 + 1], m->v_data[j * 3 + 2]);
+					glVertex3f(m->vertices[j].position.x, m->vertices[j].position.y, m->vertices[j].position.z);
 					j++;
 				}
 				glEnd();
@@ -675,7 +677,8 @@ void draw_debug_Draw()
 			
 			case DRAW_BRUSH_OUTLINE:
 				
-				verts = *(float **)&draw_cmds[i].data[0];
+				//verts = *(float **)&draw_cmds[i].data[0];
+				vertices = *(vertex_t **)&draw_cmds[i].data[0];
 				l = *(int *)&draw_cmds[i].data[1];
 				
 				glEnable(GL_STENCIL_TEST);
@@ -690,11 +693,11 @@ void draw_debug_Draw()
 				glBegin(GL_TRIANGLES);
 				for(j = 0; j < l;)
 				{
-					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					glVertex3f(vertices[j].position.x, vertices[j].position.y, vertices[j].position.z);
 					j++;
-					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					glVertex3f(vertices[j].position.x, vertices[j].position.y, vertices[j].position.z);
 					j++;
-					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					glVertex3f(vertices[j].position.x, vertices[j].position.y, vertices[j].position.z);
 					j++;
 				}
 				glEnd();
@@ -712,11 +715,11 @@ void draw_debug_Draw()
 				glColor3f(draw_cmds[i].data[2], draw_cmds[i].data[3], draw_cmds[i].data[4]);
 				for(j = 0; j < l;)
 				{
-					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					glVertex3f(vertices[j].position.x, vertices[j].position.y, vertices[j].position.z);
 					j++;
-					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					glVertex3f(vertices[j].position.x, vertices[j].position.y, vertices[j].position.z);
 					j++;
-					glVertex3f(verts[j * 6], verts[j * 6 + 1], verts[j * 6 + 2]);
+					glVertex3f(vertices[j].position.x, vertices[j].position.y, vertices[j].position.z);
 					j++;
 				}
 				glEnd();
@@ -1331,7 +1334,7 @@ PEWAPI void draw_debug_DrawBrushOutline(bmodel_ptr brush, vec3_t color)
 		d.count = 1;
 		d.type = DRAW_BRUSH_OUTLINE;
 	
-		*(float **)&float_buffer[used_floats++] = brush.draw_data->verts;
+		*(vertex_t **)&float_buffer[used_floats++] = brush.draw_data->vertices;
 		*(int *)&float_buffer[used_floats++] = brush.draw_data->vert_count;
 		float_buffer[used_floats++] = color.r;
 		float_buffer[used_floats++] = color.g;
